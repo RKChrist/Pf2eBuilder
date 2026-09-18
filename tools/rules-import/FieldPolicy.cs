@@ -65,6 +65,11 @@ static class FieldPolicy
 
     // A non-empty remaster_id marks the record as superseded by the ids it names. One definition
     // serves both the pull that drops those records and the transform that reports the survivors.
+    // AoN writes remaster_id ["0"] on records that have no successor, so "0" is a marker and not an
+    // id. Verified on 18 Sep 2026: exactly 72 documents across the eighteen categories carry it, and
+    // they are the only ones whose remaster_id resolves to nothing.
+    const string NoSuccessor = "0";
+
     public static List<string> LegacyTargets(JsonObject record)
     {
         if (record["remaster_id"] is not JsonArray remaster)
@@ -75,7 +80,8 @@ static class FieldPolicy
         var targets = new List<string>(remaster.Count);
         foreach (var node in remaster)
         {
-            if (node is JsonValue value && value.TryGetValue<string>(out var text) && text.Length > 0)
+            if (node is JsonValue value && value.TryGetValue<string>(out var text) && text.Length > 0 &&
+                text != NoSuccessor)
             {
                 targets.Add(text);
             }
