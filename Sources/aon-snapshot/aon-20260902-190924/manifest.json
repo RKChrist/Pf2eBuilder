@@ -1,0 +1,181 @@
+{
+  "index": "aon-20260902-190924",
+  "pulledAtUtc": "2026-09-18T16:06:26Z",
+  "endpoint": "https://elasticsearch.aonprd.com/aon/_search",
+  "pageSize": 500,
+  "sort": "id.keyword:asc",
+  "excludedFieldPatterns": [
+    "markdown",
+    "*_markdown",
+    "access",
+    "anathema",
+    "area_of_concern",
+    "area_of_concern_raw",
+    "edict",
+    "religious_symbol",
+    "sanctification_raw",
+    "stage",
+    "summary",
+    "text"
+  ],
+  "excludedFields": [
+    "access",
+    "ammunition_markdown",
+    "anathema",
+    "area_markdown",
+    "area_of_concern",
+    "area_of_concern_raw",
+    "armor_group_markdown",
+    "base_item_markdown",
+    "bloodline_markdown",
+    "cost_markdown",
+    "deity_category_markdown",
+    "deity_markdown",
+    "divine_font_markdown",
+    "domain_alternate_markdown",
+    "domain_markdown",
+    "domain_primary_markdown",
+    "edict",
+    "favored_weapon_markdown",
+    "feat_markdown",
+    "language_markdown",
+    "markdown",
+    "pantheon_markdown",
+    "pantheon_member_markdown",
+    "patron_theme_markdown",
+    "prerequisite_markdown",
+    "primary_check_markdown",
+    "religious_symbol",
+    "requirement_markdown",
+    "sanctification_raw",
+    "saving_throw_markdown",
+    "search_markdown",
+    "secondary_check_markdown",
+    "skill_markdown",
+    "source_markdown",
+    "speed_markdown",
+    "spell_markdown",
+    "stage",
+    "stage_markdown",
+    "summary",
+    "summary_markdown",
+    "target_markdown",
+    "text",
+    "tradition_markdown",
+    "trait_markdown",
+    "trigger_markdown",
+    "usage_markdown",
+    "weapon_group_markdown"
+  ],
+  "complete": true,
+  "categories": {
+    "equipment": {
+      "indexed": 9089,
+      "written": 6568,
+      "droppedAsLegacy": 2521,
+      "legacyTargetMissing": 0
+    },
+    "feat": {
+      "indexed": 8832,
+      "written": 6390,
+      "droppedAsLegacy": 2442,
+      "legacyTargetMissing": 0
+    },
+    "action": {
+      "indexed": 4218,
+      "written": 3985,
+      "droppedAsLegacy": 233,
+      "legacyTargetMissing": 0
+    },
+    "spell": {
+      "indexed": 2762,
+      "written": 1836,
+      "droppedAsLegacy": 926,
+      "legacyTargetMissing": 0
+    },
+    "class-feature": {
+      "indexed": 1366,
+      "written": 774,
+      "droppedAsLegacy": 592,
+      "legacyTargetMissing": 0
+    },
+    "trait": {
+      "indexed": 921,
+      "written": 564,
+      "droppedAsLegacy": 357,
+      "legacyTargetMissing": 0
+    },
+    "deity": {
+      "indexed": 718,
+      "written": 484,
+      "droppedAsLegacy": 234,
+      "legacyTargetMissing": 0
+    },
+    "background": {
+      "indexed": 642,
+      "written": 524,
+      "droppedAsLegacy": 118,
+      "legacyTargetMissing": 0
+    },
+    "weapon": {
+      "indexed": 614,
+      "written": 372,
+      "droppedAsLegacy": 242,
+      "legacyTargetMissing": 0
+    },
+    "heritage": {
+      "indexed": 438,
+      "written": 337,
+      "droppedAsLegacy": 101,
+      "legacyTargetMissing": 0
+    },
+    "archetype": {
+      "indexed": 347,
+      "written": 251,
+      "droppedAsLegacy": 96,
+      "legacyTargetMissing": 0
+    },
+    "ritual": {
+      "indexed": 232,
+      "written": 163,
+      "droppedAsLegacy": 69,
+      "legacyTargetMissing": 0
+    },
+    "language": {
+      "indexed": 155,
+      "written": 121,
+      "droppedAsLegacy": 34,
+      "legacyTargetMissing": 0
+    },
+    "condition": {
+      "indexed": 98,
+      "written": 56,
+      "droppedAsLegacy": 42,
+      "legacyTargetMissing": 0
+    },
+    "ancestry": {
+      "indexed": 94,
+      "written": 67,
+      "droppedAsLegacy": 27,
+      "legacyTargetMissing": 0
+    },
+    "armor": {
+      "indexed": 75,
+      "written": 42,
+      "droppedAsLegacy": 33,
+      "legacyTargetMissing": 0
+    },
+    "class": {
+      "indexed": 51,
+      "written": 29,
+      "droppedAsLegacy": 22,
+      "legacyTargetMissing": 0
+    },
+    "skill": {
+      "indexed": 50,
+      "written": 33,
+      "droppedAsLegacy": 17,
+      "legacyTargetMissing": 0
+    }
+  }
+}

@@ -11,6 +11,3 @@ todo.md
 tools/rules-import/out/
 .claude/settings.local.json
 
-# Pulled snapshot, restored by `rules-import pull`. Tracked or not is decided
-# once its real size is known.
-Sources/aon-snapshot/
