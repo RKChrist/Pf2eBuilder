@@ -21,14 +21,23 @@ The second rule is the load-bearing one. The first is an optimisation of it that
 off this machine. `Transform` asserts that no stored record carries a prose field and fails the run
 if one does, which catches a snapshot pulled without the excludes.
 
-An earlier pass classified thirteen fields as prose, and the project owner has re-included them as
-stat-block labels. They are `area_raw`, `cost`, `duration_raw`, `frequency`, `pfs`, `prerequisite`,
-`primary_check`, `requirement`, `secondary_check`, `stage`, `target`, `trigger` and `usage`. Twelve
-of them were dropped from the wire-exclude list and added to the seed allow-list. `pfs` was never
+An earlier pass classified thirteen fields as prose, and the project owner has re-included twelve of
+them as stat-block labels. They are `area_raw`, `cost`, `duration_raw`, `frequency`, `pfs`,
+`prerequisite`, `primary_check`, `requirement`, `secondary_check`, `target`, `trigger` and `usage`.
+Eleven were dropped from the wire-exclude list and added to the seed allow-list. `pfs` was never
 withheld at the wire, so it only needed adding to the allow-list.
 
+The thirteenth, `stage`, stays excluded. The re-inclusion was conditional on a field being a short
+label rather than long-form text, and a length census over all 22,596 stored records settled it
+against `stage`. Its median value is 134 characters, only 9.9% of its 172 values are under 80
+characters, 37 exceed 200, and the longest runs to 647. Those values are affliction stage
+descriptions, which are rule text rather than a header. Two re-included fields have a prose tail
+worth knowing about. `requirement` has a median of 42 characters and 82% under 80, but eight values
+exceed 200 and one reaches 1,346. `frequency` has a median of 12 characters and 99.8% under 80, with
+a single outlier of 1,013. Both are labels in the ordinary case, so both stay.
+
 The field inventory below comes from 1,928 sample documents spanning all eighteen categories and
-182 distinct fields. Those 182 are the 47 excluded here, the 28 stored but unseeded, the 103 on the
+182 distinct fields. Those 182 are the 48 excluded here, the 28 stored but unseeded, the 102 on the
 allow-list, and `id`, `name`, `category` and `url`, which every record carries and the transform
 always emits. Field names, observed lengths and reasons are recorded here. Sample values are not,
 because reproducing the excluded prose in the document that explains the exclusion would defeat it.
@@ -48,18 +57,19 @@ there, so the two patterns cover every rendered-markdown field including ones ad
 - `religious_symbol`
 - `sanctification_raw`
 - `secondary_casters_raw`
+- `stage`
 - `summary`
 - `text`
 
-The nine rendered siblings of the re-included labels stay excluded under `*_markdown`. They are
+The eight rendered siblings of the re-included labels stay excluded under `*_markdown`. They are
 `prerequisite_markdown`, `cost_markdown`, `trigger_markdown`, `requirement_markdown`,
-`target_markdown`, `usage_markdown`, `primary_check_markdown`, `secondary_check_markdown` and
-`stage_markdown`. That is intended. The label is a mechanical value. Its AoN rendered presentation
-is Paizo's layout and link markup, which is expression.
+`target_markdown`, `usage_markdown`, `primary_check_markdown` and `secondary_check_markdown`. That
+is intended. The label is a mechanical value. Its AoN rendered presentation is Paizo's layout and
+link markup, which is expression.
 
-## Concrete excluded fields (47)
+## Concrete excluded fields (48)
 
-The patterns above match these 47 field names in the sampled data. `manifest.json` records both
+The patterns above match these 48 field names in the sampled data. `manifest.json` records both
 lists, the patterns under `excludedFieldPatterns` and these names under `excludedFields`, so a
 reviewer can see what the wildcard covered without re-running the sample.
 
@@ -105,6 +115,7 @@ value seen in the sample, which is the size of the omission rather than a limit.
 | `source_markdown` | 18 | 131 | AoN rendered presentation of source, carrying site link markup and phrasing. |
 | `speed_markdown` | 1 | 7 | AoN rendered presentation of speed, carrying site link markup and phrasing. |
 | `spell_markdown` | 2 | 351 | AoN rendered presentation of spell, carrying site link markup and phrasing. |
+| `stage` | 1 | 647 | Affliction stage rule text; median 134 chars, 90% over 80 chars. |
 | `stage_markdown` | 1 | 201 | AoN rendered presentation of stage, carrying site link markup and phrasing. |
 | `summary` | 17 | 290 | A prose sentence describing the record. |
 | `summary_markdown` | 17 | 290 | AoN rendered presentation of summary, carrying site link markup and phrasing. |
@@ -136,7 +147,7 @@ They fall into four groups.
 Adding any of them later is a one-line change to `FieldPolicy.SeedAllowList`, so the omission costs
 nothing to reverse.
 
-## Seed allow-list (103)
+## Seed allow-list (102)
 
 `Transform.Project` emits `id`, `name`, `category` and `sourceUrl` on every record, then copies
 these fields when the record carries a non-empty value for them. Nothing else reaches the seed.
@@ -234,7 +245,6 @@ from the id.
 | `speed_raw` | 1 | string |
 | `spell` | 2 | array |
 | `spell_type` | 1 | string |
-| `stage` | 1 | array |
 | `strength` | 1 | number |
 | `target` | 2 | string |
 | `tradition` | 2 | array |

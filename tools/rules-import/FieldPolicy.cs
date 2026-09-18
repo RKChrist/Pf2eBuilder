@@ -19,7 +19,8 @@ static class FieldPolicy
     public static readonly IReadOnlyList<string> WireExcludes =
     [
         "markdown", "*_markdown", "access", "anathema", "area_of_concern", "area_of_concern_raw",
-        "edict", "religious_symbol", "sanctification_raw", "secondary_casters_raw", "summary", "text",
+        "edict", "religious_symbol", "sanctification_raw", "secondary_casters_raw", "stage", "summary",
+        "text",
     ];
 
     public static readonly IReadOnlyList<string> ProseFieldOrder =
@@ -33,7 +34,8 @@ static class FieldPolicy
         "prerequisite_markdown", "primary_check_markdown", "religious_symbol", "requirement_markdown",
         "sanctification_raw", "saving_throw_markdown", "search_markdown", "secondary_casters_raw",
         "secondary_check_markdown", "skill_markdown", "source_markdown", "speed_markdown",
-        "spell_markdown", "stage_markdown", "summary", "summary_markdown", "target_markdown", "text",
+        "spell_markdown", "stage", "stage_markdown", "summary", "summary_markdown", "target_markdown",
+        "text",
         "tradition_markdown", "trait_markdown", "trigger_markdown", "usage_markdown",
         "weapon_group_markdown",
     ];
@@ -58,7 +60,7 @@ static class FieldPolicy
         "remaster_id", "requirement", "resistance", "sanctification", "saving_throw", "school",
         "secondary_casters", "secondary_check", "size", "skill", "skill_mod", "skill_proficiency",
         "source", "source_category", "speed", "speed_penalty", "speed_raw", "spell", "spell_type",
-        "stage", "strength", "target", "tradition", "trait", "trigger", "type", "usage", "vision",
+        "strength", "target", "tradition", "trait", "trigger", "type", "usage", "vision",
         "weakness", "weapon_category", "weapon_group", "weapon_type", "will_proficiency",
     }.ToFrozenSet(StringComparer.Ordinal);
 
