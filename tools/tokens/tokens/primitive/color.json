@@ -1,0 +1,148 @@
+{
+  "color": {
+    "$type": "color",
+    "ink": {
+      "0": {
+        "$value": "#FFFFFF"
+      },
+      "50": {
+        "$value": "#F2F5F8"
+      },
+      "100": {
+        "$value": "#E6ECF1"
+      },
+      "200": {
+        "$value": "#D2DCE4"
+      },
+      "300": {
+        "$value": "#AEBDC9"
+      },
+      "400": {
+        "$value": "#8397A9"
+      },
+      "500": {
+        "$value": "#5A7186"
+      },
+      "600": {
+        "$value": "#3E5265"
+      },
+      "700": {
+        "$value": "#2B3B4D"
+      },
+      "800": {
+        "$value": "#1D2A38"
+      },
+      "900": {
+        "$value": "#16202B"
+      },
+      "950": {
+        "$value": "#0E151C"
+      },
+      "$description": "Blue-black, the colour of fountain-pen ink dried on a character sheet. Never a neutral or warm grey."
+    },
+    "teal": {
+      "300": {
+        "$value": "#86D0DC"
+      },
+      "400": {
+        "$value": "#4FB3C4"
+      },
+      "500": {
+        "$value": "#1E8A9B"
+      },
+      "600": {
+        "$value": "#166E7C"
+      },
+      "700": {
+        "$value": "#0F4F5A"
+      }
+    },
+    "amber": {
+      "400": {
+        "$value": "#D9963F"
+      },
+      "500": {
+        "$value": "#B8722A"
+      },
+      "600": {
+        "$value": "#96591F"
+      }
+    },
+    "blue": {
+      "400": {
+        "$value": "#7BA3DC"
+      },
+      "500": {
+        "$value": "#4A7CC4"
+      },
+      "600": {
+        "$value": "#2F5FA8"
+      }
+    },
+    "violet": {
+      "400": {
+        "$value": "#B48ED2"
+      },
+      "500": {
+        "$value": "#9668B8"
+      },
+      "600": {
+        "$value": "#7A4B9E"
+      }
+    },
+    "crimson": {
+      "300": {
+        "$value": "#E08C8C"
+      },
+      "400": {
+        "$value": "#C96060"
+      },
+      "500": {
+        "$value": "#A93838"
+      },
+      "600": {
+        "$value": "#8E2323"
+      },
+      "700": {
+        "$value": "#6E1A1A"
+      }
+    },
+    "rose": {
+      "300": {
+        "$value": "#D98585"
+      },
+      "400": {
+        "$value": "#C97070"
+      },
+      "500": {
+        "$value": "#B14A4A"
+      }
+    },
+    "moss": {
+      "400": {
+        "$value": "#5FB983"
+      },
+      "500": {
+        "$value": "#3D9A63"
+      },
+      "600": {
+        "$value": "#2E7D4F"
+      }
+    },
+    "jade": {
+      "300": {
+        "$value": "#6FD99C"
+      },
+      "400": {
+        "$value": "#35BC74"
+      },
+      "500": {
+        "$value": "#1E9E5A"
+      },
+      "700": {
+        "$value": "#0B6E3F"
+      }
+    },
+    "$description": "Saturation is reserved for game meaning. Chrome is ink. Within the outcome ramp, a critical result always sits further from the page than a plain one, which means darker in light and brighter in dark."
+  }
+}

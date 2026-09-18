@@ -1,0 +1,43 @@
+{
+  "space": {
+    "$type": "dimension",
+    "0": { "$value": "0" },
+    "1": { "$value": "4px" },
+    "2": { "$value": "8px" },
+    "3": { "$value": "12px" },
+    "4": { "$value": "16px" },
+    "5": { "$value": "24px" },
+    "6": { "$value": "32px" },
+    "7": { "$value": "48px" },
+    "8": { "$value": "64px" }
+  },
+  "radius": {
+    "$type": "dimension",
+    "grid":  { "$value": "0",   "$description": "Data cells and the sheet grid. A grid has corners." },
+    "chip":  { "$value": "3px", "$description": "Traits and rank pips, small and stamped." },
+    "card":  { "$value": "10px", "$description": "Panels and drawers." },
+    "sheet": { "$value": "18px", "$description": "Bottom sheets, which meet the screen edge." }
+  },
+  "tap": {
+    "$type": "dimension",
+    "min":        { "$value": "44px", "$description": "Absolute floor. Nothing interactive is smaller." },
+    "default":    { "$value": "48px", "$description": "Standard control height on a phone." },
+    "primary":    { "$value": "56px", "$description": "Actions taken repeatedly mid-session, one-handed." },
+    "separation": { "$value": "8px",  "$description": "Minimum gap between two adjacent tap targets so a mis-tap needs real travel." }
+  },
+  "layout": {
+    "$type": "dimension",
+    "viewport-min":   { "$value": "320px", "$description": "Smallest phone we lay out for." },
+    "viewport-target":{ "$value": "390px", "$description": "Design width. Players are on phones; there is no desktop target." },
+    "content-max":    { "$value": "560px", "$description": "Caps line length when a large phone or tablet is used." },
+    "gutter":         { "$value": "16px" },
+    "bottom-bar":     { "$value": "64px", "$description": "Primary navigation sits in the thumb arc, not the top of the screen." },
+    "thumb-reach":    { "$value": "62%",  "$description": "Fraction of viewport height from the bottom that a thumb covers one-handed. Primary actions live inside it." }
+  },
+  "border": {
+    "$type": "dimension",
+    "hair":   { "$value": "1px", "$description": "Separation is a border, not a shadow. Shadows are only for things that genuinely float." },
+    "strong": { "$value": "2px" },
+    "focus":  { "$value": "3px" }
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "surface": {
+    "$type": "color",
+    "page": {
+      "$value": "{color.ink.50}"
+    },
+    "raised": {
+      "$value": "{color.ink.0}"
+    },
+    "sunken": {
+      "$value": "{color.ink.100}"
+    },
+    "overlay": {
+      "$value": "{color.ink.0}"
+    }
+  },
+  "text": {
+    "$type": "color",
+    "primary": {
+      "$value": "{color.ink.900}"
+    },
+    "secondary": {
+      "$value": "{color.ink.600}"
+    },
+    "muted": {
+      "$value": "{color.ink.500}"
+    },
+    "on-accent": {
+      "$value": "{color.ink.0}"
+    }
+  },
+  "line": {
+    "$type": "color",
+    "subtle": {
+      "$value": "{color.ink.200}"
+    },
+    "strong": {
+      "$value": "{color.ink.500}"
+    },
+    "focus": {
+      "$value": "{color.teal.600}"
+    }
+  },
+  "accent": {
+    "$type": "color",
+    "base": {
+      "$value": "{color.teal.600}"
+    },
+    "press": {
+      "$value": "{color.teal.700}"
+    },
+    "wash": {
+      "$value": "{color.teal.300}"
+    }
+  },
+  "rarity": {
+    "$type": "color",
+    "common": {
+      "$value": "{color.ink.500}"
+    },
+    "uncommon": {
+      "$value": "{color.amber.600}"
+    },
+    "rare": {
+      "$value": "{color.blue.600}"
+    },
+    "unique": {
+      "$value": "{color.violet.600}"
+    }
+  },
+  "outcome": {
+    "$type": "color",
+    "critical-failure": {
+      "$value": "{color.crimson.700}"
+    },
+    "failure": {
+      "$value": "{color.rose.500}"
+    },
+    "success": {
+      "$value": "{color.moss.600}"
+    },
+    "critical-success": {
+      "$value": "{color.jade.700}"
+    }
+  },
+  "rank": {
+    "$type": "color",
+    "filled": {
+      "$value": "{color.teal.600}"
+    },
+    "empty": {
+      "$value": "{color.ink.200}"
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "font": {
+    "family": {
+      "$type": "fontFamily",
+      "data":    { "$value": "'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, sans-serif", "$description": "Everything numeric and structural. Engineered to disambiguate 0/O, 1/l/I and 6/8, which is the exact failure a character sheet must not have." },
+      "display": { "$value": "'Archivo', 'Archivo Expanded', system-ui, sans-serif", "$description": "Character name and section heads only. Equipment signage, not fantasy." }
+    },
+    "weight": {
+      "$type": "fontWeight",
+      "regular":  { "$value": "400" },
+      "medium":   { "$value": "500" },
+      "semibold": { "$value": "600" },
+      "bold":     { "$value": "700" }
+    },
+    "size": {
+      "$type": "dimension",
+      "chip":    { "$value": "13px", "$description": "Trait chips and rank letters. The smallest type in the product." },
+      "data":    { "$value": "15px", "$description": "Dense table rows." },
+      "body":    { "$value": "17px", "$description": "Default. At or above 16px so iOS never zooms a focused field." },
+      "subhead": { "$value": "20px" },
+      "stat":    { "$value": "24px", "$description": "A derived number read at a glance, such as AC or a save." },
+      "hero":    { "$value": "28px", "$description": "The one number a screen is about." },
+      "section": { "$value": "34px" },
+      "name":    { "$value": "44px", "$description": "The character's name. The only place the sheet stops being a spreadsheet." }
+    },
+    "leading": {
+      "$type": "number",
+      "tight":  { "$value": "1.1",  "$description": "Display sizes." },
+      "snug":   { "$value": "1.3",  "$description": "Data rows and stat blocks." },
+      "normal": { "$value": "1.55", "$description": "Prose." }
+    },
+    "tracking": {
+      "$type": "dimension",
+      "tight":  { "$value": "-0.02em" },
+      "normal": { "$value": "0" },
+      "wide":   { "$value": "0.01em" }
+    }
+  },
+  "motion": {
+    "duration": {
+      "$type": "duration",
+      "instant": { "$value": "0ms" },
+      "quick":   { "$value": "120ms", "$description": "A control answering a tap." },
+      "sheet":   { "$value": "220ms", "$description": "A drawer or breakdown opening." }
+    },
+    "easing": {
+      "$type": "cubicBezier",
+      "exit":  { "$value": [0.4, 0.0, 1, 1] },
+      "enter": { "$value": [0.0, 0.0, 0.2, 1] }
+    }
+  }
+}

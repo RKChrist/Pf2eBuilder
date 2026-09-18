@@ -1,0 +1,14 @@
+{
+  "name": "pf2e-tokens",
+  "private": true,
+  "type": "module",
+  "description": "Design tokens for Pf2eBuilder. Builds CSS custom properties consumed by the Razor components.",
+  "scripts": {
+    "build": "node build.mjs && node contrast-check.mjs",
+    "tokens": "node build.mjs",
+    "check": "node contrast-check.mjs"
+  },
+  "devDependencies": {
+    "style-dictionary": "^5.0.0"
+  }
+}
