@@ -25,10 +25,11 @@ static class Transform
         var outRoot = Path.Combine(Snapshot.FindRepoRoot(), "tools", "rules-import", "out");
         var seedDir = Reset(Path.Combine(outRoot, "seed"));
         var unmappedDir = Reset(Path.Combine(outRoot, "unmapped"));
+        var oversizeDir = Reset(Path.Combine(outRoot, "oversize"));
 
         Console.WriteLine($"snapshot {manifest.Index} pulled {manifest.PulledAtUtc}");
 
-        var rows = new List<(string Category, int Emitted, int Unmapped)>();
+        var rows = new List<(string Category, int Emitted, int Unmapped, int Oversize)>();
         foreach (var category in categories)
         {
             if (!manifest.Categories.ContainsKey(category))
@@ -39,6 +40,7 @@ static class Transform
 
             var seeds = new List<(string Id, JsonObject Node)>();
             var unmapped = new JsonArray();
+            var oversize = new JsonArray();
 
             foreach (var record in ReadCategory(dir, category))
             {
@@ -73,7 +75,7 @@ static class Transform
                         $"remaster_id points at an id not in the snapshot: {string.Join(", ", targets)}"));
                 }
 
-                seeds.Add((id, Project(record, id, name, category, url)));
+                seeds.Add((id, Project(record, id, name, category, url, oversize)));
             }
 
             var seedArray = new JsonArray();
@@ -84,14 +86,16 @@ static class Transform
 
             Write(Path.Combine(seedDir, category + ".json"), seedArray);
             Write(Path.Combine(unmappedDir, category + ".json"), unmapped);
-            rows.Add((category, seedArray.Count, unmapped.Count));
+            Write(Path.Combine(oversizeDir, category + ".json"), oversize);
+            rows.Add((category, seedArray.Count, unmapped.Count, oversize.Count));
         }
 
         PrintSummary(rows);
         return 0;
     }
 
-    static JsonObject Project(JsonObject record, string id, string name, string category, string url)
+    static JsonObject Project(
+        JsonObject record, string id, string name, string category, string url, JsonArray oversize)
     {
         var seed = new JsonObject
         {
@@ -103,10 +107,22 @@ static class Transform
 
         foreach (var (key, value) in record.OrderBy(field => field.Key, StringComparer.Ordinal))
         {
-            if (value is not null && FieldPolicy.SeedAllowList.Contains(key) && !FieldPolicy.IsEmptyValue(value))
+            if (value is null || !FieldPolicy.SeedAllowList.Contains(key) || FieldPolicy.IsEmptyValue(value))
             {
-                seed[key] = value.DeepClone();
+                continue;
             }
+
+            if (FieldPolicy.CeilingFields.Contains(key))
+            {
+                var length = FieldPolicy.RenderedLength(value);
+                if (length > FieldPolicy.LabelCeiling)
+                {
+                    oversize.Add(Oversize(id, name, key, length));
+                    continue;
+                }
+            }
+
+            seed[key] = value.DeepClone();
         }
 
         return seed;
@@ -171,15 +187,16 @@ static class Transform
         }
     }
 
-    static void PrintSummary(IReadOnlyList<(string Category, int Emitted, int Unmapped)> rows)
+    static void PrintSummary(IReadOnlyList<(string Category, int Emitted, int Unmapped, int Oversize)> rows)
     {
-        Console.WriteLine($"{"category",-16}{"seeded",10}{"unmapped",10}");
+        Console.WriteLine($"{"category",-16}{"seeded",10}{"unmapped",10}{"oversize",10}");
         foreach (var row in rows)
         {
-            Console.WriteLine($"{row.Category,-16}{row.Emitted,10}{row.Unmapped,10}");
+            Console.WriteLine($"{row.Category,-16}{row.Emitted,10}{row.Unmapped,10}{row.Oversize,10}");
         }
 
-        Console.WriteLine($"{"TOTAL",-16}{rows.Sum(r => r.Emitted),10}{rows.Sum(r => r.Unmapped),10}");
+        Console.WriteLine(
+            $"{"TOTAL",-16}{rows.Sum(r => r.Emitted),10}{rows.Sum(r => r.Unmapped),10}{rows.Sum(r => r.Oversize),10}");
     }
 
     static string Reset(string dir)
@@ -215,6 +232,14 @@ static class Transform
             yield return "url";
         }
     }
+
+    static JsonObject Oversize(string id, string name, string field, int length) => new()
+    {
+        ["id"] = id,
+        ["name"] = name,
+        ["field"] = field,
+        ["length"] = length,
+    };
 
     static JsonObject Unmapped(string? id, string? name, string reason) => new()
     {

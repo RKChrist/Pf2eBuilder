@@ -19,8 +19,7 @@ static class FieldPolicy
     public static readonly IReadOnlyList<string> WireExcludes =
     [
         "markdown", "*_markdown", "access", "anathema", "area_of_concern", "area_of_concern_raw",
-        "edict", "religious_symbol", "sanctification_raw", "secondary_casters_raw", "stage", "summary",
-        "text",
+        "edict", "religious_symbol", "sanctification_raw", "stage", "summary", "text",
     ];
 
     public static readonly IReadOnlyList<string> ProseFieldOrder =
@@ -32,7 +31,7 @@ static class FieldPolicy
         "favored_weapon_markdown", "feat_markdown", "language_markdown", "markdown",
         "pantheon_markdown", "pantheon_member_markdown", "patron_theme_markdown",
         "prerequisite_markdown", "primary_check_markdown", "religious_symbol", "requirement_markdown",
-        "sanctification_raw", "saving_throw_markdown", "search_markdown", "secondary_casters_raw",
+        "sanctification_raw", "saving_throw_markdown", "search_markdown",
         "secondary_check_markdown", "skill_markdown", "source_markdown", "speed_markdown",
         "spell_markdown", "stage", "stage_markdown", "summary", "summary_markdown", "target_markdown",
         "text",
@@ -58,11 +57,30 @@ static class FieldPolicy
         "primary_check", "primary_source", "primary_source_category", "primary_source_raw", "range",
         "range_raw", "rarity", "reflex_proficiency", "release_date", "reload", "reload_raw",
         "remaster_id", "requirement", "resistance", "sanctification", "saving_throw", "school",
-        "secondary_casters", "secondary_check", "size", "skill", "skill_mod", "skill_proficiency",
-        "source", "source_category", "speed", "speed_penalty", "speed_raw", "spell", "spell_type",
-        "strength", "target", "tradition", "trait", "trigger", "type", "usage", "vision",
-        "weakness", "weapon_category", "weapon_group", "weapon_type", "will_proficiency",
+        "secondary_casters", "secondary_casters_raw", "secondary_check", "size", "skill", "skill_mod",
+        "skill_proficiency", "source", "source_category", "speed", "speed_penalty", "speed_raw",
+        "spell", "spell_type", "strength", "target", "tradition", "trait", "trigger", "type", "usage",
+        "vision", "weakness", "weapon_category", "weapon_group", "weapon_type", "will_proficiency",
     }.ToFrozenSet(StringComparer.Ordinal);
+
+    // The fields listed under this ceiling are on the allow-list as stat-block labels. A value that
+    // runs longer has stopped being a label and is rule text AoN filed under a header field, which is
+    // Paizo's expression and not ours to redistribute. Such a value is dropped rather than truncated,
+    // because an absent field is obviously absent while a truncated one looks like data. The ceiling
+    // covers the whole group and not just requirement and frequency, the two with a measured prose
+    // tail, so a field AoN starts overloading next year is covered without a code change.
+    public const int LabelCeiling = 300;
+
+    public static readonly FrozenSet<string> CeilingFields = new[]
+    {
+        "area_raw", "cost", "duration_raw", "frequency", "pfs", "prerequisite", "primary_check",
+        "requirement", "secondary_casters_raw", "secondary_check", "target", "trigger", "usage",
+    }.ToFrozenSet(StringComparer.Ordinal);
+
+    public static int RenderedLength(JsonNode value) =>
+        value is JsonValue v && v.TryGetValue<string>(out var text)
+            ? text.Length
+            : value.ToJsonString().Length;
 
     // A non-empty remaster_id marks the record as superseded by the ids it names. One definition
     // serves both the pull that drops those records and the transform that reports the survivors.

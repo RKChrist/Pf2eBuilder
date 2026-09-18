@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Audits the AoN import against the licensing policy. It re-parses FieldPolicy.cs and checks the
+# snapshot, out/seed, out/unmapped and out/oversize against what it finds there. The exit code is the
+# number of failed checks AND input guards, so a missing snapshot counts the same as a failed check.
 set -u
 
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
@@ -6,6 +9,7 @@ ROOT=$(cd "$SCRIPT_DIR/../.." && pwd)
 POLICY_CS="$ROOT/tools/rules-import/FieldPolicy.cs"
 SEED_DIR="$ROOT/tools/rules-import/out/seed"
 UNMAPPED_DIR="$ROOT/tools/rules-import/out/unmapped"
+OVERSIZE_DIR="$ROOT/tools/rules-import/out/oversize"
 SNAPSHOT_ROOT="$ROOT/Sources/aon-snapshot"
 
 TMP=$(mktemp -d) || exit 99
@@ -69,6 +73,7 @@ fi
 if [ -f "$POLICY_CS" ]; then info "policy   $POLICY_CS"; else fail "missing $POLICY_CS"; fi
 if [ -d "$SEED_DIR" ]; then info "seed     $SEED_DIR"; else fail "missing $SEED_DIR"; fi
 if [ -d "$UNMAPPED_DIR" ]; then info "unmapped $UNMAPPED_DIR"; else fail "missing $UNMAPPED_DIR"; fi
+if [ -d "$OVERSIZE_DIR" ]; then info "oversize $OVERSIZE_DIR"; else fail "missing $OVERSIZE_DIR"; fi
 if [ -n "$SNAPSHOT_DIR" ]; then
   info "snapshot $SNAPSHOT_DIR"
 else
@@ -94,6 +99,7 @@ const groups = [
   ['wire', 'public static readonly IReadOnlyList<string> WireExcludes =', '[', '];'],
   ['prose', 'public static readonly IReadOnlyList<string> ProseFieldOrder =', '[', '];'],
   ['allow', 'public static readonly FrozenSet<string> SeedAllowList = new[]', '{', '}.ToFrozenSet'],
+  ['ceiling', 'public static readonly FrozenSet<string> CeilingFields = new[]', '{', '}.ToFrozenSet'],
 ];
 
 for (const [name, anchor, open, close] of groups) {
@@ -105,6 +111,9 @@ for (const [name, anchor, open, close] of groups) {
   fs.writeFileSync(outDir + '/' + name + '.txt', found.map(n => n + '\n').join(''));
   console.log(name + ' ' + found.length);
 }
+
+const max = src.match(/public const int LabelCeiling = (\d+);/);
+console.log('ceilingmax ' + (max === null ? 'CONSTANT-NOT-FOUND' : max[1]));
 JS
 
 heading "Field policy parsed from FieldPolicy.cs"
@@ -118,8 +127,11 @@ policy_count() {
 WIRE_N=$(policy_count wire)
 PROSE_N=$(policy_count prose)
 ALLOW_N=$(policy_count allow)
+CEILING_N=$(policy_count ceiling)
+CEILING_MAX=$(policy_count ceilingmax)
 POLICY_OK=1
-for group in "WireExcludes:$WIRE_N" "ProseFieldOrder:$PROSE_N" "SeedAllowList:$ALLOW_N"; do
+for group in "WireExcludes:$WIRE_N" "ProseFieldOrder:$PROSE_N" "SeedAllowList:$ALLOW_N" \
+  "CeilingFields:$CEILING_N"; do
   name=${group%%:*}
   n=${group#*:}
   if [ -n "$n" ] && [ "$n" -gt 0 ] 2>/dev/null; then
@@ -129,6 +141,12 @@ for group in "WireExcludes:$WIRE_N" "ProseFieldOrder:$PROSE_N" "SeedAllowList:$A
     POLICY_OK=0
   fi
 done
+if [ -n "$CEILING_MAX" ] && [ "$CEILING_MAX" -gt 0 ] 2>/dev/null; then
+  info "LabelCeiling parsed as $CEILING_MAX characters"
+else
+  fail "LabelCeiling did not parse out of FieldPolicy.cs; dependent checks cannot run"
+  POLICY_OK=0
+fi
 if [ "$POLICY_OK" -eq 0 ]; then
   printf '%s\n' "$POLICY_OUT" | sed 's/^/      /'
 fi
@@ -258,24 +276,33 @@ const dir = process.argv[2];
 const lines = f => fs.readFileSync(f, 'utf8').split('\n').map(s => s.trim()).filter(Boolean);
 const allow = new Set(lines(process.argv[3]));
 const prose = new Set(lines(process.argv[4]));
+const ceilingFields = new Set(lines(process.argv[5]));
+const ceiling = Number(process.argv[6]);
 for (const k of ['id', 'name', 'category', 'sourceUrl']) allow.add(k);
 
 const PREFIX = 'https://2e.aonprd.com/';
 const ASPX = /^[A-Za-z0-9._%-]+\.aspx(\?[^#]*)?$/;
 
-let records = 0, urlChecked = 0, urlMalformed = 0, urlIdDerived = 0;
+let records = 0, urlChecked = 0, urlMalformed = 0, urlIdDerived = 0, oversize = 0;
 const keys = new Set(), bad = new Set(), leak = new Set(), pages = new Map();
-const malformedSamples = [];
+const malformedSamples = [], oversizeSamples = [];
 
 for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.json')).sort()) {
   const arr = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
   for (const r of arr) {
     records++;
-    for (const k of Object.keys(r)) {
+    for (const [k, v] of Object.entries(r)) {
       keys.add(k);
       if (!allow.has(k)) {
         bad.add(k);
         if (prose.has(k) || k.endsWith('_markdown')) leak.add(k);
+      }
+      if (ceilingFields.has(k)) {
+        const len = typeof v === 'string' ? v.length : JSON.stringify(v).length;
+        if (len > ceiling) {
+          oversize++;
+          if (oversizeSamples.length < 50) oversizeSamples.push(r.id + ' ' + k + ' ' + len + ' ' + file);
+        }
       }
     }
     if (r.name === 'Frightened') console.log('FRIGHTENED ' + file + ' ' + r.id);
@@ -304,14 +331,17 @@ for (const k of [...leak].sort()) console.log('LEAKKEY ' + k);
 console.log('URLCHECKED ' + urlChecked);
 console.log('URLMALFORMED ' + urlMalformed);
 console.log('URLIDDERIVED ' + urlIdDerived);
+console.log('OVERSIZE ' + oversize);
 for (const s of malformedSamples) console.log('URLBAD ' + s);
+for (const s of oversizeSamples) console.log('TOOLONG ' + s);
 for (const [p, n] of [...pages].sort()) console.log('PAGE ' + p + ' ' + n);
 JS
 
 SEEDSCAN_OUT=""
 if seed_files_present && [ "$POLICY_OK" -eq 1 ] && command -v node >/dev/null 2>&1; then
   SEEDSCAN_OUT=$(node "$(winpath "$TMP/seedscan.js")" "$(winpath "$SEED_DIR")" \
-    "$(winpath "$TMP/allow.txt")" "$(winpath "$TMP/prose.txt")" 2>&1)
+    "$(winpath "$TMP/allow.txt")" "$(winpath "$TMP/prose.txt")" \
+    "$(winpath "$TMP/ceiling.txt")" "$CEILING_MAX" 2>&1)
 fi
 seedscan_value() { printf '%s\n' "$SEEDSCAN_OUT" | awk -v k="$1" '$1 == k { print $2; exit }'; }
 SEED_RECORDS=$(seedscan_value RECORDS)
@@ -448,12 +478,36 @@ else
   fi
 fi
 
+heading "8. Length ceiling on the re-included label fields in out/seed"
+if [ "$SEED_RECORDS" -eq 0 ]; then
+  fail "check 8 could not run: zero seed records parsed"
+else
+  oversize_n=$(seedscan_value OVERSIZE)
+  if [ -z "$oversize_n" ]; then
+    fail "check 8 could not run: seedscan reported no ceiling result"
+    printf '%s\n' "$SEEDSCAN_OUT" | head -n 5 | sed 's/^/      /'
+  elif [ "$oversize_n" -eq 0 ]; then
+    pass "no seeded value of the $CEILING_N ceiling fields exceeds $CEILING_MAX characters"
+  else
+    fail "$oversize_n seeded values exceed the $CEILING_MAX-character ceiling"
+    printf '%s\n' "$SEEDSCAN_OUT" | awk '$1 == "TOOLONG"' | head -n 20 | sed 's/^/      /'
+  fi
+fi
+
 cat > "$TMP/unmapped.js" <<'JS'
 const fs = require('fs');
 const path = require('path');
 const dir = process.argv[2];
-let total = 0;
-for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.json')).sort()) {
+const oversizeDir = process.argv[3];
+const jsonFiles = d => fs.existsSync(d) ? fs.readdirSync(d).filter(f => f.endsWith('.json')).sort() : [];
+
+const oversize = new Map();
+for (const file of jsonFiles(oversizeDir)) {
+  oversize.set(file, JSON.parse(fs.readFileSync(path.join(oversizeDir, file), 'utf8')).length);
+}
+
+let total = 0, oversizeTotal = 0;
+for (const file of jsonFiles(dir)) {
   const arr = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
   const groups = new Map();
   for (const r of arr) {
@@ -462,22 +516,25 @@ for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.json')).sort()) 
     groups.set(head, (groups.get(head) || 0) + 1);
   }
   total += arr.length;
-  console.log('CAT ' + path.basename(file, '.json') + ' ' + arr.length);
+  const over = oversize.get(file) || 0;
+  oversizeTotal += over;
+  console.log('CAT ' + path.basename(file, '.json') + ' ' + arr.length + ' ' + over);
   for (const [g, n] of [...groups].sort((a, b) => b[1] - a[1])) console.log('REASON ' + n + ' ' + g);
 }
-console.log('TOTAL ' + total);
+console.log('TOTAL ' + total + ' ' + oversizeTotal);
 JS
 
-heading "8. Unmapped records and snapshot size (informational)"
+heading "9. Unmapped and oversize records and snapshot size (informational)"
 if [ -d "$UNMAPPED_DIR" ] && command -v node >/dev/null 2>&1; then
-  UNMAPPED_OUT=$(node "$(winpath "$TMP/unmapped.js")" "$(winpath "$UNMAPPED_DIR")" 2>&1)
+  UNMAPPED_OUT=$(node "$(winpath "$TMP/unmapped.js")" "$(winpath "$UNMAPPED_DIR")" \
+    "$(winpath "$OVERSIZE_DIR")" 2>&1)
   printf '%s\n' "$UNMAPPED_OUT" | awk '
-    $1 == "CAT" { printf "      %-14s %s unmapped\n", $2, $3; next }
+    $1 == "CAT" { printf "      %-14s %6s unmapped %6s oversize\n", $2, $3, $4; next }
     $1 == "REASON" { $1 = ""; $2 = ""; printf "        %s\n", $0; next }
-    $1 == "TOTAL" { printf "      total unmapped: %s\n", $2; next }
+    $1 == "TOTAL" { printf "      total unmapped: %s, total oversize: %s\n", $2, $3; next }
     { printf "      %s\n", $0 }'
 else
-  info "unmapped counts unavailable"
+  info "unmapped and oversize counts unavailable"
 fi
 if [ -n "$SNAPSHOT_DIR" ]; then
   snap_total=0

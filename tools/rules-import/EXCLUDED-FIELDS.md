@@ -21,23 +21,24 @@ The second rule is the load-bearing one. The first is an optimisation of it that
 off this machine. `Transform` asserts that no stored record carries a prose field and fails the run
 if one does, which catches a snapshot pulled without the excludes.
 
-An earlier pass classified thirteen fields as prose, and the project owner has re-included twelve of
-them as stat-block labels. They are `area_raw`, `cost`, `duration_raw`, `frequency`, `pfs`,
-`prerequisite`, `primary_check`, `requirement`, `secondary_check`, `target`, `trigger` and `usage`.
-Eleven were dropped from the wire-exclude list and added to the seed allow-list. `pfs` was never
-withheld at the wire, so it only needed adding to the allow-list.
+An earlier pass classified fourteen fields as prose, and the project owner has re-included thirteen
+of them as stat-block labels. They are `area_raw`, `cost`, `duration_raw`, `frequency`, `pfs`,
+`prerequisite`, `primary_check`, `requirement`, `secondary_casters_raw`, `secondary_check`,
+`target`, `trigger` and `usage`. Twelve were dropped from the wire-exclude list and added to the
+seed allow-list. `pfs` was never withheld at the wire, so it only needed adding to the allow-list.
 
-The thirteenth, `stage`, stays excluded. The re-inclusion was conditional on a field being a short
+The fourteenth, `stage`, stays excluded. The re-inclusion was conditional on a field being a short
 label rather than long-form text, and a length census over all 22,596 stored records settled it
 against `stage`. Its median value is 134 characters, only 9.9% of its 172 values are under 80
 characters, 37 exceed 200, and the longest runs to 647. Those values are affliction stage
 descriptions, which are rule text rather than a header. Two re-included fields have a prose tail
 worth knowing about. `requirement` has a median of 42 characters and 82% under 80, but eight values
 exceed 200 and one reaches 1,346. `frequency` has a median of 12 characters and 99.8% under 80, with
-a single outlier of 1,013. Both are labels in the ordinary case, so both stay.
+a single outlier of 1,013. Both are labels in the ordinary case, so both stay, and the length
+ceiling described below drops the individual values that are not.
 
 The field inventory below comes from 1,928 sample documents spanning all eighteen categories and
-182 distinct fields. Those 182 are the 48 excluded here, the 28 stored but unseeded, the 102 on the
+182 distinct fields. Those 182 are the 47 excluded here, the 28 stored but unseeded, the 103 on the
 allow-list, and `id`, `name`, `category` and `url`, which every record carries and the transform
 always emits. Field names, observed lengths and reasons are recorded here. Sample values are not,
 because reproducing the excluded prose in the document that explains the exclusion would defeat it.
@@ -56,7 +57,6 @@ there, so the two patterns cover every rendered-markdown field including ones ad
 - `edict`
 - `religious_symbol`
 - `sanctification_raw`
-- `secondary_casters_raw`
 - `stage`
 - `summary`
 - `text`
@@ -67,9 +67,9 @@ The eight rendered siblings of the re-included labels stay excluded under `*_mar
 is intended. The label is a mechanical value. Its AoN rendered presentation is Paizo's layout and
 link markup, which is expression.
 
-## Concrete excluded fields (48)
+## Concrete excluded fields (47)
 
-The patterns above match these 48 field names in the sampled data. `manifest.json` records both
+The patterns above match these 47 field names in the sampled data. `manifest.json` records both
 lists, the patterns under `excludedFieldPatterns` and these names under `excludedFields`, so a
 reviewer can see what the wildcard covered without re-running the sample.
 
@@ -109,7 +109,6 @@ value seen in the sample, which is the size of the omission rather than a limit.
 | `sanctification_raw` | 1 | 26 | A sentence clause; sanctification carries the values. |
 | `saving_throw_markdown` | 2 | 38 | AoN rendered presentation of saving_throw, carrying site link markup and phrasing. |
 | `search_markdown` | 18 | 1572 | AoN rendered presentation of search, carrying site link markup and phrasing. |
-| `secondary_casters_raw` | 1 | 39 | A phrase qualifying the count; secondary_casters carries the number. |
 | `secondary_check_markdown` | 1 | 327 | AoN rendered presentation of secondary_check, carrying site link markup and phrasing. |
 | `skill_markdown` | 4 | 534 | AoN rendered presentation of skill, carrying site link markup and phrasing. |
 | `source_markdown` | 18 | 131 | AoN rendered presentation of source, carrying site link markup and phrasing. |
@@ -147,7 +146,26 @@ They fall into four groups.
 Adding any of them later is a one-line change to `FieldPolicy.SeedAllowList`, so the omission costs
 nothing to reverse.
 
-## Seed allow-list (102)
+## Length ceiling on the re-included labels (300 characters)
+
+The thirteen re-included label fields carry a 300-character ceiling. They are `area_raw`, `cost`,
+`duration_raw`, `frequency`, `pfs`, `prerequisite`, `primary_check`, `requirement`,
+`secondary_casters_raw`, `secondary_check`, `target`, `trigger` and `usage`. A value longer than
+that has stopped being a stat-block label and is rule text that AoN filed under a header field,
+which is the expression this project withholds.
+
+The transform omits the offending value and seeds the record without it. It does not truncate,
+because an absent field is obviously absent while a truncated one looks like data. The rest of the
+record is seeded as usual, so only the one field is lost. The ceiling covers the whole group rather
+than only `requirement` and `frequency`, the two with a measured prose tail, so a field AoN starts
+overloading next year is covered without a code change.
+
+Each omission is recorded in `tools/rules-import/out/oversize/<category>.json` with the record's
+`id` and `name`, the `field` that was dropped and its observed `length`. `verify.sh` re-reads both
+the ceiling and the field list out of `FieldPolicy.cs` and fails if a seeded value of any of those
+fields exceeds it.
+
+## Seed allow-list (103)
 
 `Transform.Project` emits `id`, `name`, `category` and `sourceUrl` on every record, then copies
 these fields when the record carries a non-empty value for them. Nothing else reaches the seed.
@@ -233,6 +251,7 @@ from the id.
 | `saving_throw` | 2 | string |
 | `school` | 4 | string |
 | `secondary_casters` | 1 | number |
+| `secondary_casters_raw` | 1 | string |
 | `secondary_check` | 1 | string |
 | `size` | 1 | array |
 | `skill` | 5 | array |
