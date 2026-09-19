@@ -35,3 +35,16 @@ Do not use Chrome's `--screenshot` flag with `--window-size` for this. It render
 viewport and crops to the window, which made this app look like it clipped content and dropped
 two navigation items at 390px when it did neither. Two separate false bugs came from reading
 those images. The image and the numbers have to come from the same viewport or one of them lies.
+
+## Slider and gesture checks
+
+`verify-sliders.mjs` drives the component gallery in a real Chrome and asserts the behaviour
+that cannot be read off the source:
+
+    node tools/ui-check/verify-sliders.mjs <absolute path to src/Pf2e.Components/gallery/index.html>
+
+46 assertions covering pointer-media sizing under genuine touch emulation, keyboard operation
+including Home, End and the page keys, the invariant that range thumbs cannot cross, that a touch
+drag moves the thumb without scrolling the page, hold-to-confirm on destructive actions, and that
+reduced motion zeroes transitions while deliberately leaving the hold delay alone. `cdp.mjs` is
+the shared driver; both scripts use only Node builtins.
