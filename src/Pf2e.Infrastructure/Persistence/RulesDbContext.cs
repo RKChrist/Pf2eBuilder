@@ -10,8 +10,12 @@ public sealed class RulesDbContext(DbContextOptions<RulesDbContext> options)
 {
     public DbSet<RuleRecord> RuleRecords => Set<RuleRecord>();
     public DbSet<SeedState> SeedState => Set<SeedState>();
-    public DbSet<TrackedTable> Tables => Set<TrackedTable>();
+    public DbSet<Campaign> Campaigns => Set<Campaign>();
     public DbSet<TrackedCharacter> Characters => Set<TrackedCharacter>();
+    public DbSet<EffectApplication> EffectApplications => Set<EffectApplication>();
+    public DbSet<EffectTarget> EffectTargets => Set<EffectTarget>();
+    public DbSet<Encounter> Encounters => Set<Encounter>();
+    public DbSet<Combatant> Combatants => Set<Combatant>();
 
     protected override void OnModelCreating(ModelBuilder model)
     {

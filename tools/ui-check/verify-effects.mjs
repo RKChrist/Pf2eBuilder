@@ -50,19 +50,21 @@ const shot = async (name) => {
 await page.goto(client);
 await waitFor('.pf-bottomnav__item');
 
+// A campaign is created rather than conjured by reading a code, and the DM key comes back with
+// it. The effect picker is a player screen, so the key is not used below.
 const code = await page.eval(`(async () => {
-  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const code = [...crypto.getRandomValues(new Uint8Array(6))].map(n => letters[n % letters.length]).join('');
-  const table = await fetch(${JSON.stringify(api)} + '/tables/' + code).then(r => r.json());
-  const added = await fetch(${JSON.stringify(api)} + '/tables/' + code + '/characters', {
+  const made = await fetch(${JSON.stringify(api)} + '/campaigns', { method: 'POST' });
+  if (!made.ok) throw new Error('create -> ' + made.status + ' ' + (await made.text()).slice(0, 200));
+  const campaign = await made.json();
+  const added = await fetch(${JSON.stringify(api)} + '/campaigns/' + campaign.code + '/characters', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ pathbuilder: ${JSON.stringify(pathbuilder)} }),
   });
   if (!added.ok) throw new Error('import -> ' + added.status + ' ' + (await added.text()).slice(0, 300));
-  return code;
+  return campaign.code;
 })()`);
-check('a table with one imported character exists', /^[A-Z0-9]{6}$/.test(code), code);
+check('a campaign with one imported character exists', /^[A-Z0-9]{6}$/.test(code), code);
 
 // The page joins a table through its own form, which is the only way a player reaches one.
 await page.goto(`${client}party`);

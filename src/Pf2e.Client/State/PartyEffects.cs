@@ -10,7 +10,7 @@ public sealed class PartyEffects
 {
     readonly TrackerApi _tracker;
     readonly RulesApi _rules;
-    readonly TableHub _hub;
+    readonly CampaignHub _hub;
     readonly IState<PartyState> _state;
     readonly TimeSpan _debounce;
 
@@ -20,7 +20,7 @@ public sealed class PartyEffects
     public PartyEffects(
         TrackerApi tracker,
         RulesApi rules,
-        TableHub hub,
+        CampaignHub hub,
         IState<PartyState> state,
         IOptions<ApiOptions> options,
         IDispatcher dispatcher)
@@ -32,15 +32,17 @@ public sealed class PartyEffects
         _debounce = TimeSpan.FromMilliseconds(options.Value.SearchDebounceMilliseconds);
 
         hub.CharacterChanged += sheet => dispatcher.Dispatch(new CharacterUpdated(sheet));
+        hub.ModeChanged += mode => dispatcher.Dispatch(new ModeChanged(mode));
+        hub.CampaignChanged += campaign => dispatcher.Dispatch(new CampaignRefreshed(campaign));
     }
 
     [EffectMethod]
     public async Task Handle(JoinRequested action, IDispatcher dispatcher)
     {
-        var code = TableCodes.Normalize(action.Code);
-        if (!TableCodes.IsValid(code))
+        var code = CampaignCodes.Normalize(action.Code);
+        if (!CampaignCodes.IsValid(code))
         {
-            dispatcher.Dispatch(new TableFailed("A table code is four to twelve letters and digits."));
+            dispatcher.Dispatch(new CampaignFailed("A campaign code is four to twelve letters and digits."));
             return;
         }
 
@@ -48,32 +50,27 @@ public sealed class PartyEffects
     }
 
     [EffectMethod]
-    public async Task Handle(TableCreationRequested _, IDispatcher dispatcher)
+    public async Task Handle(CampaignCreationRequested _, IDispatcher dispatcher)
     {
-        const int draws = 5;
-
-        for (var draw = 0; draw < draws; draw++)
+        try
         {
-            TableView table;
-            try
-            {
-                table = await _tracker.GetTableAsync(TableCodes.Draw(), CancellationToken.None);
-            }
-            catch (TrackerApiException failure)
-            {
-                dispatcher.Dispatch(new TableFailed(failure.Message));
-                return;
-            }
-
-            if (!table.Exists)
-            {
-                dispatcher.Dispatch(new TableOpened(table));
-                return;
-            }
+            var created = await _tracker.CreateCampaignAsync(CancellationToken.None);
+            dispatcher.Dispatch(new CampaignCreated(created));
         }
+        catch (CampaignApiException failure)
+        {
+            dispatcher.Dispatch(new CampaignFailed(failure.Message));
+        }
+    }
 
-        dispatcher.Dispatch(new TableFailed(
-            $"Every one of {draws} codes this app drew is already a table. Try again."));
+    /// <summary>The DM key arrives once, with the campaign that was just created, and is held
+    /// for the rest of the session. Reloading the page makes this browser a player, which is the
+    /// honest consequence of a secret nobody wrote down.</summary>
+    [EffectMethod]
+    public async Task Handle(CampaignCreated action, IDispatcher dispatcher)
+    {
+        _tracker.UseDmKey(action.Created.DmKey);
+        await OpenAsync(action.Created.Code, dispatcher);
     }
 
     /// <summary>
@@ -82,11 +79,11 @@ public sealed class PartyEffects
     /// working. Not live is a state a player can be shown.
     /// </summary>
     [EffectMethod]
-    public async Task Handle(TableOpened action, IDispatcher dispatcher)
+    public async Task Handle(CampaignOpened action, IDispatcher dispatcher)
     {
         try
         {
-            await _hub.JoinAsync(action.Table.Code, CancellationToken.None);
+            await _hub.JoinAsync(action.Campaign.Code, _state.Value.DmKey, CancellationToken.None);
             dispatcher.Dispatch(new LiveJoined());
         }
         catch (Exception failure) when (failure is not OperationCanceledException)
@@ -106,21 +103,48 @@ public sealed class PartyEffects
                 await _tracker.ImportAsync(now.Code, now.PasteDraft, CancellationToken.None)));
             dispatcher.Dispatch(new ImportSucceeded());
         }
-        catch (TrackerApiException failure)
+        catch (CampaignApiException failure)
         {
             dispatcher.Dispatch(new ImportFailed(failure.Message));
         }
     }
 
     [EffectMethod]
+    public async Task Handle(ModeChangeRequested action, IDispatcher dispatcher)
+    {
+        try
+        {
+            // The answer is dispatched as well as pushed, so the DM's own screen moves on the
+            // tap rather than on the round trip back through the hub.
+            dispatcher.Dispatch(new ModeChanged(
+                await _tracker.SetModeAsync(_state.Value.Code, action.Mode, CancellationToken.None)));
+        }
+        catch (CampaignApiException failure)
+        {
+            dispatcher.Dispatch(new ActionFailed(failure.Message));
+        }
+    }
+
+    [EffectMethod]
+    public Task Handle(HitPointsApplied action, IDispatcher dispatcher) =>
+        ApplyToCampaignAsync(dispatcher, code => _tracker.ChangeHitPointsAsync(
+            code, action.CharacterId, action.Amount, action.Direction, CancellationToken.None));
+
+    [EffectMethod]
     public Task Handle(HitPointsNudged action, IDispatcher dispatcher) =>
-        ApplyAsync(dispatcher, code =>
-            _tracker.ChangeHitPointsAsync(code, action.CharacterId, action.Delta, CancellationToken.None));
+        ApplyToCampaignAsync(dispatcher, code => _tracker.ChangeHitPointsAsync(
+            code,
+            action.CharacterId,
+            Math.Abs(action.Delta),
+            action.Delta < 0 ? "Damage" : "Heal",
+            CancellationToken.None));
 
     [EffectMethod]
     public Task Handle(EffectSet action, IDispatcher dispatcher) =>
-        ApplyAsync(dispatcher, code =>
-            _tracker.SetEffectAsync(code, action.CharacterId, action.Slot, action.Effect, CancellationToken.None));
+        ApplyToCampaignAsync(dispatcher, code => _tracker.ApplyEffectAsync(
+            code, action.Slot, action.Effect,
+            [new EffectTargetSpec("Character", action.CharacterId)],
+            CancellationToken.None));
 
     [EffectMethod]
     public Task Handle(CustomEffectAdded action, IDispatcher dispatcher)
@@ -130,8 +154,10 @@ public sealed class PartyEffects
             draft.Type, draft.Signed, [EffectVocabulary.Of(draft.Applies).Spec]);
         var effect = new EffectSpec(draft.Name.Trim(), "Custom", null, 0, null, [modifier]);
 
-        return ApplyAsync(dispatcher, code =>
-            _tracker.SetEffectAsync(code, action.CharacterId, Guid.NewGuid(), effect, CancellationToken.None));
+        return ApplyToCampaignAsync(dispatcher, code => _tracker.ApplyEffectAsync(
+            code, Guid.NewGuid(), effect,
+            [new EffectTargetSpec("Character", action.CharacterId)],
+            CancellationToken.None));
     }
 
     [EffectMethod]
@@ -157,8 +183,10 @@ public sealed class PartyEffects
         }
 
         var effect = new EffectSpec(action.Name, "Rule", action.RuleId, 0, null, rule.Modifiers);
-        await ApplyAsync(dispatcher, code =>
-            _tracker.SetEffectAsync(code, action.CharacterId, Guid.NewGuid(), effect, CancellationToken.None));
+        await ApplyToCampaignAsync(dispatcher, code => _tracker.ApplyEffectAsync(
+            code, Guid.NewGuid(), effect,
+            [new EffectTargetSpec("Character", action.CharacterId)],
+            CancellationToken.None));
     }
 
     [EffectMethod]
@@ -197,11 +225,11 @@ public sealed class PartyEffects
     {
         try
         {
-            dispatcher.Dispatch(new TableOpened(await _tracker.GetTableAsync(code, CancellationToken.None)));
+            dispatcher.Dispatch(new CampaignOpened(await _tracker.GetCampaignAsync(code, CancellationToken.None)));
         }
-        catch (TrackerApiException failure)
+        catch (CampaignApiException failure)
         {
-            dispatcher.Dispatch(new TableFailed(failure.Message));
+            dispatcher.Dispatch(new CampaignFailed(failure.Message));
         }
     }
 
@@ -211,7 +239,22 @@ public sealed class PartyEffects
         {
             dispatcher.Dispatch(new CharacterUpdated(await call(_state.Value.Code)));
         }
-        catch (TrackerApiException failure)
+        catch (CampaignApiException failure)
+        {
+            dispatcher.Dispatch(new ActionFailed(failure.Message));
+        }
+    }
+
+    /// <summary>One effect can reach the whole party, so the answer is the whole campaign rather
+    /// than one sheet. It refreshes rather than reopening, because reopening would rejoin the
+    /// hub and this connection is already in the right groups.</summary>
+    async Task ApplyToCampaignAsync(IDispatcher dispatcher, Func<string, Task<CampaignView>> call)
+    {
+        try
+        {
+            dispatcher.Dispatch(new CampaignRefreshed(await call(_state.Value.Code)));
+        }
+        catch (CampaignApiException failure)
         {
             dispatcher.Dispatch(new ActionFailed(failure.Message));
         }

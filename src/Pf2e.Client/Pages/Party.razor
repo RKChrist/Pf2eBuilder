@@ -12,23 +12,23 @@
     @if (State.Code.Length > 0)
     {
         <p class="code">
-            <span class="code__label">Table</span>
-            <span class="table-code">@State.Code</span>
+            <span class="code__label">Campaign</span>
+            <span class="campaign-code">@State.Code</span>
         </p>
     }
 </header>
 
-<RemoteView T="TableView" Data="State.Table">
+<RemoteView T="CampaignView" Data="State.Campaign">
     <NotAsked>@Entrance</NotAsked>
     <Loading>
         <div class="pending">
-            <Spinner ShowLabel="true" Label="Opening the table" />
+            <Spinner ShowLabel="true" Label="Opening the campaign" />
         </div>
     </Loading>
     <Failed Context="message">
         <div class="panel">
             <Card>
-                <ErrorState Title="Could not open that table">
+                <ErrorState Title="Could not open that campaign">
                     <ChildContent>@message</ChildContent>
                 </ErrorState>
             </Card>
@@ -36,10 +36,18 @@
         @Entrance
     </Failed>
     <Loaded Context="table">
+        <p class="shell" role="status">
+            <span class="shell__mode">@table.Mode</span>
+            @if (table.Role == "Dm")
+            {
+                <span class="shell__dm">DM</span>
+            }
+        </p>
+
         @if (!State.Live)
         {
             <p class="offline" role="status">
-                Changes other people make will not arrive until this page can reach the table.
+                Changes other people make will not arrive until this page can reach the campaign.
             </p>
         }
 
@@ -52,9 +60,9 @@
         {
             <div class="panel">
                 <Card>
-                    <EmptyState Title="@(table.Exists ? "Nobody is at this table yet" : "A table waiting for its first character")">
+                    <EmptyState Title="Nobody is in this campaign yet">
                         <ChildContent>
-                            Read out the code @State.Code so everyone joins the same table, then paste a
+                            Read out the code @State.Code so everyone joins the same campaign, then paste a
                             Pathbuilder export below to put a character on it.
                         </ChildContent>
                     </EmptyState>
@@ -148,8 +156,32 @@
                                     <span class="hp__of" aria-hidden="true">/</span>
                                     <span class="hp__max">@character.MaxHitPoints</span>
                                 </p>
-                                @* Zero is the resting value, so the minus button is live without a tap to
-                                   arm it and the card never shows a total the server has not sent back. *@
+                                @* The primary control, because the stepper alone made losing a hundred
+                                   hit points a hundred taps and a hundred round trips, which is unusable
+                                   in the moment it exists for. The keypad comes up on a phone. *@
+                                <div class="amount">
+                                    <TextInput Class="amount__field"
+                                               Label="@($"Hit points to apply to {character.Name}")"
+                                               InputMode="numeric"
+                                               Placeholder="0"
+                                               Value="@State.HitPointDraft(character.Id)"
+                                               ValueChanged="typed => Dispatcher.Dispatch(
+                                                   new HitPointDraftChanged(character.Id, typed ?? string.Empty))" />
+                                    <Button Variant="ButtonVariant.Secondary"
+                                            Disabled="@(Typed(character.Id) is null)"
+                                            OnClick='() => Apply(character.Id, "Damage")'>
+                                        Damage
+                                    </Button>
+                                    <Button Variant="ButtonVariant.Secondary"
+                                            Disabled="@(Typed(character.Id) is null)"
+                                            OnClick='() => Apply(character.Id, "Heal")'>
+                                        Heal
+                                    </Button>
+                                </div>
+
+                                @* The stepper stays for the nudge case. Zero is the resting value, so the
+                                   minus button is live without a tap to arm it and the card never shows a
+                                   total the server has not sent back. *@
                                 <NumberStepper Class="delta"
                                                Label="@($"Change {character.Name}'s hit points")"
                                                DecrementLabel="@($"{character.Name} takes a point of damage")"
@@ -183,7 +215,7 @@
         }
 
         <div class="panel import">
-            <Card Title="Put a character on the table">
+            <Card Title="Put a character in the campaign">
                 <ChildContent>
                     <TextArea Label="Pathbuilder export"
                               Rows="5"
@@ -490,14 +522,14 @@
     RenderFragment Entrance => @<div class="join">
         <div class="panel">
             <Card>
-                <EmptyState Title="Join a table">
+                <EmptyState Title="Join a campaign">
                     <ChildContent>
-                        A table is a short code everyone playing types in. Whoever starts one reads it
+                        A campaign is a short code everyone playing types in. Whoever starts one reads it
                         out; after that every change anybody makes shows up on everybody's screen.
                     </ChildContent>
                     <Action>
                         <div class="entry">
-                            <TextInput Label="Table code"
+                            <TextInput Label="Campaign code"
                                        Placeholder="ABC234"
                                        InputMode="text"
                                        Value="@State.CodeDraft"
@@ -509,8 +541,8 @@
                                     Join
                                 </Button>
                                 <Button Variant="ButtonVariant.Secondary"
-                                        OnClick="() => Dispatcher.Dispatch(new TableCreationRequested())">
-                                    Start a new table
+                                        OnClick="() => Dispatcher.Dispatch(new CampaignCreationRequested())">
+                                    Start a new campaign
                                 </Button>
                             </div>
                         </div>
@@ -536,7 +568,7 @@
     }
 
     CharacterSheetView? Character(Guid id) =>
-        State.Table is RemoteData<TableView>.Loaded loaded
+        State.Campaign is RemoteData<CampaignView>.Loaded loaded
             ? loaded.Value.Characters.FirstOrDefault(character => character.Id == id)
             : null;
 
@@ -572,6 +604,21 @@
 
     void Nudge(Guid characterId, int delta) =>
         Dispatcher.Dispatch(new HitPointsNudged(characterId, delta));
+
+    /// <summary>Null for anything that is not a number a table would apply, which is what leaves
+    /// both buttons disabled rather than sending a request the server will refuse.</summary>
+    int? Typed(Guid characterId) =>
+        int.TryParse(State.HitPointDraft(characterId), out var amount) && amount is > 0 and <= 999
+            ? amount
+            : null;
+
+    void Apply(Guid characterId, string direction)
+    {
+        if (Typed(characterId) is { } amount)
+        {
+            Dispatcher.Dispatch(new HitPointsApplied(characterId, amount, direction));
+        }
+    }
 
     void Redraft(EffectDraft draft) => Dispatcher.Dispatch(new DraftChanged(draft));
 

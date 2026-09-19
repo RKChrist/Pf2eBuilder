@@ -7,9 +7,9 @@ using Pf2e.Contracts.Tracker;
 using Pf2e.Domain;
 using Pf2e.Domain.Tracking;
 
-namespace Pf2e.Application.Features.Tracker;
+namespace Pf2e.Application.Features.Campaigns;
 
-public sealed record ImportCharacter(string TableCode, string Pathbuilder) : IRequest<CharacterSheetView>;
+public sealed record ImportCharacter(string Code, string Pathbuilder) : IRequest<CharacterSheetView>;
 
 public sealed class ImportCharacterValidator : AbstractValidator<ImportCharacter>
 {
@@ -17,8 +17,8 @@ public sealed class ImportCharacterValidator : AbstractValidator<ImportCharacter
 
     public ImportCharacterValidator()
     {
-        RuleFor(c => c.TableCode).Must(TableCode.IsValid)
-                                 .WithMessage("A table code is four to twelve letters and digits.");
+        RuleFor(c => c.Code).Must(CampaignCode.IsValid)
+                                 .WithMessage("A campaign code is four to twelve letters and digits.");
         // Cascade.Stop, because without it FluentValidation runs every rule in the chain and
         // the length check dereferences the null that NotEmpty just rejected. A request with
         // the field missing then answers 500 instead of naming the missing field.
@@ -32,36 +32,33 @@ public sealed class ImportCharacterValidator : AbstractValidator<ImportCharacter
 public sealed class ImportCharacterHandler(
     ITrackerDbContext tracker,
     IRulesDbContext rules,
-    ITableBroadcaster broadcaster) : IRequestHandler<ImportCharacter, CharacterSheetView>
+    ICampaignBroadcaster broadcaster) : IRequestHandler<ImportCharacter, CharacterSheetView>
 {
     public async Task<CharacterSheetView> Handle(ImportCharacter command, CancellationToken ct)
     {
+        // A campaign nobody created is a refusal that names the problem, not a campaign this
+        // handler starts on the way past. One started here would have a DM key that reached
+        // nobody, which is a campaign with no DM.
+        //
+        // Checked before the paste is parsed, because if there is nowhere to put the character
+        // then what the player pasted is beside the point, and being told about their JSON when
+        // the real problem is the code sends them to fix the wrong thing.
+        var (campaign, _) = await CampaignAccess.LoadAsync(tracker, command.Code, null, ct);
+        var code = campaign.Code;
+
         var parsed = PathbuilderBuild.Parse(command.Pathbuilder);
         var build = await WithSeededGear(parsed, ct);
-        var code = TableCode.Normalize(command.TableCode);
-
-        var table = await tracker.Tables
-            .Include(t => t.Characters).ThenInclude(c => c.Effects)
-            .SingleOrDefaultAsync(t => t.Code == code, ct);
-
-        if (table is null)
-        {
-            // A table comes into being when its first character arrives, which is why there is
-            // no operation that creates one.
-            table = new TrackedTable { Id = Guid.NewGuid(), Code = code, CreatedAtUtc = DateTimeOffset.UtcNow };
-            tracker.Tables.Add(table);
-        }
 
         // Pathbuilder stores one JSON id per player and overwrites it on each export, so it is a
         // slot and not an identity. Matching on the name is what makes a level-up a re-import.
-        var character = table.Characters
+        var character = campaign.Characters
             .FirstOrDefault(c => string.Equals(c.Name, build.Name, StringComparison.OrdinalIgnoreCase));
 
         if (character is null)
         {
             var fresh = SessionState.Fresh(CharacterSheet.Compute(build, SessionState.Fresh(0)).MaxHitPoints);
-            character = TrackedCharacter.From(table.Id, build, fresh);
-            table.Characters.Add(character);
+            character = TrackedCharacter.From(campaign.Id, build, fresh);
+            campaign.Characters.Add(character);
         }
         else
         {
@@ -70,13 +67,13 @@ public sealed class ImportCharacterHandler(
 
         await tracker.SaveChangesAsync(ct);
 
-        var sheet = SheetViews.Of(character);
+        var sheet = SheetViews.Of(character, campaign.EffectApplications);
         await broadcaster.CharacterChangedAsync(code, sheet, ct);
         return sheet;
     }
 
     /// <summary>
-    /// The armour's item bonus and Dex cap come from the seeded ruleset rather than a table in
+    /// The armour's item bonus and Dex cap come from the seeded ruleset rather than a campaign in
     /// this file, so a re-seed corrects them. A potency rune raises the armour's own item bonus,
     /// so +1 studded leather is one +3 item bonus and not a +2 and a +1 that the stacking rule
     /// would then refuse to combine.

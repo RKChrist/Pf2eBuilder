@@ -1,4 +1,4 @@
-using Pf2e.Application.Features.Tracker;
+using Pf2e.Application.Features.Campaigns;
 using Pf2e.Contracts.Tracker;
 using Pf2e.Domain;
 

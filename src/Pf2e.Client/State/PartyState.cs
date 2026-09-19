@@ -36,12 +36,16 @@ public sealed record PartyState
 
     public string CodeDraft { get; init; } = string.Empty;
 
-    public RemoteData<TableView> Table { get; init; } = new RemoteData<TableView>.NotAsked();
+    /// <summary>Held for this browser session only. It arrives once, with the campaign this
+    /// browser created, and a reload makes this browser a player again.</summary>
+    public string? DmKey { get; init; }
+
+    public RemoteData<CampaignView> Campaign { get; init; } = new RemoteData<CampaignView>.NotAsked();
 
     public string PasteDraft { get; init; } = string.Empty;
 
-    /// <summary>Separate from <see cref="Table"/> on purpose: a paste that will not import must
-    /// not blank the table everyone at it is reading.</summary>
+    /// <summary>Separate from <see cref="Campaign"/> on purpose: a paste that will not import must
+    /// not blank the campaign everyone in it is reading.</summary>
     public bool Importing { get; init; }
 
     public string? ImportError { get; init; }
@@ -55,17 +59,36 @@ public sealed record PartyState
     public EffectPicker? Picker { get; init; }
 
     public EffectDraft Draft { get; init; } = EffectDraft.Fresh;
+
+    /// <summary>What each card's hit point field holds, keyed by character, because two cards
+    /// are open at once and one shared number would send the fighter's damage to the bard.</summary>
+    public IReadOnlyDictionary<Guid, string> HitPointDrafts { get; init; } =
+        new Dictionary<Guid, string>();
+
+    public string HitPointDraft(Guid characterId) =>
+        HitPointDrafts.TryGetValue(characterId, out var typed) ? typed : string.Empty;
 }
 
 public sealed record CodeDraftChanged(string Draft);
 
 public sealed record JoinRequested(string Code);
 
-public sealed record TableCreationRequested;
+public sealed record CampaignCreationRequested;
 
-public sealed record TableOpened(TableView Table);
+public sealed record CampaignOpened(CampaignView Campaign);
 
-public sealed record TableFailed(string Message);
+public sealed record CampaignCreated(CreatedCampaignView Created);
+
+public sealed record CampaignFailed(string Message);
+
+/// <summary>A command whose answer is the whole campaign. It replaces the loaded value without
+/// reopening, because reopening would rejoin a hub connection that is already in the right
+/// groups.</summary>
+public sealed record CampaignRefreshed(CampaignView Campaign);
+
+public sealed record ModeChangeRequested(string Mode);
+
+public sealed record ModeChanged(CampaignModeView Mode);
 
 public sealed record PasteDraftChanged(string Draft);
 
@@ -79,7 +102,18 @@ public sealed record ImportFailed(string Message);
 /// push both arrive here, so a local change and somebody else's are the same render.</summary>
 public sealed record CharacterUpdated(CharacterSheetView Character);
 
+/// <summary>One point, for the nudge case the steppers still serve.</summary>
 public sealed record HitPointsNudged(Guid CharacterId, int Delta);
+
+public sealed record HitPointDraftChanged(Guid CharacterId, string Draft);
+
+/// <summary>
+/// The typed amount, which is the primary control: losing a hundred hit points is one number and
+/// one round trip rather than a hundred taps. Direction is "Damage" or "Heal".
+/// <para>The amount travels with the action because its reducer empties the field, and a reducer
+/// runs before the effect that has to send what was in it.</para>
+/// </summary>
+public sealed record HitPointsApplied(Guid CharacterId, int Amount, string Direction);
 
 public sealed record EffectSet(Guid CharacterId, Guid Slot, EffectSpec? Effect);
 
@@ -129,25 +163,33 @@ public static class PartyReducers
 
     [ReducerMethod]
     public static PartyState On(PartyState state, JoinRequested _) =>
-        state with { Table = new RemoteData<TableView>.Loading() };
+        state with { Campaign = new RemoteData<CampaignView>.Loading() };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, TableCreationRequested _) =>
-        state with { Table = new RemoteData<TableView>.Loading() };
+    public static PartyState On(PartyState state, CampaignCreationRequested _) =>
+        state with { Campaign = new RemoteData<CampaignView>.Loading() };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, TableOpened action) => state with
+    public static PartyState On(PartyState state, CampaignOpened action) => state with
     {
-        Code = action.Table.Code,
+        Code = action.Campaign.Code,
         CodeDraft = string.Empty,
-        Table = new RemoteData<TableView>.Loaded(action.Table),
+        Campaign = new RemoteData<CampaignView>.Loaded(action.Campaign),
         ImportError = null,
         ActionError = null,
     };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, TableFailed action) =>
-        state with { Table = new RemoteData<TableView>.Failed(action.Message) };
+    public static PartyState On(PartyState state, CampaignFailed action) =>
+        state with { Campaign = new RemoteData<CampaignView>.Failed(action.Message) };
+
+    [ReducerMethod]
+    public static PartyState On(PartyState state, CampaignRefreshed action) =>
+        state with { Campaign = new RemoteData<CampaignView>.Loaded(action.Campaign) };
+
+    [ReducerMethod]
+    public static PartyState On(PartyState state, CampaignCreated action) =>
+        state with { DmKey = action.Created.DmKey };
 
     [ReducerMethod]
     public static PartyState On(PartyState state, PasteDraftChanged action) =>
@@ -168,7 +210,7 @@ public static class PartyReducers
     [ReducerMethod]
     public static PartyState On(PartyState state, CharacterUpdated action)
     {
-        if (state.Table is not RemoteData<TableView>.Loaded loaded)
+        if (state.Campaign is not RemoteData<CampaignView>.Loaded loaded)
         {
             return state;
         }
@@ -182,10 +224,35 @@ public static class PartyReducers
 
         return state with
         {
-            Table = new RemoteData<TableView>.Loaded(
-                loaded.Value with { Exists = true, Characters = replaced }),
+            Campaign = new RemoteData<CampaignView>.Loaded(
+                loaded.Value with { Characters = replaced }),
         };
     }
+
+    /// <summary>The DM's own tap and somebody else's push land here as the same value, which is
+    /// what makes "every screen follows" one code path rather than two.</summary>
+    [ReducerMethod]
+    public static PartyState On(PartyState state, ModeChanged action) =>
+        state.Campaign is RemoteData<CampaignView>.Loaded loaded
+            ? state with
+            {
+                Campaign = new RemoteData<CampaignView>.Loaded(
+                    loaded.Value with { Mode = action.Mode.Mode }),
+            }
+            : state;
+
+    [ReducerMethod]
+    public static PartyState On(PartyState state, HitPointDraftChanged action) =>
+        state with { HitPointDrafts = Drafts(state, action.CharacterId, action.Draft) };
+
+    /// <summary>The field empties on the tap, so a DM who taps Damage twice by accident does not
+    /// apply the number twice.</summary>
+    [ReducerMethod]
+    public static PartyState On(PartyState state, HitPointsApplied action) =>
+        state with { HitPointDrafts = Drafts(state, action.CharacterId, string.Empty) };
+
+    static Dictionary<Guid, string> Drafts(PartyState state, Guid characterId, string draft) =>
+        new(state.HitPointDrafts) { [characterId] = draft };
 
     [ReducerMethod]
     public static PartyState On(PartyState state, ActionFailed action) =>

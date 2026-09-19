@@ -1,9 +1,9 @@
-using Pf2e.Application.Abstractions;
+using Pf2e.Application.Features.Campaigns;
 using Pf2e.Application.Features.Rules;
-using Pf2e.Application.Features.Tracker;
 using Pf2e.Contracts.Rules;
 using Pf2e.Contracts.Tracker;
 using Pf2e.Domain;
+using Pf2e.Infrastructure.Persistence;
 
 namespace Pf2e.Persistence.Tests;
 
@@ -16,14 +16,10 @@ namespace Pf2e.Persistence.Tests;
 /// </summary>
 public class ExtractedModifiers(SeededDatabase database) : IClassFixture<SeededDatabase>
 {
-    sealed class Silent : ITableBroadcaster
-    {
-        public Task CharacterChangedAsync(string code, CharacterSheetView sheet, CancellationToken ct) =>
-            Task.CompletedTask;
-    }
-
     static string Fixture(string name) =>
         File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", name));
+
+    RecordingBroadcaster Broadcaster { get; } = new();
 
     async Task<RuleSearchResult> Search(string category, string? name = null, int page = 1)
     {
@@ -62,13 +58,15 @@ public class ExtractedModifiers(SeededDatabase database) : IClassFixture<SeededD
     {
         var horn = await Horn();
         RuleDetail detail;
+        CreatedCampaignView campaign;
         CharacterSheetView character;
 
         await using (var db = database.NewContext())
         {
             detail = (await new GetRuleHandler(db).Handle(new GetRule(horn.Id), default))!;
-            character = await new ImportCharacterHandler(db, db, new Silent())
-                .Handle(new ImportCharacter("HORN01", Fixture("gnibbo.json")), default);
+            campaign = await new CreateCampaignHandler(db).Handle(new CreateCampaign(), default);
+            character = await new ImportCharacterHandler(db, db, Broadcaster)
+                .Handle(new ImportCharacter(campaign.Code, Fixture("gnibbo.json")), default);
         }
 
         var before = character.Skills.ToDictionary(skill => skill.Name, skill => skill.Value.Total);
@@ -77,10 +75,12 @@ public class ExtractedModifiers(SeededDatabase database) : IClassFixture<SeededD
         CharacterSheetView? after;
         await using (var db = database.NewContext())
         {
-            after = await new SetEffectHandler(db, new Silent()).Handle(
-                new SetEffect("HORN01", character.Id, Guid.NewGuid(),
-                    new EffectSpec(horn.Name, "Rule", horn.Id, 0, null, detail.Modifiers)),
+            var applied = await new ApplyEffectHandler(db, new MemoryUndoStack(), Broadcaster).Handle(
+                new ApplyEffect(campaign.Code, null, Guid.NewGuid(),
+                    new EffectSpec(horn.Name, "Rule", horn.Id, 0, null, detail.Modifiers),
+                    [new EffectTargetSpec("Character", character.Id)]),
                 default);
+            after = applied.Characters.SingleOrDefault(c => c.Id == character.Id);
         }
 
         Assert.NotNull(after);

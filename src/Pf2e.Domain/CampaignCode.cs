@@ -1,21 +1,22 @@
 using System.Security.Cryptography;
 
-namespace Pf2e.Client.State;
+namespace Pf2e.Domain;
 
 /// <summary>
-/// A table is made up here and the server accepts any valid code, which is why there is no
-/// operation that creates one.
+/// A campaign is a short code and anyone with the code is in that campaign. The code is drawn
+/// by whoever creates the campaign, which is the server, because a campaign now comes into
+/// being through an operation rather than by being typed at.
 /// </summary>
-public static class TableCodes
+public static class CampaignCode
 {
-    public const int Length = 6;
+    public const int GeneratedLength = 6;
 
     /// <summary>I, O, 0 and 1 are missing because a code is read out across a table and those
     /// four are the ones people write down as each other.</summary>
     const string Alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
     public static string Draw() =>
-        string.Create(Length, 0, (span, _) =>
+        string.Create(GeneratedLength, 0, (span, _) =>
         {
             for (var i = 0; i < span.Length; i++)
             {
@@ -29,6 +30,6 @@ public static class TableCodes
     {
         var normalized = Normalize(code);
         return normalized.Length is >= 4 and <= 12
-               && normalized.All(c => c is >= 'A' and <= 'Z' or >= '0' and <= '9');
+            && normalized.All(c => c is >= 'A' and <= 'Z' or >= '0' and <= '9');
     }
 }

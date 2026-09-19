@@ -179,6 +179,20 @@
     font-size: var(--font-size-body);
 }
 
+/* The typed amount and its two verbs stay on one line at phone width, with the field taking
+   whatever is left, because this is the control a DM reaches for mid-turn. */
+.amount {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-2);
+    flex: 1 1 14rem;
+}
+
+.amount__field {
+    flex: 1 1 5rem;
+    min-width: 4rem;
+}
+
 .chips {
     display: flex;
     flex-wrap: wrap;

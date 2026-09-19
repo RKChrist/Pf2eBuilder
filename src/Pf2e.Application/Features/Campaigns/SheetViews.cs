@@ -3,7 +3,7 @@ using Pf2e.Contracts.Tracker;
 using Pf2e.Domain;
 using Pf2e.Domain.Tracking;
 
-namespace Pf2e.Application.Features.Tracker;
+namespace Pf2e.Application.Features.Campaigns;
 
 /// <summary>
 /// The one crossing between the domain and the wire, used by all four tracker handlers, so a
@@ -12,9 +12,9 @@ namespace Pf2e.Application.Features.Tracker;
 /// </summary>
 internal static class SheetViews
 {
-    public static CharacterSheetView Of(TrackedCharacter character)
+    public static CharacterSheetView Of(TrackedCharacter character, IEnumerable<EffectApplication> effects)
     {
-        var sheet = CharacterSheet.Compute(character.ToBuild(), character.ToSession());
+        var sheet = CharacterSheet.Compute(character.ToBuild(), character.ToSession(effects));
 
         return new CharacterSheetView(
             character.Id,
@@ -58,14 +58,30 @@ internal static class SheetViews
         effect.Duration,
         [.. effect.Source.StoredModifiers.Select(Of)]);
 
-    /// <summary>The slot id comes from the caller rather than from the spec, because the client
-    /// names the slot and that is what makes applying the same effect twice idempotent.</summary>
+    /// <summary>The application id comes from the caller rather than from the spec, because the
+    /// client names it and that is what makes applying the same effect twice idempotent.</summary>
     public static ActiveEffect ToActive(Guid id, EffectSpec spec) => new(
         id,
         spec.Name,
         spec.Value,
         EffectSource.From(spec.Kind, spec.Key, [.. spec.Modifiers.Select(ToModifier)]),
         spec.Duration);
+
+    public static EffectApplicationView Of(EffectApplication application) => new(
+        application.Id,
+        application.Name,
+        application.SourceKind,
+        application.SourceKey,
+        Domain.Effects.Find(application.SourceKey ?? string.Empty) is { HasValue: true }
+            && application.SourceKind == "Seeded",
+        application.Duration,
+        application.Timing.ToString(),
+        application.SourceCreatureId,
+        application.PersistentDamage,
+        application.PersistentDamageType,
+        [.. application.Modifiers.Select(Of)],
+        [.. application.Targets.Select(target => new EffectTargetView(
+            target.Kind.ToString(), target.TargetId, target.Value, target.RemainingRounds))]);
 
     static ModifierSummary Of(Modifier modifier) => new(
         modifier.Source,

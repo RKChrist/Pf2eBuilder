@@ -17,7 +17,7 @@ public sealed class TrackedCharacter
     }
 
     public Guid Id { get; private set; }
-    public Guid TableId { get; private set; }
+    public Guid CampaignId { get; private set; }
 
     public string Name { get; private set; } = string.Empty;
     public int Level { get; private set; }
@@ -55,21 +55,23 @@ public sealed class TrackedCharacter
     public int TemporaryHitPoints { get; set; }
     public int HeroPoints { get; set; }
 
-    public List<TrackedEffect> Effects { get; } = [];
-
-    public static TrackedCharacter From(Guid tableId, Character build, SessionState session)
+    /// <summary>
+    /// Effects are not here. They belong to the campaign, one row per application, because one
+    /// application can reach five characters and a monster, and a list hanging off each
+    /// character could not say that.
+    /// </summary>
+    public static TrackedCharacter From(Guid campaignId, Character build, SessionState session)
     {
         var character = new TrackedCharacter
         {
             Id = Guid.NewGuid(),
-            TableId = tableId,
+            CampaignId = campaignId,
             CurrentHitPoints = session.CurrentHitPoints,
             TemporaryHitPoints = session.TemporaryHitPoints,
             HeroPoints = session.HeroPoints,
         };
 
         character.Apply(build);
-        character.Effects.AddRange(session.Effects.Select(e => TrackedEffect.From(character.Id, e)));
         return character;
     }
 
@@ -97,11 +99,11 @@ public sealed class TrackedCharacter
         Weapons,
         Spellcasting);
 
-    public SessionState ToSession() => new(
+    public SessionState ToSession(IEnumerable<EffectApplication> campaignEffects) => new(
         CurrentHitPoints,
         TemporaryHitPoints,
         HeroPoints,
-        [.. Effects.Select(effect => effect.ToActive())]);
+        AppliedEffects.On(Id, campaignEffects));
 
     /// <summary>
     /// The only place that expresses "the build is replaced, the session is preserved". A player
