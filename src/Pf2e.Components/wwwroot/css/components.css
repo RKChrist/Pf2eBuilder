@@ -12,17 +12,6 @@
   box-sizing: border-box;
 }
 
-.pf-visually-hidden {
-  position: absolute;
-  width: var(--border-hair);
-  height: var(--border-hair);
-  margin: calc(var(--border-hair) * -1);
-  padding: var(--space-0);
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 /* Adjacent tap targets need real travel between them, so every cluster of controls
    uses this rather than an ad hoc gap. */
 .pf-cluster {
