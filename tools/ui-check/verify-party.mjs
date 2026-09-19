@@ -6,14 +6,19 @@
 //
 //   dotnet run --project src/Pf2e.Api --urls http://localhost:5092
 //   dotnet run --project src/Pf2e.Client --launch-profile http
-//   node tools/ui-check/verify-party.mjs
+//   node tools/ui-check/verify-party.mjs [clientUrl] [apiOrigin] [fixture]
+//
+// The API origin is asserted, not assumed. Several worktrees of this app run on one machine and
+// the client reads its API address from a static file, so a client pointed at another
+// worktree's API passes every visible assertion while proving nothing about this build.
 //
 // Exit code is the number of failures.
 import { readFileSync } from 'node:fs';
 import { launch, openPage, reporter, sleep } from './cdp.mjs';
 
 const client = process.argv[2] ?? 'http://localhost:5173';
-const fixture = process.argv[3] ?? 'tests/Pf2e.Persistence.Tests/Fixtures/gnibbo.json';
+const apiOrigin = process.argv[3] ?? 'http://localhost:5092';
+const fixture = process.argv[4] ?? 'tests/Pf2e.Persistence.Tests/Fixtures/gnibbo.json';
 const pathbuilder = readFileSync(fixture, 'utf8');
 
 const check = reporter();
@@ -197,6 +202,20 @@ check('the second page follows the second delta too', await two.waitUntil(
   `Number.parseInt(document.querySelector('.hp__current').textContent, 10) === 74`));
 
 for (const [name, page] of [['first', one.page], ['second', two.page]]) {
+  const calls = (await page.eval(`performance.getEntriesByType('resource').map(e => e.name)`))
+    .filter(url => /\/(tables|rules|conditions)(\/|\?|$)/.test(url) || url.includes('/hub/'));
+  const strays = [...new Set(calls.filter(url => !url.startsWith(apiOrigin)))];
+  check(`the ${name} page reached an API`, calls.length > 0, `${calls.length} calls`);
+  check(`every ${name}-page API call went to the API under test`, strays.length === 0, strays.join(' | '));
+
+  // A websocket never appears in resource timings, so the hub's destination is only checkable
+  // through the HTTP negotiate that precedes it. No negotiate means unverified, not fine.
+  const negotiate = calls.filter(url => url.includes('/negotiate'));
+  check(`the ${name} page's hub negotiated`, negotiate.length > 0,
+    'no negotiate call seen; the hub origin is unverified');
+  check(`the ${name} page's hub negotiated against the API under test`,
+    negotiate.length > 0 && negotiate.every(url => url.startsWith(apiOrigin)), negotiate.join(' | '));
+
   const errors = page.consoleErrors().filter(entry => !entry.includes('ERR_BLOCKED_BY_CLIENT'));
   check.eq(`no console errors on the ${name} page`, errors.length, 0, errors.join(' | '));
 }
