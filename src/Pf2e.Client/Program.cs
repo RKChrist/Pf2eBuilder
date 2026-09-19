@@ -17,6 +17,14 @@ var api = builder.Configuration.GetSection(ApiOptions.Section).Get<ApiOptions>()
           ?? throw new InvalidOperationException(
               $"wwwroot/appsettings.json is missing its '{ApiOptions.Section}' section.");
 
+// An empty BaseUrl means the API is wherever this page came from. That is what makes one
+// ngrok tunnel enough: the API serves the client, so phones and desktops share an origin
+// and there is no CORS to configure. A value here overrides it for the two-process dev run.
+if (string.IsNullOrWhiteSpace(api.BaseUrl))
+{
+    api.BaseUrl = builder.HostEnvironment.BaseAddress;
+}
+
 builder.Services.AddSingleton(Options.Create(api));
 builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(api.BaseUrl) });
 builder.Services.AddScoped<RulesApi>();

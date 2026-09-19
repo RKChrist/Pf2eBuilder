@@ -83,3 +83,34 @@ A running API or client holds `Pf2e.Domain.dll` open, and the next build fails w
 
 `pkill -f Pf2e.Api` from a bash shell does **not** work here; the process is a Windows
 executable and pkill silently matches nothing, which looks like the kill succeeded.
+
+## Serving it to the table, over ngrok or your own wifi
+
+    serve.cmd
+
+One process, one port. The API hosts the published client, so there is a single origin, no
+CORS to configure and only one tunnel to open. Then, in another window:
+
+    ngrok http 5092
+
+Open the https URL ngrok prints on every phone and every desktop at the table. Desktop and
+phones together is the point: the layout adapts per device, and everyone on the same table code
+sees the same numbers update live.
+
+Two details that make it work and are easy to miss.
+
+The client's `BaseUrl` is empty in the published config, which means "wherever this page came
+from". That is what makes one tunnel enough. The two-process development run overrides it back
+to `http://localhost:5092` through `wwwroot/appsettings.Development.json`.
+
+The API binds `0.0.0.0` rather than `localhost`, because a tunnel and a phone on your wifi are
+both a different machine as far as the socket is concerned. It also honours forwarded headers,
+since ngrok terminates TLS and forwards plain HTTP; without that the app believes every request
+is insecure and any absolute URL it builds comes back as `http` on an `https` page, which the
+browser blocks as mixed content.
+
+### What this is not
+
+It is not authenticated. Anyone who knows a table code can read and change every character on
+it. That is fine on your own wifi and it is not fine on a public URL, so treat an ngrok link as
+something you share with your table and let expire, not as a deployment.

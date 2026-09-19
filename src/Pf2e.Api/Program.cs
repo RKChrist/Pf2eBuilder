@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using System.Text.Json;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
@@ -15,7 +16,22 @@ using Pf2e.Infrastructure.Configuration;
 using Pf2e.Infrastructure.Persistence;
 using AspNetCorsOptions = Microsoft.AspNetCore.Cors.Infrastructure.CorsOptions;
 
-var builder = WebApplication.CreateBuilder(args);
+// Read where the published client lives before the host exists, because
+// UseBlazorFrameworkFiles serves _framework from the web root and ignores any file
+// provider handed to UseStaticFiles. Making the client the web root is the only way
+// both the framework files and the static assets come from the same place.
+var bootstrap = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: true)
+    .AddEnvironmentVariables()
+    .Build();
+var clientRoot = bootstrap[$"{HostingOptions.Section}:{nameof(HostingOptions.ClientRoot)}"];
+
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    WebRootPath = string.IsNullOrWhiteSpace(clientRoot) ? null : Path.GetFullPath(clientRoot),
+});
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -35,6 +51,7 @@ builder.Services.AddOptions<AspNetCorsOptions>()
               .AllowAnyMethod()
               .AllowCredentials()));
 
+builder.Services.AddSection<HostingOptions>(builder.Configuration, HostingOptions.Section);
 builder.Services.AddSection<RealtimeOptions>(builder.Configuration, RealtimeOptions.Section);
 builder.Services.AddSignalR();
 builder.Services.AddOptions<HubOptions>()
@@ -106,7 +123,35 @@ await using (var scope = app.Services.CreateAsyncScope())
     }
 }
 
+// ngrok terminates TLS and forwards plain HTTP, so without this the app believes every
+// request is insecure and any absolute URL it builds comes back as http on an https
+// page, which a browser then blocks as mixed content.
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    // A tunnel is not in a known subnet, and this only ever runs behind one the operator
+    // started themselves.
+    KnownIPNetworks = { },
+    KnownProxies = { },
+});
+
 app.UseCors();
+
+// Serving the published client from here is a deployment convenience, not a coupling:
+// there is no project reference, only a directory. The client stays a standalone
+// WebAssembly app that can be hosted anywhere, which is what design/001 decided.
+if (!string.IsNullOrWhiteSpace(clientRoot))
+{
+    if (!Directory.Exists(Path.GetFullPath(clientRoot)))
+    {
+        throw new DirectoryNotFoundException(
+            $"Hosting:ClientRoot is '{Path.GetFullPath(clientRoot)}', which does not exist. " +
+            "Publish the client first: dotnet publish src/Pf2e.Client -o <path>");
+    }
+
+    app.UseBlazorFrameworkFiles();
+    app.UseStaticFiles();
+}
 
 app.MapRules();
 app.MapTracker();
@@ -117,6 +162,12 @@ app.MapGet("/health", async (RulesDbContext db) => Results.Ok(new
     database = await db.Database.CanConnectAsync(),
     rules = await db.RuleRecords.CountAsync(),
 }));
+
+// After the API routes, so a real endpoint always wins over the client's catch-all.
+if (!string.IsNullOrWhiteSpace(clientRoot))
+{
+    app.MapFallbackToFile("index.html");
+}
 
 app.Run();
 
