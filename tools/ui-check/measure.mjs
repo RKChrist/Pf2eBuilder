@@ -90,12 +90,16 @@ const report = await evaluate(`(() => {
     .filter(box => box.width > 0 && box.height > 0);
 
   // Content clipped by an ancestor's overflow never widens scrollWidth, so it has to be found
-  // element by element. Fixed bars legitimately span the viewport, hence the tolerance.
+  // element by element. Only elements that STRADDLE an edge count: one parked entirely
+  // off-canvas is a panel waiting to slide in, which is deliberate, and flagging it made this
+  // tool report a bug about a working docked sheet.
   const clipped = [...document.querySelectorAll('body *')]
     .filter(el => {
       const box = el.getBoundingClientRect();
       if (box.width === 0 || box.height === 0) return false;
-      return box.right > viewport + 1 || box.left < -1;
+      const straddlesRight = box.left < viewport - 1 && box.right > viewport + 1;
+      const straddlesLeft = box.right > 1 && box.left < -1;
+      return straddlesRight || straddlesLeft;
     })
     .slice(0, 12)
     .map(el => ({

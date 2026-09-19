@@ -15,8 +15,11 @@ if (!outDir) throw new Error('usage: node tools/ui-check/record.mjs <outputDir> 
 const port = process.env.CDP_PORT ?? '9222';
 const client = process.env.CLIENT_URL ?? 'http://localhost:5173';
 const gallery = process.env.GALLERY_URL;
-const WIDTH = 390;
-const HEIGHT = 844;
+const WIDTH = Number(process.env.WIDTH ?? 390);
+const HEIGHT = Number(process.env.HEIGHT ?? 844);
+
+// Structural, so a renamed component cannot make the recorder claim the app never rendered.
+const NAV = 'nav button, nav a, [role=navigation] button, [role=navigation] a';
 
 const targets = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
 const target = targets.find(t => t.type === 'page');
@@ -55,7 +58,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 await send('Runtime.enable');
 await send('Page.enable');
 await send('Emulation.setDeviceMetricsOverride', {
-  width: WIDTH, height: HEIGHT, deviceScaleFactor: 1, mobile: true,
+  width: WIDTH, height: HEIGHT, deviceScaleFactor: 1, mobile: WIDTH < 1024,
 });
 await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
 
@@ -65,9 +68,15 @@ let frameNumber = 0;
 const frames = [];
 
 async function frame(caption) {
-  const { result } = await send('Page.captureScreenshot', { format: 'jpeg', quality: 78 });
+  const response = await send('Page.captureScreenshot', { format: 'jpeg', quality: 78 });
+  // Navigating between origins can swap the CDP target out from under the session, and the
+  // capture then comes back empty. Losing a frame must not lose the whole recording.
+  if (!response.result?.data) {
+    console.error(`dropped a frame: ${response.error?.message ?? 'empty capture'}`);
+    return;
+  }
   const name = `f${String(frameNumber++).padStart(4, '0')}.jpg`;
-  writeFileSync(join(outDir, name), Buffer.from(result.data, 'base64'));
+  writeFileSync(join(outDir, name), Buffer.from(response.result.data, 'base64'));
   frames.push({ name, caption });
 }
 
@@ -80,31 +89,44 @@ async function frames_over(ms, caption, count = 4) {
   }
 }
 
-const click = selector => evaluate(`(() => {
-  const el = document.querySelector(${JSON.stringify(selector)});
-  if (!el) throw new Error('no element for ' + ${JSON.stringify(selector)});
+// Everything below finds elements by what they say and where they sit, never by a class name.
+// A recorder keyed on classes breaks the moment a component is swapped, and then reports a
+// failure about itself rather than about the app. The kit migration renamed every one of them.
+
+const clickNav = text => evaluate(`(() => {
+  const nav = document.querySelector('nav, [role=navigation]');
+  const el = [...nav.querySelectorAll('button, a')]
+    .find(e => e.textContent.trim().toLowerCase().startsWith(${JSON.stringify(text.toLowerCase())}));
+  if (!el) throw new Error('no nav item starting with ' + ${JSON.stringify(text)});
+  el.click();
+  return true;
+})()`);
+
+// The first list on the page that is not the navigation, whatever markup it happens to use.
+const clickRow = text => evaluate(`(() => {
+  const nav = document.querySelector('nav, [role=navigation]');
+  const rows = [...document.querySelectorAll('button, a')].filter(e => !nav?.contains(e));
+  const el = ${JSON.stringify(text)}
+    ? rows.find(e => e.textContent.trim().toLowerCase().includes(${JSON.stringify(String(text).toLowerCase())}))
+    : rows[0];
+  if (!el) throw new Error('no row' + (${JSON.stringify(text)} ? ' containing ' + ${JSON.stringify(text)} : ''));
   el.scrollIntoView({ block: 'center' });
   el.click();
   return true;
 })()`);
 
-const clickText = (selector, text) => evaluate(`(() => {
-  const el = [...document.querySelectorAll(${JSON.stringify(selector)})]
-    .find(e => e.textContent.trim().toLowerCase().includes(${JSON.stringify(text.toLowerCase())}));
-  if (!el) throw new Error('no ' + ${JSON.stringify(selector)} + ' containing ' + ${JSON.stringify(text)});
-  el.scrollIntoView({ block: 'center' });
-  el.click();
-  return true;
-})()`);
+const searchBox = () =>
+  `document.querySelector('input[type=search]') ?? document.querySelector('input[inputmode=search]')`;
 
-async function typeInto(selector, value) {
-  // One character at a time through real key events, so the debounce is exercised rather than
-  // bypassed by setting .value directly.
-  await evaluate(`document.querySelector(${JSON.stringify(selector)}).focus()`);
+// One character at a time through real key events, so the debounce and the last-keystroke-wins
+// cancellation are exercised rather than bypassed by assigning .value.
+async function typeSearch(value, caption) {
+  await evaluate(`(${searchBox()})?.focus()`);
   for (const character of value) {
     await send('Input.dispatchKeyEvent', { type: 'keyDown', text: character });
     await send('Input.dispatchKeyEvent', { type: 'keyUp' });
-    await sleep(60);
+    await sleep(90);
+    await frame(caption);
   }
 }
 
@@ -127,49 +149,50 @@ async function goto(url, settleSelector) {
 
 const scenarios = {
   async browse() {
-    await goto(`${client}/`, 'nav.bar button');
-    await frame('Six groups in the thumb bar. Build opens the character-creation categories.');
-    await clickText('nav.bar button', 'feats');
-    await frames_over(500, 'Feats group. Two categories.');
-    await clickText('li button, .categories button', 'feats');
-    await waitFor('.results, [class*=row], article');
-    await frames_over(900, 'All 6,390 feats, paged.', 5);
-    await typeInto('input[type=search], .pf-search__input', 'power');
-    await frames_over(1200, 'Typing filters as you go. The last keystroke wins.', 6);
+    await goto(`${client}/`, NAV);
+    await frames_over(400, 'Six groups. On a phone they sit in the thumb arc.', 2);
+    await clickNav('feats');
+    await frames_over(700, 'The Feats group and its categories.', 4);
+    await clickRow('feats');
+    await sleep(900);
+    await frames_over(900, 'All 6,390 feats, paged fifty at a time.', 5);
+    await typeSearch('power', 'Typing filters as you go, one keystroke at a time.');
+    await frames_over(1400, 'The last keystroke wins; earlier requests are cancelled.', 6);
   },
 
   async detail() {
-    await goto(`${client}/`, 'nav.bar button');
-    await clickText('nav.bar button', 'gear');
-    await sleep(400);
-    await clickText('li button, .categories button', 'weapons');
-    await waitFor('.results, [class*=row], article');
-    await frames_over(800, 'Weapons.', 4);
-    await evaluate(`(() => {
-      const row = document.querySelector('.results button, [class*=row] button, li button');
-      row.scrollIntoView({ block: 'center' }); row.click(); return true;
-    })()`);
-    await frames_over(900, 'The record opens as a bottom sheet with its mechanics as labelled pairs.', 6);
+    await goto(`${client}/`, NAV);
+    await clickNav('gear');
+    await frames_over(600, 'The Gear group.', 3);
+    await clickRow('weapon');
+    await sleep(900);
+    await frames_over(700, 'Weapons.', 4);
+    await clickRow('club');
+    await frames_over(1300, 'A record opens with its mechanics as labelled pairs and a link to its source. On a wide screen it docks beside the list so you keep your place.', 8);
   },
 
   async conditions() {
-    await goto(`${client}/conditions`, '.pf-card, article, section');
-    await frames_over(700, 'The fourteen conditions the rules engine computes.', 4);
-    await evaluate('window.scrollTo({ top: 420, behavior: "instant" })');
-    await frames_over(500, 'Clumsy is Dexterity-based, not a list of five statistics.', 3);
-    await evaluate('window.scrollTo({ top: 900, behavior: "instant" })');
-    await frames_over(500, 'Stupefied reaches Intelligence, Wisdom and Charisma.', 3);
+    await goto(`${client}/conditions`, NAV);
+    await frames_over(800, 'The fourteen conditions the rules engine can actually compute.', 4);
+    for (const [top, caption] of [
+      [380, 'Clumsy is every Dexterity-based statistic, not a list of five.'],
+      [760, 'Drained is Constitution-based, and also costs hit points per level.'],
+      [1140, 'Stupefied reaches Intelligence, Wisdom and Charisma.'],
+    ]) {
+      await evaluate(`window.scrollTo({ top: ${top}, behavior: 'instant' })`);
+      await frames_over(420, caption, 3);
+    }
   },
 
   async sliders() {
     if (!gallery) return;
-    await goto(gallery, '.pf-slider');
-    await evaluate(`document.querySelector('.pf-slider').scrollIntoView({ block: 'center' })`);
+    await goto(gallery, 'input[type=range]');
+    await evaluate(`document.querySelector('input[type=range]').closest('section, div').scrollIntoView({ block: 'center' })`);
     await frame('Slider and RangeSlider, from the component kit.');
-    const rails = await evaluate(`[...document.querySelectorAll('.pf-slider input[type=range]')].length`);
+    const rails = await evaluate(`document.querySelectorAll('input[type=range]').length`);
     for (let value = 3; value <= 18; value += 3) {
       await evaluate(`(() => {
-        const rail = document.querySelector('.pf-slider input[type=range]');
+        const rail = document.querySelector('input[type=range]');
         rail.value = ${value};
         rail.dispatchEvent(new Event('input', { bubbles: true }));
         return rail.value;
