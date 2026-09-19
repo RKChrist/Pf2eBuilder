@@ -58,7 +58,14 @@ public readonly record struct StatTarget(
         is StatKind.Fortitude or StatKind.Reflex or StatKind.Will or StatKind.Perception
         or StatKind.Attack or StatKind.Skill or StatKind.SpellAttack;
 
-    public bool IsDc => Kind is StatKind.ClassDc or StatKind.SpellDc;
+    /// <summary>
+    /// Armour class is a DC. Player Core page 10: a creature's armour class "serves as the
+    /// Difficulty Class for hitting" it. So a condition whose text reads "all your checks and
+    /// DCs", which is frightened and sickened, lowers armour class too. This engine excluded it
+    /// and a test asserted the exclusion, which meant a frightened creature was harder to hit
+    /// than the rules say.
+    /// </summary>
+    public bool IsDc => Kind is StatKind.ClassDc or StatKind.SpellDc or StatKind.ArmorClass;
 
     public bool IsSavingThrow => Kind is StatKind.Fortitude or StatKind.Reflex or StatKind.Will;
 }

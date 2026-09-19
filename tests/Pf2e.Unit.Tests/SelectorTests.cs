@@ -82,13 +82,20 @@ public class SelectorTests
     }
 
     [Fact]
-    public void AllChecksAndDcsCoversChecksAndDcsButNotArmorClassOrSpeed()
+    public void AllChecksAndDcsReachesArmourClassBecauseArmourClassIsADc()
     {
         var selector = Selector.AllChecksAndDcs;
 
         Assert.True(selector.Matches(StatTarget.Perception));
         Assert.True(selector.Matches(StatTarget.ClassDc(AttributeKind.Charisma)));
-        Assert.False(selector.Matches(StatTarget.ArmorClass));
+        Assert.True(selector.Matches(StatTarget.SpellDc(AttributeKind.Wisdom)));
+
+        // Player Core page 10: armour class "serves as the Difficulty Class for hitting" a
+        // creature. This assertion read False and was the second copy of the same bug.
+        Assert.True(selector.Matches(StatTarget.ArmorClass));
+
+        // Speed and damage are neither a check nor a DC, which is what keeps this from meaning
+        // "everything".
         Assert.False(selector.Matches(StatTarget.Speed));
         Assert.False(selector.Matches(StatTarget.Damage(AttributeKind.Strength)));
     }

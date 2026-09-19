@@ -96,7 +96,11 @@ public class ConditionRules
             Assert.True(Hits(Conditions.Frightened, target, 2), $"frightened must reach {target.Kind}");
         }
 
-        Assert.False(Hits(Conditions.Frightened, StatTarget.ArmorClass, 2), "AC is neither a check nor a DC");
+        // Player Core page 444: "a status penalty equal to this value to all your checks and
+        // DCs". Player Core page 10: armour class "serves as the Difficulty Class for
+        // hitting". A frightened creature is therefore easier to hit, not only worse at
+        // acting. This assertion used to read False and was encoding the bug.
+        Assert.Equal(-2, Total(0, StatTarget.ArmorClass, Conditions.Frightened, 2));
         Assert.False(Hits(Conditions.Frightened, StatTarget.Speed, 2), "speed is neither a check nor a DC");
     }
 
@@ -146,5 +150,24 @@ public class ConditionRules
         Assert.Equal(Conditions.All.Length, Conditions.All.Select(c => c.Key).Distinct().Count());
         Assert.All(Conditions.All, c => Assert.False(string.IsNullOrWhiteSpace(c.SourceRef), $"{c.Key} has no SourceRef"));
         Assert.All(Conditions.All, c => Assert.False(c.Verified, $"{c.Key} claims to be verified against the book"));
+    }
+
+    [Fact]
+    public void SickenedLowersArmourClassForTheSameReasonFrightenedDoes()
+    {
+        // Sickened is worded identically, "a status penalty equal to this value on all your
+        // checks and DCs", so whatever is true of frightened here is true of sickened.
+        Assert.Equal(23, Total(25, StatTarget.ArmorClass, Conditions.Sickened, 2));
+        Assert.Equal(23, Total(25, StatTarget.ArmorClass, Conditions.Frightened, 2));
+    }
+
+    [Fact]
+    public void AConditionThatNamesSpecificStatisticsDoesNotReachArmourClass()
+    {
+        // The counterweight to the rule above: only "all checks and DCs" reaches armour class.
+        // Stupefied names four statistics and must not widen to everything.
+        Assert.False(Hits(Conditions.Stupefied, StatTarget.ArmorClass, 2));
+        Assert.False(Hits(Conditions.Drained, StatTarget.ArmorClass, 2));
+        Assert.False(Hits(Conditions.Enfeebled, StatTarget.ArmorClass, 2));
     }
 }
