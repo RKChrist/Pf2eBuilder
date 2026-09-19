@@ -11,3 +11,8 @@ todo.md
 tools/rules-import/out/
 .claude/settings.local.json
 
+
+# Local databases, rebuilt from migrations and reseeded on startup.
+*.db
+*.db-shm
+*.db-wal
