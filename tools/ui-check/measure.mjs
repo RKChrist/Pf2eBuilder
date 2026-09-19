@@ -55,7 +55,7 @@ await send('Page.navigate', { url });
 
 // Blazor boots its runtime before anything renders, so wait for real nodes rather than for load.
 const booted = await evaluate(`new Promise(done => {
-  const ready = () => document.querySelectorAll('nav.bar button').length > 0;
+  const ready = () => document.querySelectorAll('nav.pf-bottomnav button').length > 0;
   if (ready()) return done(true);
   const observer = new MutationObserver(() => { if (ready()) { observer.disconnect(); done(true); } });
   observer.observe(document.documentElement, { childList: true, subtree: true });
@@ -73,12 +73,12 @@ if (process.env.INJECT_CSS) {
 }
 
 const report = await evaluate(`(() => {
-  const bar = document.querySelector('nav.bar');
+  const bar = document.querySelector('nav.pf-bottomnav');
   const viewport = document.documentElement.clientWidth;
   const items = [...bar.querySelectorAll('button')].map(item => {
     const box = item.getBoundingClientRect();
     return {
-      label: item.querySelector('.label')?.textContent?.trim(),
+      label: item.textContent?.trim(),
       left: Math.round(box.left),
       right: Math.round(box.right),
       width: Math.round(box.width),

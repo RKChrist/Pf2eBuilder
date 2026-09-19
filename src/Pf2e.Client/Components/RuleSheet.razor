@@ -3,48 +3,59 @@
 @inject IDispatcher Dispatcher
 @inject IJSRuntime Js
 
-@if (Detail.Value.Id is not null)
-{
-    <BottomSheet Label="Rule detail" OnClose="Close">
-        <RemoteView T="RuleDetail" Data="Detail.Value.Detail">
-            <Loading>
-                <SkeletonRows Rows="5" />
-            </Loading>
-            <Failed Context="message">
-                <FailureState Message="@message" OnRetry="@(() => Dispatcher.Dispatch(new RuleRetried()))" />
-            </Failed>
-            <Loaded Context="rule">
-                <header class="head">
-                    <h2 class="name">@rule.Summary.Name</h2>
-                    <div class="marks">
-                        @if (rule.Summary.Level is int level)
-                        {
-                            <span class="level">Level @level</span>
-                        }
-                        <RarityTag Rarity="@rule.Summary.Rarity" />
-                    </div>
-                    <TraitList Traits="rule.Summary.Traits" AlreadyShown="@rule.Summary.Rarity" />
-                </header>
+<BottomSheet Open="@(Detail.Value.Id is not null)" Title="@Title" OnClose="Close">
+    <RemoteView T="RuleDetail" Data="Detail.Value.Detail">
+        <Loading>
+            <div class="pending">
+                <Spinner ShowLabel="true" Label="Loading the rule" />
+            </div>
+        </Loading>
+        <Failed Context="message">
+            <ErrorState Title="Could not load this rule">
+                <ChildContent>@message</ChildContent>
+                <Action>
+                    <Button Variant="ButtonVariant.Secondary"
+                            OnClick="@(() => Dispatcher.Dispatch(new RuleRetried()))">
+                        Try again
+                    </Button>
+                </Action>
+            </ErrorState>
+        </Failed>
+        <Loaded Context="rule">
+            <div class="pf-cluster">
+                @if (rule.Summary.Level is int level)
+                {
+                    <span class="level">Level @level</span>
+                }
+                <RarityBadge Value="RuleDisplay.RarityOf(rule.Summary.Rarity)" />
+                @foreach (var trait in RuleDisplay.TraitsBeside(rule.Summary))
+                {
+                    <TraitChip>@trait</TraitChip>
+                }
+            </div>
 
-                <dl class="mechanics">
-                    @foreach (var row in MechanicsDisplay.Rows(rule))
-                    {
-                        <dt>@row.Label</dt>
-                        <dd>@string.Join(", ", row.Values)</dd>
-                    }
-                </dl>
+            <dl class="mechanics">
+                @foreach (var row in MechanicsDisplay.Rows(rule))
+                {
+                    <dt>@row.Label</dt>
+                    <dd>@string.Join(", ", row.Values)</dd>
+                }
+            </dl>
 
-                <a class="archives" href="@rule.Summary.SourceUrl" target="_blank" rel="noopener">
-                    Read it on Archives of Nethys
-                </a>
-            </Loaded>
-        </RemoteView>
-    </BottomSheet>
-}
+            <a class="archives" href="@rule.Summary.SourceUrl" target="_blank" rel="noopener">
+                Read it on Archives of Nethys
+            </a>
+        </Loaded>
+    </RemoteView>
+</BottomSheet>
 
 @code {
     /// <summary>Owned by the query string so the phone's back button closes the sheet.</summary>
     [Parameter] public string? RuleId { get; set; }
+
+    string Title => Detail.Value.Detail is RemoteData<RuleDetail>.Loaded loaded
+        ? loaded.Value.Summary.Name
+        : "Rule";
 
     protected override void OnParametersSet()
     {

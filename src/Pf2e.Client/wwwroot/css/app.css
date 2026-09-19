@@ -61,6 +61,29 @@ a {
     white-space: nowrap;
 }
 
+/* A card, a spinner or a state block, laid on the page at its gutter. */
+.panel {
+    padding: var(--space-3) var(--layout-gutter);
+}
+
+/* The delay is the feature: an answer that beats it replaces the spinner before a frame is
+   painted, so a fast search never flashes one. */
+.pending {
+    padding: var(--space-3) var(--layout-gutter);
+    animation: reveal var(--motion-duration-quick) var(--motion-easing-enter) var(--motion-duration-sheet);
+    animation-fill-mode: backwards;
+}
+
+@keyframes reveal {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
 .boot {
     padding: var(--space-6) var(--layout-gutter);
     color: var(--text-muted);

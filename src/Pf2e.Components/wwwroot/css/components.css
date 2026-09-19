@@ -1317,11 +1317,14 @@
 
 /* ---------------------------------------------------------------- bottom nav */
 
+/* No inline gutter: six items at the tap floor, separated, already spend 304 of the 320px
+   minimum viewport, so a bar that also reserved one overran it on the right and left the row
+   sitting a gutter off centre. */
 .pf-bottomnav {
   display: flex;
   gap: var(--tap-separation);
   min-height: var(--layout-bottom-bar);
-  padding: var(--space-1) var(--layout-gutter) calc(var(--space-1) + var(--layout-safe-bottom));
+  padding: var(--space-1) var(--space-0) calc(var(--space-1) + var(--layout-safe-bottom));
   border-top: var(--border-hair) solid var(--line-subtle);
   background: var(--surface-raised);
 }

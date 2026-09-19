@@ -19,10 +19,15 @@ overflow at 320px that did not exist, and the fix was written before anything wa
 `INJECT_CSS` is the part that catches that. It puts a rule back before measuring, so a layout
 fix can be shown to matter instead of assumed:
 
-    INJECT_CSS='nav.bar{grid-template-columns:repeat(6,1fr) !important}' \
+    INJECT_CSS='nav.pf-bottomnav{padding-inline:var(--layout-gutter) !important}' \
       node tools/ui-check/measure.mjs http://localhost:5173/ 320 740
 
 If the numbers do not move, the change was not a fix. That is exactly what happened here.
+
+That example puts back the gutter the bottom bar used to reserve. Six items at the 44px floor
+with 8px between them spend 304 of the 320px minimum viewport, so with the gutter the row runs
+16..320 and sits a gutter off centre; without it the row runs 0..320 and the items come out at
+47px. The numbers moved, so the change was a fix.
 
 ## Screenshots
 
@@ -35,6 +40,23 @@ Do not use Chrome's `--screenshot` flag with `--window-size` for this. It render
 viewport and crops to the window, which made this app look like it clipped content and dropped
 two navigation items at 390px when it did neither. Two separate false bugs came from reading
 those images. The image and the numbers have to come from the same viewport or one of them lies.
+
+## Client behaviour checks
+
+`verify-client.mjs` drives the running client the way a player does and asserts what the screens
+promise, which is the half `measure.mjs` cannot see:
+
+    dotnet run --project src/Pf2e.Api
+    dotnet run --project src/Pf2e.Client --launch-profile http
+    node tools/ui-check/verify-client.mjs
+
+31 assertions covering the search debounce (six keystrokes, one request, carrying the last one),
+paging, the dual-thumb level range and that every row it returns is inside it, the detail sheet
+and its title, the deep link that restores a record, back and Escape both closing the sheet
+rather than leaving the app, the conditions screen, and a failure whose retry recovers. The
+failing service is simulated by blocking the API through the protocol, so nothing has to be
+stopped and restarted. It also measures the records screen at 320px under touch emulation, which
+`measure.mjs` cannot reach because that screen is three taps in rather than a URL.
 
 ## Slider and gesture checks
 
