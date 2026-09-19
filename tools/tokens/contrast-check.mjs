@@ -38,8 +38,14 @@ const check = (label, fg, bg, min) => {
 };
 
 for (const [theme, t] of [['light', light], ['dark', dark]]) {
-  for (const surface of ['page', 'raised']) {
+  // overlay is the bottom sheet, which carries the same rarity chips and stat colours as a
+  // card, so it has to clear the same bar.
+  for (const surface of ['page', 'raised', 'overlay']) {
     for (const name of TEXT_ON_PAGE) check(`${theme} ${name} on surface-${surface}`, t[name], t[`surface-${surface}`], 4.5);
+  }
+  // Sunken is the ground under a pressed row, a stepper key and an unselected segment.
+  for (const name of ['text-primary', 'text-secondary']) {
+    check(`${theme} ${name} on surface-sunken`, t[name], t['surface-sunken'], 4.5);
   }
   check(`${theme} text-on-accent on accent-base`, t['text-on-accent'], t['accent-base'], 4.5);
   check(`${theme} text-on-danger on danger-base`, t['text-on-danger'], t['danger-base'], 4.5);

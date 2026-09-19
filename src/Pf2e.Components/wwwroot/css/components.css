@@ -524,8 +524,8 @@
   background: var(--line-strong);
 }
 
-/* 56 wide minus two 2px borders and two 4px pads leaves 44 of track; the thumb fills the
-   20 of content height and is square, so its travel is exactly one --space-5. */
+/* The thumb fills the track's content height and is square, so with a --tap-primary track
+   inset by --border-strong and --space-1 its travel comes out at exactly --space-5. */
 .pf-switch__track {
   flex: none;
   display: flex;

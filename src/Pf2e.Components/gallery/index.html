@@ -13,7 +13,7 @@
 
 <header class="g-top">
   <h1 class="g-top__title">Pf2e.Components</h1>
-  <p class="g-top__note">Every component, every state. Designed at 390px. Same stylesheet the Razor components use.</p>
+  <p class="g-top__note">Every component, every state. Designed at phone width. Same stylesheet the Razor components use.</p>
   <div class="pf-segmented" role="group" aria-label="Theme">
     <button class="pf-segmented__option" type="button" data-theme-option="light" aria-pressed="false">Light</button>
     <button class="pf-segmented__option" type="button" data-theme-option="dark" aria-pressed="false">Dark</button>
@@ -28,13 +28,13 @@
 <div class="g-spec">
   <h3 class="g-spec__name">Button</h3>
   <div class="g-case">
-    <span class="g-case__label">Primary, 56px. The action taken over and over mid-session.</span>
+    <span class="g-case__label">Primary, at --tap-primary. The action taken over and over mid-session.</span>
     <div class="g-stack">
       <button class="pf-btn pf-btn--primary" type="button">Add to character</button>
     </div>
   </div>
   <div class="g-case">
-    <span class="g-case__label">Secondary and quiet, 48px</span>
+    <span class="g-case__label">Secondary and quiet, at --tap-default</span>
     <div class="pf-cluster">
       <button class="pf-btn pf-btn--secondary" type="button">Compare</button>
       <button class="pf-btn pf-btn--quiet" type="button">Cancel</button>
@@ -126,7 +126,7 @@
 <div class="g-spec">
   <h3 class="g-spec__name">NumberStepper</h3>
   <div class="g-case">
-    <span class="g-case__label">Hit points. Both keys 56px, thumb-sized, value fixed between them.</span>
+    <span class="g-case__label">Hit points. Both keys at --tap-primary, thumb-sized, value fixed between them.</span>
     <div class="g-stack">
       <div class="pf-stepper" role="group" aria-label="Hit points">
         <button class="pf-stepper__btn pf-stepper__btn--minus" type="button" aria-label="Decrease hit points"></button>
@@ -396,7 +396,7 @@
 <div class="g-spec">
   <h3 class="g-spec__name">ListRow</h3>
   <div class="g-case">
-    <span class="g-case__label">Tappable, chevron, 48px floor</span>
+    <span class="g-case__label">Tappable, chevron, --tap-default floor</span>
     <section class="pf-card">
       <a class="pf-row" href="#listrow">
         <span class="pf-row__lead"><span class="pf-cost" role="img" aria-label="1 action"><i class="pf-cost__glyph"></i></span></span>
