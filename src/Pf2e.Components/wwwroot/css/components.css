@@ -29,6 +29,7 @@
 :is(
   .pf-btn,
   .pf-input,
+  .pf-textarea,
   .pf-search__input,
   .pf-search__clear,
   .pf-stepper__btn,
@@ -213,6 +214,7 @@
 }
 
 .pf-input,
+.pf-textarea,
 .pf-select__native {
   width: 100%;
   min-height: var(--tap-default);
@@ -228,22 +230,33 @@
 }
 
 .pf-input::placeholder,
+.pf-textarea::placeholder,
 .pf-search__input::placeholder {
   color: var(--text-muted);
 }
 
-.pf-field--invalid :is(.pf-input, .pf-select__native) {
+.pf-field--invalid :is(.pf-input, .pf-textarea, .pf-select__native) {
   border-width: var(--border-strong);
   border-color: var(--danger-base);
 }
 
 .pf-input:disabled,
+.pf-textarea:disabled,
 .pf-select__native:disabled,
 .pf-slider__readout:disabled {
   border-color: var(--line-subtle);
   background: var(--surface-sunken);
   color: var(--text-muted);
   cursor: not-allowed;
+}
+
+/* Height is the rows attribute times the shared line-height, so the one number a caller sets
+   is the one that decides it and there is no second copy of that maths here. The shared
+   min-height above is what the resize grip cannot drag below, which is why there is no
+   separate floor in this block. Horizontal resize is off because a textarea dragged wider
+   than its field escapes the page gutter and nothing scrolls it back. */
+.pf-textarea {
+  resize: vertical;
 }
 
 /* ---------------------------------------------------------------- select */

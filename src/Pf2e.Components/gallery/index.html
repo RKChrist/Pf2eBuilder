@@ -114,6 +114,59 @@
 </div>
 
 <div class="g-spec">
+  <h3 class="g-spec__name">TextArea</h3>
+  <div class="g-case">
+    <span class="g-case__label">Label and hint</span>
+    <div class="pf-field">
+      <label class="pf-field__label" for="ta-notes">Session notes</label>
+      <textarea class="pf-textarea" id="ta-notes" rows="4" aria-describedby="ta-notes-hint">Seelah spent her last hero point on the boss. Remind her it resets next session.</textarea>
+      <p class="pf-field__hint" id="ta-notes-hint">Kept with the party, not with the character.</p>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Placeholder</span>
+    <div class="pf-field">
+      <label class="pf-field__label" for="ta-reason">Why this build</label>
+      <textarea class="pf-textarea" id="ta-reason" rows="4" placeholder="Two attacks a round, and something to do at range"></textarea>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Error</span>
+    <div class="pf-field pf-field--invalid">
+      <label class="pf-field__label" for="ta-bad">Pathbuilder export</label>
+      <textarea class="pf-textarea" id="ta-bad" rows="4" aria-invalid="true" aria-describedby="ta-bad-err">{"build":{"name":"Seelah",</textarea>
+      <p class="pf-field__error" id="ta-bad-err">That is not a complete Pathbuilder export.</p>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Rows set high, which is the case the control exists for: a screenful of pasted Pathbuilder JSON, resizable downwards by the grip and no further than the tap floor</span>
+    <div class="pf-field">
+      <label class="pf-field__label" for="ta-json">Pathbuilder export</label>
+      <textarea class="pf-textarea" id="ta-json" rows="12" aria-describedby="ta-json-hint">{
+  "build": {
+    "name": "Seelah",
+    "class": "Champion",
+    "level": 12,
+    "ancestry": "Human",
+    "keyability": "str",
+    "abilities": { "str": 20, "dex": 12, "con": 16, "int": 10, "wis": 14, "cha": 16 },
+    "proficiencies": { "fortitude": 6, "reflex": 4, "will": 6, "perception": 4 },
+    "armor": [{ "name": "Full Plate", "prof": "heavy", "res": 6, "dexcap": 0 }]
+  }
+}</textarea>
+      <p class="pf-field__hint" id="ta-json-hint">Paste the whole export. Nothing is sent anywhere.</p>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Disabled</span>
+    <div class="pf-field">
+      <label class="pf-field__label" for="ta-locked">Session notes</label>
+      <textarea class="pf-textarea" id="ta-locked" rows="4" disabled>The GM closed this session.</textarea>
+    </div>
+  </div>
+</div>
+
+<div class="g-spec">
   <h3 class="g-spec__name">SearchField</h3>
   <div class="g-case">
     <span class="g-case__label">Empty</span>
