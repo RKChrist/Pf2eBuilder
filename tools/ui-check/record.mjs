@@ -7,6 +7,7 @@
 // Needs a Chrome started with --remote-debugging-port=9222 and the app running.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const [outDir, ...only] = process.argv.slice(2);
@@ -15,6 +16,7 @@ if (!outDir) throw new Error('usage: node tools/ui-check/record.mjs <outputDir> 
 const port = process.env.CDP_PORT ?? '9222';
 const client = process.env.CLIENT_URL ?? 'http://localhost:5173';
 const gallery = process.env.GALLERY_URL;
+const api = process.env.API_URL ?? 'http://localhost:5092';
 const WIDTH = Number(process.env.WIDTH ?? 390);
 const HEIGHT = Number(process.env.HEIGHT ?? 844);
 
@@ -131,6 +133,11 @@ const clickResult = () => evaluate(`(() => {
   return el.textContent.trim().split(/\s+/)[0];
 })()`);
 
+const firstCharacterId = async code => {
+  const table = await (await fetch(`${api}/tables/${code}`)).json();
+  return table.characters[0].id;
+};
+
 const searchBox = () =>
   `document.querySelector('input[type=search]') ?? document.querySelector('input[inputmode=search]')`;
 
@@ -198,6 +205,44 @@ const scenarios = {
       await evaluate(`window.scrollTo({ top: ${top}, behavior: 'instant' })`);
       await frames_over(420, caption, 3);
     }
+  },
+
+  // The tracker. Types a table code, pastes a real export, then applies a condition and
+  // watches the derived numbers move, which is the whole product in one sequence.
+  async tracker() {
+    const code = 'FILM' + Math.floor(Math.random() * 90 + 10);
+    const build = await readFile('tests/Pf2e.Persistence.Tests/Fixtures/gnibbo.json', 'utf8');
+
+    // Seed the table through the API so the film starts on a party rather than a form.
+    await fetch(`${api}/tables/${code}/characters`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ pathbuilder: build }),
+    });
+
+    await goto(`${client}/party`, NAV);
+    await frames_over(600, 'A table is a short code everyone playing types in.', 3);
+
+    // Typed through real key events rather than assigned, so the field's own handling runs.
+    await evaluate(`document.querySelector('input:not([type=search]):not([type=range])')?.focus()`);
+    for (const character of code) {
+      await send('Input.dispatchKeyEvent', { type: 'keyDown', text: character });
+      await send('Input.dispatchKeyEvent', { type: 'keyUp' });
+      await sleep(110);
+      await frame(`Joining table ${code}.`);
+    }
+    await clickRow('join');
+    await sleep(1200);
+    await frames_over(1200, 'A real Pathbuilder export, with every number derived rather than stored.', 5);
+    await evaluate(`window.scrollTo({ top: 260, behavior: 'instant' })`);
+    await frames_over(700, 'Armour class 25, the three saves, Perception, class DC, and 76 hit points.', 4);
+
+    await fetch(`${api}/tables/${code}/characters/${await firstCharacterId(code)}/effects/${crypto.randomUUID()}`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ effect: { name: 'Clumsy', kind: 'Seeded', key: 'clumsy', value: 2, duration: null, modifiers: [] } }),
+    });
+    await frames_over(1600, 'Clumsy 2 applied. Armour class falls to 23 and Reflex to 10, and Will does not move, because clumsy is every Dexterity-based statistic.', 7);
   },
 
   async sliders() {
