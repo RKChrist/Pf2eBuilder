@@ -6,10 +6,15 @@
 
 /* Every size below is a border-box size. Zero specificity so a host page never has to
    fight it, and scoped to whole pf- class tokens so it never reaches the host's own. */
+/* The tap highlight rides along here because it inherits, so one zero-specificity rule covers
+   every control and there is no second list of selectors to fall out of step with the first.
+   Pressed feedback is already drawn with :active, and the browser's borrowed grey wash is noise
+   over a design that has already answered. */
 :where([class^='pf-'], [class*=' pf-']),
 :where([class^='pf-'], [class*=' pf-'])::before,
 :where([class^='pf-'], [class*=' pf-'])::after {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Adjacent tap targets need real travel between them, so every cluster of controls
@@ -31,6 +36,8 @@
   .pf-segmented__option,
   .pf-check__input,
   .pf-switch__input,
+  .pf-slider__input,
+  .pf-slider__readout,
   .pf-row,
   .pf-sheet__close,
   .pf-bottomnav__item,
@@ -130,6 +137,30 @@
   cursor: progress;
 }
 
+/* Isolated so the fill can sit under the label at a negative index instead of washing over it. */
+.pf-btn--hold {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+/* Deliberately still drawn under prefers-reduced-motion. It reports how much of a required
+   delay is left, which makes it feedback rather than decoration, and the delay itself is never
+   shortened. */
+.pf-btn__hold {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  z-index: -1;
+  inline-size: 0;
+  background: var(--danger-press);
+  transition: inline-size var(--motion-duration-hold) linear;
+}
+
+.pf-btn--holding .pf-btn__hold {
+  inline-size: 100%;
+}
+
 .pf-btn--full {
   display: flex;
   width: 100%;
@@ -207,7 +238,8 @@
 }
 
 .pf-input:disabled,
-.pf-select__native:disabled {
+.pf-select__native:disabled,
+.pf-slider__readout:disabled {
   border-color: var(--line-subtle);
   background: var(--surface-sunken);
   color: var(--text-muted);
@@ -400,6 +432,299 @@
   font-variant-numeric: tabular-nums;
   line-height: var(--font-leading-tight);
   letter-spacing: var(--font-tracking-tight);
+}
+
+/* ---------------------------------------------------------------- slider */
+
+/* The hit box never changes: it is --tap-min under either pointer, so the drawn mark can
+   shrink to something a mouse can aim with while the target stays above the floor. */
+:root {
+  --pf-thumb-hit: var(--tap-min);
+  --pf-thumb-mark: var(--control-thumb-coarse);
+  --pf-track: var(--control-track-coarse);
+}
+
+@media (pointer: fine) {
+  :root {
+    --pf-thumb-mark: var(--control-thumb-fine);
+    --pf-track: var(--control-track-fine);
+  }
+}
+
+/* After the fine query deliberately: a touch laptop reports a fine primary pointer while a
+   finger is still the thing that will reach for the control. */
+@media (any-pointer: coarse) {
+  :root {
+    --pf-thumb-mark: var(--control-thumb-coarse);
+    --pf-track: var(--control-track-coarse);
+  }
+}
+
+/* One block serves the single and the range variant, because a single-value slider is a range
+   whose start is pinned to the minimum, and one set of styles is one set of bugs. The fill
+   defaults to empty so the first paint, before the script runs, is a plain track. */
+.pf-slider {
+  --pf-fill-start: 0%;
+  --pf-fill-end: 0%;
+  --pf-fraction: 0;
+  --pf-fill-color: var(--accent-base);
+  --pf-mark-color: var(--accent-base);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-family: var(--font-family-data);
+}
+
+.pf-slider__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.pf-slider__label {
+  color: var(--text-secondary);
+  font-size: var(--font-size-data);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--font-leading-snug);
+}
+
+.pf-slider__readouts {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pf-slider__dash {
+  color: var(--text-muted);
+}
+
+/* Typing is the readout's whole job and the slider is already the stepping affordance, so the
+   native spinner is dropped rather than shrunk. */
+.pf-slider__readout {
+  appearance: textfield;
+  -webkit-appearance: textfield;
+  min-width: calc(var(--font-size-body) * 4);
+  min-height: var(--tap-min);
+  padding: var(--space-2);
+  border: var(--border-hair) solid var(--line-strong);
+  border-radius: var(--radius-chip);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font-family: var(--font-family-data);
+  font-size: var(--font-size-body);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  transition: border-color var(--motion-duration-quick) var(--motion-easing-exit);
+}
+
+.pf-slider__readout::-webkit-inner-spin-button,
+.pf-slider__readout::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: var(--space-0);
+}
+
+@media (pointer: fine) {
+  .pf-slider__readout {
+    min-width: calc(var(--font-size-body) * 3);
+  }
+}
+
+.pf-slider__rail {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: var(--tap-min);
+}
+
+.pf-slider__input {
+  appearance: none;
+  -webkit-appearance: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: var(--tap-min);
+  margin: var(--space-0);
+  background: transparent;
+  /* The horizontal axis belongs to the thumb and the vertical axis stays with the page: none
+     would make a full-width slider a stripe the browse list cannot be scrolled under. */
+  touch-action: pan-y;
+  cursor: pointer;
+}
+
+.pf-slider__input::-webkit-slider-runnable-track {
+  height: var(--pf-track);
+  border-radius: var(--radius-chip);
+  background: linear-gradient(
+    to right,
+    var(--line-subtle) 0 var(--pf-fill-start),
+    var(--pf-fill-color) var(--pf-fill-start) var(--pf-fill-end),
+    var(--line-subtle) var(--pf-fill-end) 100%
+  );
+}
+
+.pf-slider__input::-moz-range-track {
+  height: var(--pf-track);
+  border-radius: var(--radius-chip);
+  background: linear-gradient(
+    to right,
+    var(--line-subtle) 0 var(--pf-fill-start),
+    var(--pf-fill-color) var(--pf-fill-start) var(--pf-fill-end),
+    var(--line-subtle) var(--pf-fill-end) 100%
+  );
+}
+
+/* Generous target, precise mark: the box stays at the full hit size and a transparent border
+   holds the painted mark in the content box, so both numbers come from tokens and the mark
+   stays a circle at either pointer size. The margin recentres the thumb on the shorter track. */
+.pf-slider__input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: var(--pf-thumb-hit);
+  height: var(--pf-thumb-hit);
+  margin-top: calc((var(--pf-track) - var(--pf-thumb-hit)) / 2);
+  border: calc((var(--pf-thumb-hit) - var(--pf-thumb-mark)) / 2) solid transparent;
+  border-radius: 50%;
+  background: var(--pf-mark-color) content-box;
+  cursor: pointer;
+}
+
+.pf-slider__input::-moz-range-thumb {
+  box-sizing: border-box;
+  width: var(--pf-thumb-hit);
+  height: var(--pf-thumb-hit);
+  border: calc((var(--pf-thumb-hit) - var(--pf-thumb-mark)) / 2) solid transparent;
+  border-radius: 50%;
+  background: var(--pf-mark-color) content-box;
+  cursor: pointer;
+}
+
+/* Only the low input draws the track; the high one is a second thumb over the same domain. */
+.pf-slider--range .pf-slider__input--high::-webkit-slider-runnable-track {
+  background: transparent;
+}
+
+.pf-slider--range .pf-slider__input--high::-moz-range-track {
+  background: transparent;
+}
+
+.pf-slider--range .pf-slider__input--high {
+  z-index: 1;
+}
+
+/* With both thumbs on the same value only the one on top can be grabbed, and the clamp pushes
+   it straight back into the other. So when they meet, the reachable thumb is the one with room
+   to move: the low near the top of the scale, the high near the bottom. */
+.pf-slider--met-high .pf-slider__input--low {
+  z-index: 2;
+}
+
+/* Each thumb is grabbed on its own, and a press on bare track between them moves nothing: with
+   two thumbs a tap is ambiguous, and guessing wrong changes a bound nobody asked to change. */
+.pf-slider--range .pf-slider__input {
+  pointer-events: none;
+}
+
+.pf-slider--range .pf-slider__input::-webkit-slider-thumb {
+  pointer-events: auto;
+}
+
+.pf-slider--range .pf-slider__input::-moz-range-thumb {
+  pointer-events: auto;
+}
+
+/* The script sets only --pf-fraction, a plain 0-to-1 number, and the thumb-centre arithmetic
+   stays here. A percentage resolves against the rail at layout time, so the bubble is still on
+   the thumb after a resize or a rotation, and it is right the first time on a slider enhanced
+   while it was hidden. A pixel offset measured once is wrong in both cases. */
+.pf-slider__bubble {
+  position: absolute;
+  bottom: 100%;
+  left: calc(var(--pf-thumb-hit) / 2 + var(--pf-fraction) * (100% - var(--pf-thumb-hit)));
+  z-index: 2;
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-hair) solid var(--line-strong);
+  border-radius: var(--radius-chip);
+  background: var(--surface-overlay);
+  color: var(--text-primary);
+  font-size: var(--font-size-data);
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--font-leading-tight);
+  transform: translateX(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-duration-quick) var(--motion-easing-exit);
+}
+
+.pf-slider--bubbling .pf-slider__bubble {
+  opacity: 1;
+}
+
+/* Inset by half a thumb on each side so the marks line up with thumb centres, which is where
+   the value actually is, rather than with the rail edges. */
+.pf-slider__ticks {
+  display: flex;
+  justify-content: space-between;
+  margin-inline: calc(var(--pf-thumb-hit) / 2);
+  pointer-events: none;
+}
+
+.pf-slider__tick {
+  width: var(--border-strong);
+  height: var(--space-2);
+  background: var(--line-strong);
+}
+
+.pf-slider__ends {
+  display: flex;
+  justify-content: space-between;
+  margin-inline: calc(var(--pf-thumb-hit) / 2);
+  color: var(--text-muted);
+  font-size: var(--font-size-chip);
+}
+
+.pf-slider:has(.pf-slider__input:disabled) {
+  --pf-fill-color: var(--line-subtle);
+  --pf-mark-color: var(--line-strong);
+  cursor: not-allowed;
+}
+
+/* The input and its thumb carry their own cursor, so without these the rail keeps a pointer
+   cursor and only the margins around it read as disabled. */
+.pf-slider__input:disabled {
+  cursor: not-allowed;
+}
+
+.pf-slider__input:disabled::-webkit-slider-thumb {
+  cursor: not-allowed;
+}
+
+.pf-slider__input:disabled::-moz-range-thumb {
+  cursor: not-allowed;
+}
+
+/* The error message and its triangle carry the state; the mark and the fill are the second
+   channel, never the only one. */
+.pf-field--invalid .pf-slider {
+  --pf-fill-color: var(--danger-base);
+  --pf-mark-color: var(--danger-base);
+}
+
+@media (hover: hover) {
+  .pf-slider__input:hover:not(:disabled) {
+    --pf-mark-color: var(--accent-press);
+  }
+
+  /* Set on the input, so it would otherwise beat the danger colour the field sets on the root
+     and turn an invalid slider's mark teal under the cursor. */
+  .pf-field--invalid .pf-slider__input:hover:not(:disabled) {
+    --pf-mark-color: var(--danger-press);
+  }
+
+  .pf-slider__readout:hover:not(:disabled) {
+    border-color: var(--line-focus);
+  }
 }
 
 /* ---------------------------------------------------------------- segmented control */
@@ -879,16 +1204,25 @@
 
 /* Capped so the whole sheet, title included, stays inside the thumb arc. */
 .pf-sheet__panel {
+  --pf-sheet-drag: var(--space-0);
   position: relative;
   display: flex;
   flex-direction: column;
   max-height: var(--layout-thumb-reach);
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: var(--layout-safe-bottom);
   border-top-left-radius: var(--radius-sheet);
   border-top-right-radius: var(--radius-sheet);
   background: var(--surface-overlay);
   color: var(--text-primary);
+  transform: translateY(var(--pf-sheet-drag));
   animation: pf-sheet-rise var(--motion-duration-sheet) var(--motion-easing-enter);
+  transition: transform var(--motion-duration-sheet) var(--motion-easing-exit);
+}
+
+/* The transition is the spring back on release. While a finger is down the panel has to sit
+   exactly under it, and easing each step would make it trail the drag instead. */
+.pf-sheet--dragging .pf-sheet__panel {
+  transition: none;
 }
 
 @keyframes pf-sheet-rise {
@@ -898,14 +1232,29 @@
 }
 
 .pf-sheet__grab {
+  position: relative;
   flex: none;
   width: var(--space-7);
   height: var(--space-1);
   margin: var(--space-2) auto var(--space-0);
   border-radius: var(--radius-chip);
   background: var(--line-strong);
+  touch-action: none;
 }
 
+/* The bar is drawn hair-thin because that is what reads as a grabber, so the thing a thumb
+   actually has to hit is this, centred on it and at the tap floor. */
+.pf-sheet__grab::after {
+  content: '';
+  position: absolute;
+  inset-inline: calc(var(--space-7) * -1);
+  top: 50%;
+  height: var(--tap-min);
+  transform: translateY(-50%);
+}
+
+/* A drag handle as much as the grabber is, so the vertical axis has to be the sheet's here
+   too. Without this the browser pans instead, which cancels the pointer and aborts the drag. */
 .pf-sheet__head {
   display: flex;
   align-items: center;
@@ -913,6 +1262,7 @@
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
   border-bottom: var(--border-hair) solid var(--line-subtle);
+  touch-action: none;
 }
 
 .pf-sheet__title {
@@ -971,7 +1321,7 @@
   display: flex;
   gap: var(--tap-separation);
   min-height: var(--layout-bottom-bar);
-  padding: var(--space-1) var(--layout-gutter) calc(var(--space-1) + env(safe-area-inset-bottom));
+  padding: var(--space-1) var(--layout-gutter) calc(var(--space-1) + var(--layout-safe-bottom));
   border-top: var(--border-hair) solid var(--line-subtle);
   background: var(--surface-raised);
 }

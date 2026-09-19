@@ -1,0 +1,140 @@
+<div @attributes="Attributes" class="pf-field @(HasError ? "pf-field--invalid" : null) @Class">
+    <div class="pf-slider pf-slider--range" role="group" aria-labelledby="@LabelId">
+        <div class="pf-slider__head">
+            <span class="pf-slider__label" id="@LabelId">@Label</span>
+            <span class="pf-slider__readouts">
+                <input class="pf-slider__readout"
+                       type="number"
+                       inputmode="numeric"
+                       min="@Min"
+                       max="@Max"
+                       step="@Step"
+                       value="@Value.Low"
+                       @onchange="OnLowChanged"
+                       disabled="@Disabled"
+                       aria-label="@LowText"
+                       aria-describedby="@DescribedBy"
+                       aria-invalid="@(HasError ? "true" : null)" />
+                <span class="pf-slider__dash" aria-hidden="true">&ndash;</span>
+                <input class="pf-slider__readout"
+                       type="number"
+                       inputmode="numeric"
+                       min="@Min"
+                       max="@Max"
+                       step="@Step"
+                       value="@Value.High"
+                       @onchange="OnHighChanged"
+                       disabled="@Disabled"
+                       aria-label="@HighText"
+                       aria-describedby="@DescribedBy"
+                       aria-invalid="@(HasError ? "true" : null)" />
+            </span>
+        </div>
+        <div class="pf-slider__rail">
+            <output class="pf-slider__bubble" aria-hidden="true">@Value.Low</output>
+            <input class="pf-slider__input pf-slider__input--low"
+                   type="range"
+                   min="@Min"
+                   max="@Max"
+                   step="@Step"
+                   value="@Value.Low"
+                   @onchange="OnLowChanged"
+                   disabled="@Disabled"
+                   aria-label="@LowText"
+                   aria-describedby="@DescribedBy"
+                   aria-invalid="@(HasError ? "true" : null)" />
+            <input class="pf-slider__input pf-slider__input--high"
+                   type="range"
+                   min="@Min"
+                   max="@Max"
+                   step="@Step"
+                   value="@Value.High"
+                   @onchange="OnHighChanged"
+                   disabled="@Disabled"
+                   aria-label="@HighText"
+                   aria-describedby="@DescribedBy"
+                   aria-invalid="@(HasError ? "true" : null)" />
+        </div>
+        @if (TickCount > 1)
+        {
+            <div class="pf-slider__ticks" aria-hidden="true">
+                @for (var tick = 0; tick < TickCount; tick++)
+                {
+                    <i class="pf-slider__tick"></i>
+                }
+            </div>
+        }
+        @if (ShowEnds)
+        {
+            <div class="pf-slider__ends">
+                <span class="pf-slider__end">@Min</span>
+                <span class="pf-slider__end">@Max</span>
+            </div>
+        }
+    </div>
+    @if (HasError)
+    {
+        <p class="pf-field__error" id="@ErrorId">@Error</p>
+    }
+</div>
+
+@code {
+    private readonly string _id = $"pf-{Guid.NewGuid():N}";
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    [Parameter] public IntRange Value { get; set; }
+
+    [Parameter] public EventCallback<IntRange> ValueChanged { get; set; }
+
+    [Parameter] public string? LowLabel { get; set; }
+
+    [Parameter] public string? HighLabel { get; set; }
+
+    [Parameter] public int Min { get; set; }
+
+    [Parameter] public int Max { get; set; } = 100;
+
+    [Parameter] public int Step { get; set; } = 1;
+
+    /// <summary>
+    /// Value interval between tick marks, or zero for none. Deliberately not derived from
+    /// <see cref="Step"/>: the step is how finely the value moves, the interval is how the
+    /// scale is annotated, and on a wide range with a fine step those are nothing alike.
+    /// </summary>
+    [Parameter] public int TickEvery { get; set; }
+
+    [Parameter] public bool ShowEnds { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+
+    [Parameter] public string? Error { get; set; }
+
+    private string LowText => string.IsNullOrEmpty(LowLabel) ? $"Lowest {Label}" : LowLabel;
+
+    private string HighText => string.IsNullOrEmpty(HighLabel) ? $"Highest {Label}" : HighLabel;
+
+    private bool HasError => !string.IsNullOrEmpty(Error);
+
+    private string LabelId => $"{_id}-label";
+
+    private string ErrorId => $"{_id}-error";
+
+    private string? DescribedBy => HasError ? ErrorId : null;
+
+    private int TickCount => TickEvery > 0 && Max > Min ? (Max - Min) / TickEvery + 1 : 0;
+
+    private Task OnLowChanged(ChangeEventArgs e) => Commit(e, Value.WithLow);
+
+    private Task OnHighChanged(ChangeEventArgs e) => Commit(e, Value.WithHigh);
+
+    private Task Commit(ChangeEventArgs e, Func<int, IntRange> bound) =>
+        int.TryParse(e.Value?.ToString(), out var parsed)
+            ? ValueChanged.InvokeAsync(bound(Math.Clamp(parsed, Min, Max)))
+            : Task.CompletedTask;
+}

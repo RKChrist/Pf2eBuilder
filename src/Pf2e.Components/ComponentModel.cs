@@ -14,6 +14,19 @@ public enum ModifierKind { Status, Circumstance, Item, Proficiency, Untyped }
 
 public sealed record ChoiceOption<TValue>(TValue Value, string Text, bool Disabled = false);
 
+/// <summary>
+/// A low and a high bound that cannot cross. The constructor orders its arguments, so a
+/// crossed range is not a state this type can hold and no caller has to check for one.
+/// </summary>
+public readonly record struct IntRange
+{
+    public IntRange(int low, int high) { Low = Math.Min(low, high); High = Math.Max(low, high); }
+    public int Low { get; }
+    public int High { get; }
+    public IntRange WithLow(int value) => new(Math.Min(value, High), High);
+    public IntRange WithHigh(int value) => new(Low, Math.Max(value, Low));
+}
+
 public static class ComponentModel
 {
     public static string CssSuffix(this ButtonVariant variant) => variant switch

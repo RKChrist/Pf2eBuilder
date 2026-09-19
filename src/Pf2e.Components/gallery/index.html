@@ -48,6 +48,14 @@
     </div>
   </div>
   <div class="g-case">
+    <span class="g-case__label">Hold to confirm. A tap does nothing; the button fires once the press has lasted --motion-duration-hold, and the fill reports how much of that is left. This is what stands between a mis-tap mid-session and a deleted character. A keyboard activation fires straight away.</span>
+    <div class="g-stack">
+      <button class="pf-btn pf-btn--destructive pf-btn--hold" type="button">
+        <span class="pf-btn__hold" aria-hidden="true"></span>Hold to delete character
+      </button>
+    </div>
+  </div>
+  <div class="g-case">
     <span class="g-case__label">Disabled</span>
     <div class="pf-cluster">
       <button class="pf-btn pf-btn--primary" type="button" disabled>Add to character</button>
@@ -87,6 +95,13 @@
       <label class="pf-field__label" for="ti-level">Level</label>
       <input class="pf-input" id="ti-level" type="text" value="21" aria-invalid="true" aria-describedby="ti-level-err">
       <p class="pf-field__error" id="ti-level-err">Level must be between 1 and 20.</p>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Numeric input mode, so a phone offers the number pad instead of the alphabet</span>
+    <div class="pf-field">
+      <label class="pf-field__label" for="ti-gold">Gold pieces</label>
+      <input class="pf-input" id="ti-gold" type="text" inputmode="numeric" value="147">
     </div>
   </div>
   <div class="g-case">
@@ -143,6 +158,157 @@
         <button class="pf-stepper__btn pf-stepper__btn--minus" type="button" aria-label="Decrease damage" disabled></button>
         <output class="pf-stepper__value">0</output>
         <button class="pf-stepper__btn pf-stepper__btn--plus" type="button" aria-label="Increase damage"></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">Slider</h3>
+  <div class="g-case">
+    <span class="g-case__label">Character level, with a tick per step and labelled ends. The thumb is --tap-min across whatever it draws; the bubble rides it while dragging; the readout takes typing when a thumb is too coarse for the exact number.</span>
+    <div class="pf-slider">
+      <div class="pf-slider__head">
+        <label class="pf-slider__label" id="sl-level-label" for="sl-level-num">Level</label>
+        <span class="pf-slider__readouts">
+          <input class="pf-slider__readout" id="sl-level-num" type="number" inputmode="numeric" min="1" max="20" step="1" value="12" aria-labelledby="sl-level-label">
+        </span>
+      </div>
+      <div class="pf-slider__rail">
+        <output class="pf-slider__bubble" aria-hidden="true">12</output>
+        <input class="pf-slider__input" type="range" min="1" max="20" step="1" value="12" aria-labelledby="sl-level-label">
+      </div>
+      <div class="pf-slider__ticks" aria-hidden="true"><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i></div>
+      <div class="pf-slider__ends"><span class="pf-slider__end">1</span><span class="pf-slider__end">20</span></div>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Disabled</span>
+    <div class="pf-slider">
+      <div class="pf-slider__head">
+        <label class="pf-slider__label" id="sl-off-label" for="sl-off-num">Hero points</label>
+        <span class="pf-slider__readouts">
+          <input class="pf-slider__readout" id="sl-off-num" type="number" inputmode="numeric" min="0" max="3" step="1" value="1" aria-labelledby="sl-off-label" disabled>
+        </span>
+      </div>
+      <div class="pf-slider__rail">
+        <output class="pf-slider__bubble" aria-hidden="true">1</output>
+        <input class="pf-slider__input" type="range" min="0" max="3" step="1" value="1" aria-labelledby="sl-off-label" disabled>
+      </div>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Error. The message and its triangle carry the state; the danger mark and fill are the second channel.</span>
+    <div class="pf-field pf-field--invalid">
+      <div class="pf-slider">
+        <div class="pf-slider__head">
+          <label class="pf-slider__label" id="sl-bad-label" for="sl-bad-num">Starting level</label>
+          <span class="pf-slider__readouts">
+            <input class="pf-slider__readout" id="sl-bad-num" type="number" inputmode="numeric" min="1" max="20" step="1" value="17" aria-labelledby="sl-bad-label" aria-invalid="true" aria-describedby="sl-bad-err">
+          </span>
+        </div>
+        <div class="pf-slider__rail">
+          <output class="pf-slider__bubble" aria-hidden="true">17</output>
+          <input class="pf-slider__input" type="range" min="1" max="20" step="1" value="17" aria-labelledby="sl-bad-label" aria-invalid="true" aria-describedby="sl-bad-err">
+        </div>
+        <div class="pf-slider__ends"><span class="pf-slider__end">1</span><span class="pf-slider__end">20</span></div>
+      </div>
+      <p class="pf-field__error" id="sl-bad-err">This table starts at level 5 or below.</p>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Both pointer renderings at once. The live page picks one from the pointer itself; these two are pinned so they can be compared. The hit box is --tap-min in both, and only the drawn mark changes.</span>
+    <span class="g-case__label">Coarse, sized for a finger</span>
+    <div class="g-pointer--coarse">
+      <div class="pf-slider">
+        <div class="pf-slider__head">
+          <label class="pf-slider__label" id="sl-coarse-label" for="sl-coarse-num">Level</label>
+          <span class="pf-slider__readouts">
+            <input class="pf-slider__readout" id="sl-coarse-num" type="number" inputmode="numeric" min="1" max="20" step="1" value="12" aria-labelledby="sl-coarse-label">
+          </span>
+        </div>
+        <div class="pf-slider__rail">
+          <output class="pf-slider__bubble" aria-hidden="true">12</output>
+          <input class="pf-slider__input" type="range" min="1" max="20" step="1" value="12" aria-labelledby="sl-coarse-label">
+        </div>
+      </div>
+    </div>
+    <span class="g-case__label">Fine, sized for a mouse</span>
+    <div class="g-pointer--fine">
+      <div class="pf-slider">
+        <div class="pf-slider__head">
+          <label class="pf-slider__label" id="sl-fine-label" for="sl-fine-num">Level</label>
+          <span class="pf-slider__readouts">
+            <input class="pf-slider__readout" id="sl-fine-num" type="number" inputmode="numeric" min="1" max="20" step="1" value="12" aria-labelledby="sl-fine-label">
+          </span>
+        </div>
+        <div class="pf-slider__rail">
+          <output class="pf-slider__bubble" aria-hidden="true">12</output>
+          <input class="pf-slider__input" type="range" min="1" max="20" step="1" value="12" aria-labelledby="sl-fine-label">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">RangeSlider</h3>
+  <div class="g-case">
+    <span class="g-case__label">The browse screen's level filter, which is two number fields today, as one dual-thumb range. Each thumb is dragged on its own and neither can cross the other, so the filter cannot be put into a state that matches nothing.</span>
+    <div class="pf-slider pf-slider--range" role="group" aria-labelledby="rs-level-label">
+      <div class="pf-slider__head">
+        <span class="pf-slider__label" id="rs-level-label">Feat level</span>
+        <span class="pf-slider__readouts">
+          <input class="pf-slider__readout" type="number" inputmode="numeric" min="1" max="20" step="1" value="3" aria-label="Lowest level">
+          <span class="pf-slider__dash" aria-hidden="true">&ndash;</span>
+          <input class="pf-slider__readout" type="number" inputmode="numeric" min="1" max="20" step="1" value="11" aria-label="Highest level">
+        </span>
+      </div>
+      <div class="pf-slider__rail">
+        <output class="pf-slider__bubble" aria-hidden="true"></output>
+        <input class="pf-slider__input pf-slider__input--low" type="range" min="1" max="20" step="1" value="3" aria-label="Lowest level">
+        <input class="pf-slider__input pf-slider__input--high" type="range" min="1" max="20" step="1" value="11" aria-label="Highest level">
+      </div>
+      <div class="pf-slider__ticks" aria-hidden="true"><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i><i class="pf-slider__tick"></i></div>
+      <div class="pf-slider__ends"><span class="pf-slider__end">1</span><span class="pf-slider__end">20</span></div>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Both pointer renderings at once. The live page picks one from the pointer itself; these two are pinned so they can be compared.</span>
+    <span class="g-case__label">Coarse, sized for a finger</span>
+    <div class="g-pointer--coarse">
+      <div class="pf-slider pf-slider--range" role="group" aria-labelledby="rs-coarse-label">
+        <div class="pf-slider__head">
+          <span class="pf-slider__label" id="rs-coarse-label">Feat level</span>
+          <span class="pf-slider__readouts">
+            <input class="pf-slider__readout" type="number" inputmode="numeric" min="1" max="20" step="1" value="3" aria-label="Lowest level">
+            <span class="pf-slider__dash" aria-hidden="true">&ndash;</span>
+            <input class="pf-slider__readout" type="number" inputmode="numeric" min="1" max="20" step="1" value="11" aria-label="Highest level">
+          </span>
+        </div>
+        <div class="pf-slider__rail">
+          <output class="pf-slider__bubble" aria-hidden="true"></output>
+          <input class="pf-slider__input pf-slider__input--low" type="range" min="1" max="20" step="1" value="3" aria-label="Lowest level">
+          <input class="pf-slider__input pf-slider__input--high" type="range" min="1" max="20" step="1" value="11" aria-label="Highest level">
+        </div>
+      </div>
+    </div>
+    <span class="g-case__label">Fine, sized for a mouse</span>
+    <div class="g-pointer--fine">
+      <div class="pf-slider pf-slider--range" role="group" aria-labelledby="rs-fine-label">
+        <div class="pf-slider__head">
+          <span class="pf-slider__label" id="rs-fine-label">Feat level</span>
+          <span class="pf-slider__readouts">
+            <input class="pf-slider__readout" type="number" inputmode="numeric" min="1" max="20" step="1" value="3" aria-label="Lowest level">
+            <span class="pf-slider__dash" aria-hidden="true">&ndash;</span>
+            <input class="pf-slider__readout" type="number" inputmode="numeric" min="1" max="20" step="1" value="11" aria-label="Highest level">
+          </span>
+        </div>
+        <div class="pf-slider__rail">
+          <output class="pf-slider__bubble" aria-hidden="true"></output>
+          <input class="pf-slider__input pf-slider__input--low" type="range" min="1" max="20" step="1" value="3" aria-label="Lowest level">
+          <input class="pf-slider__input pf-slider__input--high" type="range" min="1" max="20" step="1" value="11" aria-label="Highest level">
+        </div>
       </div>
     </div>
   </div>
@@ -431,6 +597,7 @@
 
 <div class="g-spec">
   <h3 class="g-spec__name">BottomSheet</h3>
+  <span class="g-case__label">Draggable downward from the grabber or its header to dismiss. Past a quarter of the panel's height it closes; short of that it springs back.</span>
   <div class="g-case">
     <span class="g-case__label">Open. Capped inside the thumb arc; closed renders nothing.</span>
     <div class="g-frame">
@@ -588,5 +755,6 @@ document.addEventListener('click', (event) => {
   if (button) applyTheme(button.dataset.themeOption);
 });
 </script>
+<script defer src="../wwwroot/js/pf-components.js"></script>
 </body>
 </html>
