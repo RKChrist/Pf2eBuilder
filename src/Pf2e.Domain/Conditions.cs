@@ -2,12 +2,12 @@ using System.Collections.Immutable;
 
 namespace Pf2e.Domain;
 
-/// <summary>One modifier a condition imposes. Conditions can impose more than one.</summary>
+/// <summary>One modifier an effect imposes. An effect can impose more than one.</summary>
 public abstract record ModifierTemplate(ModifierType Type, ImmutableArray<Selector> Applies)
 {
-    public abstract Modifier For(string conditionName, int conditionValue);
+    public abstract Modifier For(string effectName, int effectValue);
 
-    /// <summary>A penalty equal to the condition's value, such as clumsy 2 giving -2.</summary>
+    /// <summary>A penalty equal to the effect's value, such as clumsy 2 giving -2.</summary>
     public sealed record Scaling(ModifierType Type, ImmutableArray<Selector> Applies)
         : ModifierTemplate(Type, Applies)
     {
@@ -24,10 +24,12 @@ public abstract record ModifierTemplate(ModifierType Type, ImmutableArray<Select
 }
 
 /// <summary>
+/// A name, a set of typed modifiers and an optional value they scale with. A condition and a
+/// buff are the same thing, so this is the definition of both.
 /// <see cref="Verified"/> defaults to false because the first draft of this table was
 /// transcribed from a brief its own author called a draft written from memory.
 /// </summary>
-public sealed record ConditionDefinition(
+public sealed record EffectDefinition(
     string Key,
     string Name,
     bool HasValue,
@@ -55,77 +57,81 @@ public static class Conditions
 {
     const string Ref = "Player Core, Conditions Appendix";
 
-    static ConditionDefinition Scaling(string key, string name, params Selector[] applies) =>
+    static EffectDefinition Scaling(string key, string name, params Selector[] applies) =>
         new(key, name, HasValue: true,
             [new ModifierTemplate.Scaling(ModifierType.Status, [.. applies])], Ref);
 
-    static ConditionDefinition Flat(string key, string name, ModifierType type, int penalty, params Selector[] applies) =>
+    static EffectDefinition Flat(string key, string name, ModifierType type, int penalty, params Selector[] applies) =>
         new(key, name, HasValue: false,
             [new ModifierTemplate.Flat(type, penalty, [.. applies])], Ref);
 
     // Every scaling condition below names a derived category rather than a list of statistics,
     // which is how the printed rules are written. Clumsy is "Dex-based", and that phrase covers
     // Dex-based attack rolls, which an enumeration of AC, Reflex and three skills silently drops.
-    public static ConditionDefinition Clumsy { get; } =
+    public static EffectDefinition Clumsy { get; } =
         Scaling("clumsy", "Clumsy", Selector.Governed(AttributeKind.Dexterity));
 
-    public static ConditionDefinition Drained { get; } =
+    public static EffectDefinition Drained { get; } =
         Scaling("drained", "Drained", Selector.Governed(AttributeKind.Constitution));
 
-    public static ConditionDefinition Enfeebled { get; } =
+    public static EffectDefinition Enfeebled { get; } =
         Scaling("enfeebled", "Enfeebled", Selector.Governed(AttributeKind.Strength));
 
-    public static ConditionDefinition Stupefied { get; } =
+    public static EffectDefinition Stupefied { get; } =
         Scaling("stupefied", "Stupefied",
             Selector.Governed(AttributeKind.Intelligence),
             Selector.Governed(AttributeKind.Wisdom),
             Selector.Governed(AttributeKind.Charisma));
 
-    public static ConditionDefinition Frightened { get; } =
+    public static EffectDefinition Frightened { get; } =
         Scaling("frightened", "Frightened", Selector.AllChecksAndDcs);
 
-    public static ConditionDefinition Sickened { get; } =
+    public static EffectDefinition Sickened { get; } =
         Scaling("sickened", "Sickened", Selector.AllChecksAndDcs);
 
-    public static ConditionDefinition Fascinated { get; } =
+    public static EffectDefinition Fascinated { get; } =
         Flat("fascinated", "Fascinated", ModifierType.Status, 2,
             Selector.Exactly(StatKind.Perception), Selector.Exactly(StatKind.Skill));
 
-    public static ConditionDefinition Fatigued { get; } =
+    public static EffectDefinition Fatigued { get; } =
         Flat("fatigued", "Fatigued", ModifierType.Status, 1,
             Selector.Exactly(StatKind.ArmorClass), Selector.SavingThrows);
 
     // UNVERIFIED against the printed rule: deafened's penalty should be predicated on the
     // auditory trait, which this engine cannot express yet, so it applies to all Perception.
-    public static ConditionDefinition Deafened { get; } =
+    public static EffectDefinition Deafened { get; } =
         Flat("deafened", "Deafened", ModifierType.Status, 2, Selector.Exactly(StatKind.Perception));
 
-    public static ConditionDefinition Blinded { get; } =
+    public static EffectDefinition Blinded { get; } =
         Flat("blinded", "Blinded", ModifierType.Status, 4, Selector.Exactly(StatKind.Perception));
 
-    public static ConditionDefinition Unconscious { get; } =
+    public static EffectDefinition Unconscious { get; } =
         Flat("unconscious", "Unconscious", ModifierType.Status, 4,
             Selector.Exactly(StatKind.ArmorClass),
             Selector.Exactly(StatKind.Perception),
             Selector.Exactly(StatKind.Reflex));
 
-    public static ConditionDefinition OffGuard { get; } =
+    public static EffectDefinition OffGuard { get; } =
         Flat("off-guard", "Off-Guard", ModifierType.Circumstance, 2, Selector.Exactly(StatKind.ArmorClass));
 
-    public static ConditionDefinition Prone { get; } =
+    public static EffectDefinition Prone { get; } =
         Flat("prone", "Prone", ModifierType.Circumstance, 2, Selector.Exactly(StatKind.Attack));
 
     /// <summary>Clumsy 1 and a speed penalty, which is two modifiers of different types.</summary>
-    public static ConditionDefinition Encumbered { get; } =
+    public static EffectDefinition Encumbered { get; } =
         new("encumbered", "Encumbered", HasValue: false,
         [
             new ModifierTemplate.Flat(ModifierType.Status, 1, [Selector.Governed(AttributeKind.Dexterity)]),
             new ModifierTemplate.Flat(ModifierType.Untyped, 10, [Selector.Speeds]),
         ], Ref);
 
-    public static ImmutableArray<ConditionDefinition> All { get; } =
+    /// <summary>The seeded subset of effects that comes from the conditions appendix.</summary>
+    public static ImmutableArray<EffectDefinition> All { get; } =
     [
         Clumsy, Drained, Enfeebled, Stupefied, Frightened, Sickened,
         Fascinated, Fatigued, Deafened, Blinded, Unconscious, OffGuard, Prone, Encumbered,
     ];
+
+    public static EffectDefinition? Find(string key) =>
+        All.FirstOrDefault(c => string.Equals(c.Key, key, StringComparison.OrdinalIgnoreCase));
 }
