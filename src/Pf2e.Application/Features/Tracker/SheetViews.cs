@@ -12,26 +12,28 @@ namespace Pf2e.Application.Features.Tracker;
 /// </summary>
 internal static class SheetViews
 {
-    public static CharacterSheetView Of(TrackedCharacter character, Sheet sheet) => new(
-        character.Id,
-        character.Name,
-        character.Level,
-        character.ClassName,
-        character.AncestryName,
-        Of(sheet.ArmorClass),
-        Of(sheet.Fortitude),
-        Of(sheet.Reflex),
-        Of(sheet.Will),
-        Of(sheet.Perception),
-        Of(sheet.ClassDc),
-        sheet.CurrentHitPoints,
-        sheet.MaxHitPoints,
-        sheet.TemporaryHitPoints,
-        sheet.HeroPoints,
-        [.. sheet.Effects.Select(Of)]);
+    public static CharacterSheetView Of(TrackedCharacter character)
+    {
+        var sheet = CharacterSheet.Compute(character.ToBuild(), character.ToSession());
 
-    public static CharacterSheetView Of(TrackedCharacter character) =>
-        Of(character, CharacterSheet.Compute(character.ToBuild(), character.ToSession()));
+        return new CharacterSheetView(
+            character.Id,
+            character.Name,
+            character.Level,
+            character.ClassName,
+            character.AncestryName,
+            Of(sheet.ArmorClass),
+            Of(sheet.Fortitude),
+            Of(sheet.Reflex),
+            Of(sheet.Will),
+            Of(sheet.Perception),
+            Of(sheet.ClassDc),
+            sheet.CurrentHitPoints,
+            sheet.MaxHitPoints,
+            sheet.TemporaryHitPoints,
+            sheet.HeroPoints,
+            [.. sheet.Effects.Select(Of)]);
+    }
 
     public static BreakdownSummary Of(Breakdown breakdown) => new(
         breakdown.Base,
