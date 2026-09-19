@@ -1,0 +1,367 @@
+{
+  "success": true,
+  "build": {
+    "name": "Gnibbo",
+    "class": "Bard",
+    "level": 7,
+    "ancestry": "Goblin",
+    "heritage": "Razortooth Goblin",
+    "background": "Street Urchin",
+    "alignment": "N",
+    "gender": "Not set",
+    "age": "Not set",
+    "deity": "Shelyn",
+    "size": 2,
+    "keyability": "cha",
+    "languages": [
+      "Common",
+      "Goblin",
+      "Draconic"
+    ],
+    "attributes": {
+      "ancestryhp": 6,
+      "classhp": 8,
+      "bonushp": 0,
+      "bonushpPerLevel": 0,
+      "speed": 25,
+      "speedBonus": 0
+    },
+    "abilities": {
+      "str": 10,
+      "dex": 16,
+      "con": 14,
+      "int": 12,
+      "wis": 12,
+      "cha": 19,
+      "breakdown": {
+        "ancestryFree": [
+          "Dex",
+          "Cha"
+        ],
+        "ancestryBoosts": [],
+        "ancestryFlaws": [
+          "Wis"
+        ],
+        "backgroundBoosts": [
+          "Dex",
+          "Cha"
+        ],
+        "classBoosts": [
+          "Cha"
+        ],
+        "mapLevelledBoosts": {
+          "1": [
+            "Dex",
+            "Con",
+            "Int",
+            "Cha"
+          ],
+          "5": [
+            "Dex",
+            "Con",
+            "Wis",
+            "Cha"
+          ]
+        }
+      }
+    },
+    "proficiencies": {
+      "classDC": 2,
+      "perception": 4,
+      "fortitude": 2,
+      "reflex": 2,
+      "will": 4,
+      "heavy": 0,
+      "medium": 0,
+      "light": 2,
+      "unarmored": 2,
+      "advanced": 0,
+      "martial": 0,
+      "simple": 2,
+      "unarmed": 2,
+      "castingArcane": 0,
+      "castingDivine": 0,
+      "castingOccult": 4,
+      "castingPrimal": 0,
+      "acrobatics": 2,
+      "arcana": 0,
+      "athletics": 0,
+      "crafting": 0,
+      "deception": 4,
+      "diplomacy": 4,
+      "intimidation": 2,
+      "medicine": 0,
+      "nature": 0,
+      "occultism": 4,
+      "performance": 6,
+      "religion": 0,
+      "society": 2,
+      "stealth": 4,
+      "survival": 0,
+      "thievery": 2
+    },
+    "feats": [
+      [
+        "Bardic Lore",
+        null,
+        "Class Feat",
+        1
+      ],
+      [
+        "Goblin Song",
+        null,
+        "Ancestry Feat",
+        1
+      ],
+      [
+        "Hobnobber",
+        null,
+        "Skill Feat",
+        2
+      ],
+      [
+        "Inspire Competence",
+        null,
+        "Class Feat",
+        2
+      ],
+      [
+        "Fascinating Performance",
+        null,
+        "Skill Feat",
+        4
+      ],
+      [
+        "Loremaster's Etude",
+        null,
+        "Class Feat",
+        4
+      ],
+      [
+        "Very Sneaky",
+        null,
+        "Ancestry Feat",
+        5
+      ],
+      [
+        "Virtuosic Performer",
+        "Oratory",
+        "Skill Feat",
+        6
+      ],
+      [
+        "Inspire Heroics",
+        null,
+        "Class Feat",
+        6
+      ],
+      [
+        "Additional Lore",
+        "Warfare Lore",
+        "General Feat",
+        7
+      ]
+    ],
+    "specials": [
+      "Enigma",
+      "Occult Spellcasting",
+      "Composition Spells",
+      "Darkvision",
+      "Razortooth Goblin",
+      "Lightning Reflexes",
+      "Expert Spellcaster"
+    ],
+    "lores": [
+      [
+        "Warfare",
+        2
+      ],
+      [
+        "Sewer",
+        2
+      ]
+    ],
+    "equipment": [
+      [
+        "Adventurer's Pack",
+        1
+      ],
+      [
+        "Rope (50 feet)",
+        1
+      ],
+      [
+        "Healing Potion (Lesser)",
+        2
+      ],
+      [
+        "Writing Set",
+        1
+      ],
+      [
+        "Everburning Torch",
+        1
+      ]
+    ],
+    "specificProficiencies": {
+      "trained": [],
+      "expert": [],
+      "master": [],
+      "legendary": []
+    },
+    "weapons": [
+      {
+        "name": "Rapier",
+        "qty": 1,
+        "prof": "martial",
+        "die": "d6",
+        "pot": 1,
+        "str": "striking",
+        "mat": null,
+        "display": "+1 Striking Rapier",
+        "runes": [],
+        "damageType": "P",
+        "attack": 15,
+        "damageBonus": 0
+      },
+      {
+        "name": "Shortbow",
+        "qty": 1,
+        "prof": "martial",
+        "die": "d6",
+        "pot": 0,
+        "str": "",
+        "mat": null,
+        "display": "Shortbow",
+        "runes": [],
+        "damageType": "P",
+        "attack": 14,
+        "damageBonus": 0
+      }
+    ],
+    "money": {
+      "cp": 7,
+      "sp": 4,
+      "gp": 62,
+      "pp": 0
+    },
+    "armor": [
+      {
+        "name": "Studded Leather Armor",
+        "qty": 1,
+        "prof": "light",
+        "pot": 1,
+        "res": "",
+        "mat": null,
+        "display": "+1 Studded Leather Armor",
+        "worn": true,
+        "runes": []
+      },
+      {
+        "name": "Explorer's Clothing",
+        "qty": 1,
+        "prof": "unarmored",
+        "pot": 0,
+        "res": "",
+        "mat": null,
+        "display": "Explorer's Clothing",
+        "worn": false,
+        "runes": []
+      }
+    ],
+    "spellCasters": [
+      {
+        "name": "Bard",
+        "magicTradition": "occult",
+        "spellcastingType": "spontaneous",
+        "ability": "cha",
+        "proficiency": 4,
+        "focusPoints": 2,
+        "innate": false,
+        "perDay": [
+          5,
+          4,
+          4,
+          4,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "spells": [
+          {
+            "spellLevel": 0,
+            "list": [
+              "Daze",
+              "Prestidigitation",
+              "Shield",
+              "Telekinetic Projectile",
+              "Guidance"
+            ]
+          },
+          {
+            "spellLevel": 1,
+            "list": [
+              "Soothe",
+              "Fear",
+              "Charm"
+            ]
+          },
+          {
+            "spellLevel": 2,
+            "list": [
+              "Invisibility",
+              "Mirror Image",
+              "Sound Body"
+            ]
+          },
+          {
+            "spellLevel": 3,
+            "list": [
+              "Haste",
+              "Slow",
+              "Vampiric Feast"
+            ]
+          },
+          {
+            "spellLevel": 4,
+            "list": [
+              "Dimension Door",
+              "Translocate"
+            ]
+          }
+        ]
+      }
+    ],
+    "focus": {
+      "occult": {
+        "cha": {
+          "abilityBonus": 4,
+          "proficiency": 4,
+          "itemBonus": 0,
+          "focusCantrips": [
+            "Courageous Anthem"
+          ],
+          "focusSpells": [
+            "Uplifting Overture",
+            "Rallying Anthem"
+          ]
+        }
+      }
+    },
+    "focusPoints": 2,
+    "formula": [],
+    "pets": [],
+    "familiars": [],
+    "acTotal": {
+      "acProfBonus": 9,
+      "acAbilityBonus": 3,
+      "acItemBonus": 2,
+      "acTotal": 24,
+      "shieldBonus": null
+    }
+  }
+}
