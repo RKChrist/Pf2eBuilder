@@ -1,0 +1,745 @@
+PF2e Table Companion -- design document
+
+PF2e Table Companion -- design document
+
+ 2026-09-18 · @Someone
+
+Problem and purpose
+
+The tool's job is to put the rule on the table so nobody has to remember it or argue about
+it. Six players and a DM who wants the full picture means combat drowns in questions
+("what's your AC?", "what does sickened do?", "is that buff still up?"), and outside combat,
+what a character is allowed to attempt gets decided by memory instead of by the
+character sheet.
+Three concrete failures today:
+
+    Numbers live in six heads. AC, saves and Perception are asked across the table every
+    round; a +1 status bonus from a song is forgotten two turns later.
+    Conditions are fuzzy. Fatigued, sickened, frightened and off-guard all sound similar and
+    nobody is sure what stacks.
+    Permission is adjudicated from memory. A player says "I try to read the document,
+    that's a Society check"; the DM says no. The feat or skill action that settles it is on a
+    sheet nobody has open.
+The companion fixes this by holding the rules as data and computing the answer: every
+number the table needs is on screen, every condition and buff shows what it does right
+now, and every activity a character can attempt in the current mode of play is listed with
+the requirement that makes it legal. The DM keeps the full view; players see what their
+characters would know.
+Scope: Pathfinder 2e Remaster (Player Core, Player Core 2, GM Core). Legacy names such
+as flat-footed are not used.
+
+Design principles
+
+Every later decision in this document is checked against these six rules.
+ 1. Rules live in data, not in heads. A condition, a buff or an activity is a structured record
+
+    with its modifiers, duration and requirement, so the app can compute rather than
+    describe. If it can't be computed, it is shown as rule text, never left out.
+ 2. One truth, two audiences. The DM and the players read the same state. The DM sees
+    all of it; a player sees their own character fully, the party's public numbers, and only
+    what they would know about monsters.
+
+                                                                                                                                                                                                                                            Page 1 of 17
+PF2e Table Companion -- design document
+
+3. The mode of play decides the screen. Encounter, Exploration and Downtime are first-
+    class states of the app, and each shows the actions and activities that belong to it.
+
+4. Everything a character can do comes from their sheet. Actions, spells and feats are
+    listed per character from imported data, not from a generic menu. "You can do this
+    because of feat X" is the answer to every dispute.
+
+5. The app puts the rule on the table; it does not adjudicate. The DM still rules. The tool's
+    job is that the ruling takes ten seconds and everyone can see what it was based on.
+
+6. Built for a phone in one hand during play. Big tap targets, the current turn always
+    visible, nothing more than two taps away. Correct-but-slow loses to the DM's memory.
+
+A corollary of rule 1: wrong rules data is worse than none. Every rule record carries a
+source reference (book and section) and is editable at the table, and anything encoded
+from memory rather than from the book is flagged as unverified until checked.
+
+Roles and views
+
+Two roles, one shared state: the DM edits everything, a player edits their own character
+and reads the rest. Monster details are not merely hidden in the UI; in the shared version
+they are stored where a player's client cannot read them at all.
+
+What               DM                    Player (own      Player  Player (monsters)
+                                         character)       (other
+Name, initiative,  edit                                   PCs)    read, unless the
+                                         edit initiative          monster is marked
+                                                          read    unrevealed
+                                                                  not visible
+turn marker                                                       not visible
+
+HP, temp HP        edit                  edit             read    read
+                                         edit base,       read
+AC, Fort, Ref, Will, edit                computed                 read
+Perception                               shown            read
+                                         edit             read    read what the
+Conditions (with   edit                                           monster has shown
+value and rounds)                        apply to self    read
+                   edit, apply           and party        names
+Buffs and debuffs  to any                                 only
+(typed modifiers)  target                read own, full
+                   read all              text
+Spells, feats,     sheets
+actions from the
+sheet
+
+                                                                  Page 2 of 17
+PF2e Table Companion -- design document
+
+What              DM                     Player (own  Player       Player (monsters)
+                                         character)   (other       not visible
+DM notes, monster edit                                PCs)
+statblock                                not visible
+                                                      not visible
+                                         read
+Mode of play,     edit                                read         read
+
+round, next turn
+
+Design choices behind the table:
+
+    Players apply their own buffs. When the bard plays a song, the bard taps the party, not
+    the DM. The DM sees it land live and can undo it. This is what removes the "who tracks
+    the +1?" problem.
+    The DM can hand a monster's public row to the players (name and conditions) while
+    keeping HP and stats private. An unrevealed monster does not exist on the player
+    screen until the DM reveals it.
+    Players see full spell and feat text only for their own character. The DM opens any
+    character's sheet from the tracker instead of walking around the table.
+    The DM view is bound to the DM's identity, not to a toggle, in the shared version (see
+    Architecture). In a single-device version the same page has a DM/player toggle and the
+    split is by honour, which is fine when the player view is a screen everyone can see.
+
+Modes of play and screens
+
+The app has one persistent party roster and three modes that follow the game's own
+structure; a Reference tab sits beside them. Switching mode is a DM action and every
+screen follows.
+
+  stateDiagram-v2
+         [*] --> Exploration
+         Exploration --> Encounter: roll initiative
+         Encounter --> Exploration: encounter ends
+         Exploration --> Downtime: DM calls downtime
+         Downtime --> Exploration: back on the road
+
+Exploration is the resting state; Encounter is entered by rolling initiative and returns to
+Exploration when the DM ends it. Downtime is entered deliberately and tracked in days.
+
+                                                                         Page 3 of 17
+PF2e Table Companion -- design document
+
+Navigation shell
+
+[ Encounter | Exploration | Downtime | Reference ]  Round 3 [DM]
+
+
+
+party strip: six PC chips, each with HP bar and active conditions
+
+
+
+mode screen (below)
+
+The party strip is always present so a player's own state is one glance away in any mode.
+
+Encounter (combat tracker)
+
+DM screen:
+
+ Initiative             HP 48/60         Selected: Zuz (bard, L5)
+  23 Ogre boss          HP 37/37         AC 21 Fort +9 Ref +12 Will +11 Per +10
+                        HP 60/60
+     21 Zuz             HP 44/52                (AC base 20, +1 circ Shield)
+     19 Ogre 2                           Conditions: none
+     17 Rune's PC  Undo ]                Effects: Courageous Anthem +1 status
+att/dmg, 1 rd
+     12 ...                                                 Shield +1 circ AC, until start
+of next turn
+ [ Next turn ] [                                  Spells (from sheet)  Feats  Notes
+
+
+What it does:
+
+    Initiative order with the current turn pinned to the top of the viewport; ties put
+    adversaries before PCs (Player Core initiative rule).
+    HP with damage/heal input and temp HP; a monster's HP is DM-only.
+    Stat line per combatant: AC, Fortitude, Reflex, Will, Perception, computed from base
+    plus every active modifier. A modified number shows its delta and, on tap, the
+    breakdown by source.
+    Conditions as chips with value and remaining rounds. Tapping a chip shows what the
+    condition does in this ruleset and its mechanical effect as applied.
+    Buffs and debuffs as typed modifier effects with a source and a duration, applied to
+    one or many targets at once ("all PCs", "all monsters").
+    Next turn advances the marker, counts durations down by the ruleset's timing, expires
+    effects, decrements frightened at end of turn, and reminds about persistent damage.
+    Undo reverts the last change.
+    Character sheet drawer: the DM opens a PC's spells and feats with full text without
+    leaving the tracker.
+
+                                                                   Page 4 of 17
+PF2e Table Companion -- design document
+
+Player screen: the same order with monster HP and stats removed, unrevealed monsters
+absent, the player's own character expanded with their available actions, and
+buff/condition controls for their own character.
+
+Exploration
+
+The screen answers two questions: what is each character doing right now, and what
+could they attempt.
+
+    Exploration activity per character (Avoid Notice, Defend, Detect Magic, Follow the
+    Expert, Hustle, Investigate, Repeat a Spell, Scout, Search, plus skill activities such as
+    Track and Cover Tracks). The choice has a stated consequence the app carries
+    forward, e.g. Scout grants the party +1 circumstance to initiative, Defend starts combat
+    with the shield raised, Avoid Notice rolls Stealth for initiative.
+    "What can I attempt" list per character, computed from the sheet: every exploration
+    skill action with its requirement met or not met (trained in Society for Decipher
+    Writing, a healer's toolkit for Treat Wounds) and the feats on the sheet that change it.
+    The DM sees the same list for every character.
+    Rest and camp panel: the 10-minute activities (Treat Wounds with its one-hour
+    immunity per target, Refocus, Repair, Identify Magic) and the 8-hour rest with what it
+    restores. The panel tallies time so "how long have we been here?" has an answer.
+
+Downtime
+
+A day counter and one activity per character per day: Earn Income, Craft, Retrain, Subsist,
+Treat Disease, Create Forgery, Learn a Spell. Each shows its DC by task level and the
+outcome per proficiency rank so the DM does not open the table. This is the last phase to
+build and the least urgent.
+
+Reference
+
+All conditions, all basic and skill actions, and the party's own spells and feats, searchable,
+in the same structured form the engine uses. This is where a dispute is settled when the
+answer is not already on screen.
+
+Walkthroughs
+
+Two real moments from the table, as the app should handle them.
+
+                                                                                                                                                                                                                                            Page 5 of 17
+PF2e Table Companion -- design document
+
+Courageous Anthem in round 2
+
+  sequenceDiagram
+          participant B as Bard (phone)
+          participant S as Shared state
+          participant D as DM (laptop)
+          B->>S: Cast Courageous Anthem, targets: all PCs
+          S-->>D: Six PCs gain +1 status attack/damage, 1 round, source Bard
+          D->>S: Ogre strikes Rune's PC, applies frightened 1
+          S-->>B: Party strip shows frightened 1 on Rune's PC
+          D->>S: Next turn (Bard's turn starts)
+          S-->>D: Anthem expired: duration counted down at source's turn start
+
+ 1. The bard picks Courageous Anthem from their own spell list; the app already knows it
+    is +1 status to attack rolls and damage rolls and to saves against fear, lasting 1 round.
+    Nobody types a number.
+
+ 2. The bard taps "all PCs". Every PC row now shows the bonus on tap of their attack line;
+    the DM sees it land.
+
+ 3. The ogre's turn: the DM applies frightened 1 to Rune's PC. The stat line drops by 1
+    across the board because frightened is a status penalty to all checks and DCs. The
+    bonus and the penalty both apply: they are the same type but one is a bonus and one a
+    penalty.
+
+ 4. At the end of Rune's PC's turn, frightened counts down to 0 and disappears; the app
+    does this, not the DM.
+
+ 5. At the start of the bard's next turn the anthem's 1 round is up and it is removed from all
+    six rows at once, with a one-line notice so the bard knows to sustain or recast.
+
+The DM's role in that sequence was one tap: the frightened condition. Everything else was
+a consequence.
+
+"Can I read this?" in exploration
+
+ 1. The party finds a coded ledger. Rune's player says he tries to read it.
+ 2. On his own screen, under "What can I attempt", Decipher Writing is listed as available
+
+    because his sheet says trained in Society, with the activity's text: an exploration
+    activity, one minute per page, secret check, and the outcome per degree of success.
+ 3. The DM's exploration screen shows the same row for Rune's PC. If the ledger is in an
+    unknown language rather than a code, the DM can point at the languages line on the
+    sheet instead: the tool shows both, and the ruling is made on what is written, in
+    seconds.
+
+                                                                                                                                                                                                                                            Page 6 of 17
+PF2e Table Companion -- design document
+
+4. If a feat on the sheet changes the activity (faster deciphering, or a language-related
+    feat), it is attached to that row with its text, so "you can because of feat X" is on screen
+    for both of them.
+
+The app never says "allowed". It says "here is the activity, here is the requirement, here is
+the feat", and the DM rules.
+
+Rules engine
+
+The engine has three parts: a modifier calculator, a duration clock, and a requirement
+checker. Everything the screens show is derived from these plus the data.
+
+Conditions as data
+
+Each Remaster condition is a record with its text and, where it has one, a mechanical
+effect the calculator can apply. The ones that carry numbers (from memory of Player
+Core; verify each against the book before encoding):
+
+Condition   Modifier                     Applies to                   Also
+Clumsy X    status -X                    AC, Reflex, Dex-based
+                                         checks (ranged attacks,      lose X × level HP and max
+Drained X   status -X                    Acrobatics, Stealth,         HP; drops by 1 per full rest
+                                         Thievery)
+Enfeebled X status -X                    Fortitude and other Con-     no exploration activities;
+                                         based checks                 removed by rest
+Fascinated  status -2                    melee attack and damage,     -1 at the end of the
+Fatigued    status -1                    Athletics (Str-based)        creature's turn
+                                         Perception and skill checks  can't ingest; Retch to
+Frightened X status -X                   AC and all saves             reduce
+                                                                      flat check DC 5 + X to Cast
+Sickened X status -X                     all checks and DCs           a Spell
+
+Stupefied X status -X                    all checks and DCs
+
+                                         Will, Perception, spell
+                                         attack and spell DC,
+                                         Int/Wis/Cha skills
+
+                                                                      Page 7 of 17
+PF2e Table Companion -- design document
+
+Condition    Modifier                    Applies to                  Also
+Off-guard                                AC                          implied by grabbed,
+             circumstance                                            restrained, paralyzed,
+             -2                          attack rolls                prone, confused,
+                                                                     unconscious
+Prone        circumstance                AC, Perception, Reflex      plus off-guard; only Crawl
+             -2                          Perception when vision      and Stand to move
+Unconscious                              matters                     plus blinded and off-guard
+Blinded      status -4                   initiative and sound-based  everything is hidden to you
+                                         checks
+             status -4                                               -10 ft Speed
+
+Deafened     status -2
+
+Encumbered as clumsy 1
+
+Text-only conditions (no modifier, shown as rule text and reminders): broken, concealed,
+confused, controlled, dazzled, doomed, dying, fleeing, grabbed, hidden, immobilized,
+invisible, observed, paralyzed, persistent damage, petrified, quickened, restrained,
+slowed, stunned, undetected, unnoticed, wounded. Slowed, stunned and quickened
+change the action count at the start of the turn; the app shows the count, the player
+spends it.
+
+Bonus stacking (the modifier calculator)
+
+For each target number (AC, a save, Perception, attack, damage, a skill, a DC):
+
+  value = base
+             + highest circumstance bonus + highest item bonus + highest status
+
+  bonus
+             + worst circumstance penalty + worst item penalty + worst status
+
+  penalty
+             + sum of untyped penalties
+
+Same-typed bonuses never stack, same-typed penalties never stack, untyped penalties
+always stack, and a bonus and a penalty of the same type both apply. A +1 status from
+Courageous Anthem and a -2 status from sickened 2 net to -1. The breakdown shown on
+tap is this formula with names on each line.
+
+                                                                     Page 8 of 17
+PF2e Table Companion -- design document
+
+Duration clock
+
+    A duration in rounds counts down at the start of the source's turn; a 1-round effect
+    ends at the start of the caster's next turn. (From memory of the Player Core duration
+    rules; verify.)
+    "Until the start/end of your next turn" is tied to the affected creature, not the source,
+    e.g. Shield and Raise a Shield.
+    Frightened drops by 1 at the end of the affected creature's turn. Persistent damage is
+    dealt at the end of the affected creature's turn, then a DC 15 flat check ends it.
+    Slowed and stunned are applied at the start of the affected creature's turn.
+    Minutes convert to rounds inside an encounter: 1 minute = 10 rounds; effects that
+    outlast the encounter carry over into exploration with their remaining minutes.
+Every effect therefore stores who caused it and which of these timing rules it follows.
+"Next turn" runs the clock once for the creature whose turn ends and once for the
+creature whose turn starts.
+
+Requirement checker ("what can I attempt")
+
+An activity record states its requirements: a proficiency rank in a skill, a feat, an item, a
+class feature. A character record states what they have. The checker returns, per activity:
+available, available with a modifying feat (named), or unavailable with the missing
+requirement named. It runs per mode of play, so the Exploration screen lists exploration
+activities and the Encounter screen lists actions.
+The checker only reads the sheet. It does not know about the fiction (is the text a code or
+a language?), and it says so by showing the requirement text next to the verdict.
+
+Data model
+
+Two layers: rules data that never changes at the table, and table state that changes every
+turn. Keeping them apart is what lets rules be shared across campaigns and state be
+undone.
+
+  flowchart LR
+          subgraph Rules data
+                 CD[ConditionDef]
+                 ED[EffectDef<br/>spells, feats, tactics]
+                 AD[ActivityDef<br/>per mode]
+                 FD[FeatDef]
+          end
+          subgraph Table state
+                 CH[Character<br/>imported sheet]
+
+                                                                                                                                                                                                                                            Page 9 of 17
+PF2e Table Companion -- design document
+
+       CB[Combatant]                     time]
+       EF[Effect instance]
+       CI[Condition instance]
+       EN[Encounter]
+       SS[Session<br/>mode, day,
+end
+CH --> CB
+CB --> EF
+CB --> CI
+EN --> CB
+SS --> EN
+ED -.-> EF
+CD -.-> CI
+FD -.-> CH
+AD -.-> SS
+
+Solid arrows are ownership; dotted arrows are references from state into rules data by
+key.
+
+Record           Holds                                   Notes
+Character                                                Imported from the sheet; edited
+                 name, owner, level, class, ancestry,    only on re-import or by the
+Combatant        attribute modifiers, skill ranks, save  owner
+                 and Perception proficiency, AC, max
+Condition        HP, feats (keys), spells (keys by       Monsters carry a DM-only
+instance         rank), items, languages                 statblock and notes
+Effect instance
+Modifier         kind (PC, NPC, monster), link to        Value drives the modifier via
+Encounter        Character or inline statblock,          ConditionDef
+                 initiative, current HP, temp HP, base   One instance per affected
+                 AC/saves/Perception, revealed flag      combatant so each can expire
+                                                         independently
+                 condition key, value, remaining         applies-to keys: ac, fort, ref, will,
+                 rounds, note (e.g. persistent fire 4)   per, attack, damage, skill:
+                                                         <name>, dc, speed, all-checks
+                 effect key or custom name, source       Undo stack is a list of prior state
+                 combatant, modifiers list, timing       snapshots, capped
+                 rule, remaining rounds or minutes
+
+                 type (circumstance, item, status,
+                 untyped), value, applies-to list
+
+                 round, ordered combatant ids,
+                 current index, undo stack, log
+
+                                                         Page 10 of 17
+PF2e Table Companion -- design document
+
+Record        Holds                                                   Notes
+Session                                                               Persists across encounters
+              mode (encounter, exploration,
+ConditionDef  downtime), exploration activity per                     ~35 records, shipped
+EffectDef     character, elapsed minutes,
+ActivityDef   downtime day, party-wide effects                        Shipped starter set of ~15
+FeatDef       such as Scout                                           common ones; grows from the
+                                                                      party's own spells
+              key, name, text, modifier template,                     Basic actions, skill actions,
+              timing rule, implied conditions,                        exploration and downtime
+              source ref                                              activities
+                                                                      Only the feats the party actually
+              key, name, kind (spell, feat, tactic),                  has need to be entered
+              modifier template, default duration
+              and timing, text, source ref
+
+              key, name, mode, action cost or time,
+              traits, skill, requirements, degrees of
+              success text, source ref
+
+              key, name, level, prerequisites, text,
+              activities it grants or modifies
+
+Two rules for the model: a Combatant is never edited by rewriting a Character (the sheet
+is the source of truth for base numbers), and every rules record carries sourceRef and
+verified: true/false so unverified data is visible in the UI.
+
+Rules data and character import
+
+Rule text is typed in from the Remaster books and structured by hand, starting with
+conditions and the actions the party actually uses; character numbers come from each
+player's Pathbuilder export. Nothing is scraped from a site at runtime.
+
+Where rule text comes from
+
+Source                                   Use it for                   Caveat
+Player Core, Player Core 2,
+GM Core (the books)                      Condition text, action and   The book is the source of
+                                         activity text, stacking and  truth; every record cites
+Archives of Nethys                       duration rules               book and section
+
+                                         Looking things up while      No API; do not fetch from the
+                                         entering data; linking a     app
+                                         record to its page
+
+                                                                      Page 11 of 17
+PF2e Table Companion -- design document
+
+Source                                   Use it for                     Caveat
+Foundry VTT PF2e system                  A reference for how to
+on GitHub                                structure conditions, effects  Its content ships under a
+                                         and "rule elements" as data    Paizo-Foundry agreement
+Paizo Community Use                                                     and the OGL, not a general
+Policy                                   The terms a private, non-      licence; copy the structure,
+                                         commercial fan tool operates   not the data (README)
+                                         under
+                                                                        Requires the Community
+                                                                        Use notice in the app
+
+Data entry is bounded by the party: ~35 conditions, ~60 basic and skill actions, ~20
+exploration and downtime activities, and then only the spells and feats that appear on the
+six sheets. New feats are entered when a player takes them, not in advance.
+
+Character import
+
+Pathbuilder 2e has an Export JSON option in its menu, and it is the sheet most PF2e tables
+already use (Pathbuilder guide). The importer reads from it:
+
+    Identity: name, class, ancestry, level, attribute modifiers, languages.
+    Proficiency ranks for skills, saves and Perception, from which the app computes save
+    and Perception values with the character's level and attributes.
+    AC and max HP as exported.
+    Feats and spells by name only; the app matches names to its own FeatDef and
+    EffectDef records and lists unmatched ones as text so nothing is lost.
+    Items, for requirements such as a healer's toolkit or a shield's bonus.
+
+Re-importing after a level-up replaces the Character record and keeps the Combatant's
+current HP and conditions. The exact field names in the export must be confirmed against
+a real file from one of the party's characters before the importer is written; the shape
+above is what the export is known to contain, not its schema.
+
+Alternatives if the table does not use Pathbuilder: a Foundry VTT actor export (most
+complete, includes rule text) or Wanderer's Guide. Demiplane has no export. This is an
+open decision below.
+
+Architecture options
+
+Recommendation: prototype the engine and the encounter screen as a single published
+web page now, and move to a small self-hosted app the moment more than one device
+needs to edit at once. The engine and the rules data are written once and carried over;
+
+                                                                        Page 12 of 17
+PF2e Table Companion -- design document
+
+only the persistence layer changes.
+
+Option          What it is               Live multi-device  DM view        Effort      When it is the
+                                                            locked to      Days        right choice
+A. Published    One HTML file,           Only for people    identity
+page (Claude    state in the             signed in to the   Yes, in that   Weeks, but  Prototype; or the
+artifact)       browser, optional        same Claude        case           in Rune's   whole thing if the
+                shared database          organisation                      own stack   group shares one
+                                                            Yes, via a DM              screen (DM
+B. Self-hosted  ASP.NET Core +           Yes, any phone     link with a                laptop plus a TV
+web app         Blazor, SignalR for      with the link      secret token               showing the
+                live state, a room                                                     player view)
+C. Foundry      code instead of
+VTT             accounts,                                                              The real thing for
+                installable as a                                                       six phones
+                PWA on phones                                                          around a table
+
+                Existing VTT with Yes                       Yes            Setup only If the group is
+                a PF2e system that
+                already automates                                                      willing to run a
+                conditions,
+                bonuses and                                                            VTT at an in-
+                durations and
+                imports                                                                person table
+                Pathbuilder
+
+The blocker on option A is access, not code: a page that keeps shared state is readable
+only by members of the owner's Claude organisation. The DM and the five other players
+would each need an account there. If they do not have one, A is a single-device tool and B
+is the shared one.
+
+Option C deserves an honest paragraph. Foundry with the PF2e system does most of the
+encounter half of this document today: initiative, conditions with automation, typed
+bonuses, durations, and a Pathbuilder importer. The reasons to build anyway are specific:
+it is a phone-first companion for a physical table rather than a map-and-tokens VTT, the
+exploration and downtime screens with the "what can I attempt" list do not exist in it, and
+the group keeps its own data. If those reasons stop mattering, use Foundry.
+
+                                                                                       Page 13 of 17
+PF2e Table Companion -- design document
+
+Shape of option B
+
+  flowchart LR
+         P1[Player phone] -->|room code| API
+         P2[Player phone] -->|room code| API
+         DM[DM laptop] -->|DM link| API
+         API[ASP.NET Core<br/>SignalR hub] --> S[(State store<br/>one JSON doc per
+
+  room)]
+         API --> R[(Rules data<br/>JSON packs)]
+
+    One room per campaign; state is a single JSON document per room, versioned, so undo
+    is a pointer move.
+    The server enforces the role table from the Roles section: a player token may write
+    only its own character; monster private fields are stripped before broadcast to players.
+    Rules data is static JSON shipped with the app and editable in a DM screen; edits are
+    versioned so a wrong record can be rolled back.
+    Blazor WebAssembly or Blazor Server are both fine; Server keeps the engine in one
+    place and is simpler for six clients.
+
+Roadmap
+
+Four phases, each usable at the table on its own. Phase 1 is worth building even if nothing
+else follows.
+
+Phase      Delivers                      Needs                 Done when
+
+1. Combat  Initiative, HP, all           Base numbers typed    One real session runs
+tracker    conditions with               in by hand;           on it without anyone
+           mechanics and                 conditions and a      opening a rulebook
+           durations, typed-             starter set of ~15    for a condition
+           modifier effects with         effects entered from
+           multi-target apply,           the book
+           computed stat line with
+           breakdown, next turn
+           with the duration clock,
+           undo, DM/player views
+
+                                                               Page 14 of 17
+PF2e Table Companion -- design document
+
+Phase           Delivers                  Needs                   Done when
+2. Sheets                                 A real export file per  The DM reads a
+                Pathbuilder import,       character               player's spell from the
+3. Exploration  character sheet drawer                            tracker instead of
+                with spells and feats,    Exploration and skill   asking
+4. Downtime     effects created from a    activities entered as
+and multi-      character's own spell     data; the party's       The "can I read this?"
+device          list, the party's spells  relevant feats          walkthrough works
+                and feats entered as                              end to end
+                data                      Downtime activities
+                                          as data; a host for     Six phones, one DM
+                Mode switching,           option B                laptop, one session,
+                exploration activity per                          no paper
+                character with carried
+                consequences, "what
+                can I attempt" with
+                requirement checking,
+                rest and camp panel
+                with the time tally
+
+                Downtime activities
+                with DC and outcome
+                tables; if the group
+                needs six phones
+                editing, the move to
+                option B
+
+Rules-data entry runs alongside every phase and is the actual bottleneck. Each record is
+entered once from the book, marked verified by whoever checked it, and never trusted
+from memory.
+
+Open decisions
+
+These need an answer from Rune or the DM before the phase they gate. None of them
+blocks phase 1 except the first.
+
+    Where does it run? Do the DM and the other players have accounts in Rune's Claude
+    organisation (option A works shared), or is this one screen at the table now and option
+    B later? Gates phase 1's persistence layer.
+    Which sheet does the table use: Pathbuilder, Foundry, Wanderer's Guide, Demiplane?
+    Gates phase 2; Demiplane means manual entry.
+    Do players see anything about monster health? Nothing, or a coarse state (unharmed,
+    hurt, badly hurt, down)? Default in this document: nothing.
+
+                                                                  Page 15 of 17
+PF2e Table Companion -- design document
+
+Should a player be able to apply a condition to a monster ("I tripped it, it's prone"), or
+only propose it for the DM to confirm? Default: propose; the DM confirms with one tap.
+Initiative ties: the book's rule (adversaries first, PCs decide among themselves) or the
+DM's own house rule?
+How much rules text gets bundled: conditions and actions only, or every spell and feat
+the party owns with full text? Full text is the useful version and roughly doubles data
+entry.
+Does the DM want a way to add a house rule as a record (a custom condition or effect
+that persists across sessions)? Default: yes, it is the same form as a custom effect.
+Name for the thing. "Table Companion" is a placeholder.
+
+Risks and caveats
+
+The biggest risk is not technical: a tool that shows a wrong rule with confidence is worse
+than the DM's memory, and the DM has to want it on the table.
+
+Risk                                     Why it matters                    Mitigation
+Wrong rules data
+                                         One wrong condition modifier      Every record cites its source;
+                                         poisons every computed            a verified flag is visible in
+                                         number and the group stops        the UI; records are editable at
+                                         trusting the app                  the table; the modifier
+                                                                           breakdown always shows its
+Rules cited from memory                  The condition table, the          sources so an error is
+in this document                         duration timing (round            traceable
+                                         durations count down at the
+DM buy-in                                source's turn) and the            Check each against the book
+                                         stacking rule are written from    before encoding; treat the
+Data entry never finishes                memory of Player Core             table above as a draft
+
+                                         The DM is the one who has to      Frame it as more visibility for
+                                         look at it every round. If it     the DM, not less; he confirms
+                                         feels like it takes control from  player-proposed conditions;
+                                         him, it dies                      nothing adjudicates
+
+                                         Spells and feats for six          Enter only what is on the
+                                         characters is real work and it    sheets; unmatched names
+                                         grows every level                 show as plain text rather than
+                                                                           blocking; players enter their
+                                                                           own
+
+                                                                           Page 16 of 17
+PF2e Table Companion -- design document
+
+Risk                                     Why it matters                 Mitigation
+Access to a shared page
+                                         If the group is not in one     Decide the runtime first
+Phone usability                          Claude organisation, option A  (Open decisions); phase 1 is
+Licence                                  cannot be shared and the       designed to work on one
+                                         multi-device promise is        device regardless
+                                         broken
+                                                                        Current turn pinned, two-tap
+                                         Six people on phones with      maximum, tested on a real
+                                         small tap targets under time   phone before a session
+                                         pressure
+                                                                        Non-commercial, includes the
+                                         A fan tool must stay inside    required notice, uses rule text
+                                         Paizo's Community Use Policy   not art
+
+What this document does not cover: monster statblock import (the DM types the five
+numbers per monster for now), hero points, spell slot tracking, and Kingmaker-style
+camping subsystems. Each is a candidate for a later phase and none changes the model
+above.
+
+                                                                        Page 17 of 17
+
