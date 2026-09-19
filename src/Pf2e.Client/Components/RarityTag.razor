@@ -1,0 +1,22 @@
+@* The colour is the fast read and the word is the true one. Neither is left to carry it alone. *@
+<span class="rarity @Slug">@Word</span>
+
+@code {
+    [Parameter, EditorRequired] public string? Rarity { get; set; }
+
+    string Slug => Rarity?.ToLowerInvariant() switch
+    {
+        "uncommon" => "uncommon",
+        "rare" => "rare",
+        "unique" => "unique",
+        _ => "common",
+    };
+
+    string Word => Slug switch
+    {
+        "uncommon" => "Uncommon",
+        "rare" => "Rare",
+        "unique" => "Unique",
+        _ => "Common",
+    };
+}

@@ -1,0 +1,28 @@
+@inherits FluxorComponent
+@inject IState<RulesBrowserState> Browser
+@inject IDispatcher Dispatcher
+@inject NavigationManager Navigation
+
+<nav class="bar" aria-label="Rule groups">
+    @foreach (var group in RuleGroups.All)
+    {
+        var active = Browser.Value.ActiveGroup == group.Key;
+
+        <button type="button"
+                class="item @(active ? "active" : null)"
+                aria-current="@(active ? "page" : null)"
+                @onclick="() => Open(group.Key)">
+            <span class="marker" aria-hidden="true"></span>
+            <GroupGlyph Group="group.Key" />
+            <span class="label">@group.Label</span>
+        </button>
+    }
+</nav>
+
+@code {
+    void Open(GroupKey group)
+    {
+        Dispatcher.Dispatch(new GroupSelected(group));
+        Navigation.NavigateTo(RuleCatalog.BrowseRoute);
+    }
+}

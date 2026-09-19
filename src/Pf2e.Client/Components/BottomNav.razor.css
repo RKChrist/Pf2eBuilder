@@ -1,0 +1,60 @@
+.bar {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 3;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    /* At the 320px floor this leaves each target 46px wide, still over --tap-min, with real
+       travel between two of them. */
+    column-gap: var(--tap-separation);
+    min-height: var(--layout-bottom-bar);
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--surface-raised);
+    border-top: var(--border-hair) solid var(--line-subtle);
+}
+
+.item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    position: relative;
+    min-height: var(--tap-min);
+    padding: var(--space-1) var(--space-0);
+    border: 0;
+    background: none;
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+    letter-spacing: var(--font-tracking-tight);
+    line-height: var(--font-leading-tight);
+}
+
+/* A rule above the item, not only a colour change, so the active group survives a colour-blind
+   reading and a sunlit screen. */
+.marker {
+    position: absolute;
+    top: 0;
+    inset-inline: var(--space-3);
+    height: var(--border-strong);
+    background: transparent;
+}
+
+.item.active {
+    color: var(--accent-base);
+    font-weight: var(--font-weight-bold);
+}
+
+.item.active .marker {
+    background: var(--accent-base);
+}
+
+.item:active {
+    background: var(--surface-sunken);
+}
+
+::deep .glyph {
+    width: var(--font-size-subhead);
+    height: var(--font-size-subhead);
+}

@@ -1,0 +1,90 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: none;
+}
+
+body {
+    margin: 0;
+    background: var(--surface-page);
+    color: var(--text-primary);
+    font-family: var(--font-family-data);
+    font-size: var(--font-size-body);
+    line-height: var(--font-leading-normal);
+    -webkit-tap-highlight-color: transparent;
+}
+
+h1,
+h2,
+h3 {
+    font-family: var(--font-family-display);
+    line-height: var(--font-leading-tight);
+    letter-spacing: var(--font-tracking-tight);
+    margin: var(--space-0);
+}
+
+p {
+    margin: var(--space-0);
+}
+
+button,
+input,
+select {
+    font: inherit;
+    color: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+a {
+    color: var(--accent-base);
+}
+
+/* One rule, everywhere. A phone still gets plugged into a keyboard at a table. */
+:focus-visible {
+    outline: var(--line-focus) solid var(--border-focus);
+    outline-offset: var(--border-hair);
+}
+
+/* Names a control for a screen reader when the visible mark is a glyph. */
+.assistive {
+    position: absolute;
+    width: var(--border-hair);
+    height: var(--border-hair);
+    padding: var(--space-0);
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.boot {
+    padding: var(--space-6) var(--layout-gutter);
+    color: var(--text-muted);
+}
+
+.not-found {
+    padding: var(--space-5) var(--layout-gutter);
+    color: var(--text-muted);
+}
+
+#blazor-error-ui {
+    display: none;
+    position: fixed;
+    inset-inline: var(--space-0);
+    bottom: var(--space-0);
+    z-index: 100;
+    padding: var(--space-4) var(--layout-gutter);
+    background: var(--outcome-failure);
+    color: var(--text-on-accent);
+}
+
+#blazor-error-ui .reload {
+    color: var(--text-on-accent);
+    margin-inline-start: var(--space-3);
+}

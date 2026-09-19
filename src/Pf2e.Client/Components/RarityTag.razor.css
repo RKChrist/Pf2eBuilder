@@ -1,0 +1,28 @@
+.rarity {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-0) var(--space-2);
+    border: var(--border-hair) solid currentColor;
+    border-radius: var(--radius-chip);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--font-tracking-wide);
+    line-height: var(--font-leading-snug);
+    white-space: nowrap;
+}
+
+.common {
+    color: var(--rarity-common);
+}
+
+.uncommon {
+    color: var(--rarity-uncommon);
+}
+
+.rare {
+    color: var(--rarity-rare);
+}
+
+.unique {
+    color: var(--rarity-unique);
+}

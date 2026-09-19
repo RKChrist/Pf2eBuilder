@@ -1,0 +1,106 @@
+@page "/conditions"
+@inherits FluxorComponent
+@inject IState<ConditionsState> Store
+@inject IState<RulesBrowserState> Browser
+@inject IDispatcher Dispatcher
+
+<PageTitle>Conditions</PageTitle>
+
+<header class="top">
+    <h1 class="heading">Conditions</h1>
+</header>
+
+<RemoteView T="IReadOnlyList<ConditionSummary>" Data="Store.Value.Conditions">
+    <Loading>
+        <SkeletonRows Rows="4" />
+    </Loading>
+    <Failed Context="message">
+        <FailureState Message="@message" OnRetry="Load" />
+    </Failed>
+    <Loaded Context="conditions">
+        <div class="preamble">
+            <p>
+                The @conditions.Count conditions this app can work out the numbers for, not the whole
+                appendix. Ones that carry a value are shown at 1.
+            </p>
+            <p class="checked">@Checked(conditions)</p>
+        </div>
+
+        <ul class="cards">
+            @foreach (var condition in conditions)
+            {
+                <li class="card">
+                    <div class="card-top">
+                        <h2 class="name">@condition.Name</h2>
+                        @if (condition.HasValue)
+                        {
+                            <span class="valued">Takes a value</span>
+                        }
+                    </div>
+
+                    <ul class="modifiers">
+                        @foreach (var modifier in condition.Modifiers)
+                        {
+                            <li class="modifier">
+                                <span class="amount">@Amount(modifier)</span>
+                                <span class="effect">
+                                    <span class="kind">@modifier.Type.ToLowerInvariant()</span>
+                                    to @string.Join(" and ", modifier.Applies)
+                                </span>
+                            </li>
+                        }
+                    </ul>
+
+                    <div class="card-foot">
+                        @if (!condition.Verified)
+                        {
+                            <span class="unverified">
+                                <span class="glyph" aria-hidden="true">&#9650;</span>
+                                Unverified
+                            </span>
+                        }
+                        @if (condition.SourceUrl is { } url)
+                        {
+                            <a class="archives" href="@url" target="_blank" rel="noopener">
+                                Archives of Nethys
+                            </a>
+                        }
+                    </div>
+                </li>
+            }
+        </ul>
+    </Loaded>
+</RemoteView>
+
+@code {
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        var owner = RuleCatalog.All.First(category => category.Route == RuleCatalog.ConditionsRoute).Group;
+        if (Browser.Value.ActiveGroup != owner)
+        {
+            Dispatcher.Dispatch(new GroupSelected(owner));
+        }
+
+        if (Store.Value.Conditions is RemoteData<IReadOnlyList<ConditionSummary>>.NotAsked)
+        {
+            Load();
+        }
+    }
+
+    void Load() => Dispatcher.Dispatch(new ConditionsRequested());
+
+    // The sign, not a colour, says bonus or penalty, and it is the real minus sign rather than a
+    // hyphen so it lines up with the digits beside it.
+    static string Amount(ModifierSummary modifier) =>
+        modifier.Value < 0 ? $"−{Math.Abs(modifier.Value)}" : $"+{modifier.Value}";
+
+    static string Checked(IReadOnlyList<ConditionSummary> conditions) =>
+        conditions.Count(condition => condition.Verified) switch
+        {
+            0 => "None of these tables has been checked against the printed rules yet.",
+            var all when all == conditions.Count => "Every table here has been checked against the printed rules.",
+            var some => $"{some} of {conditions.Count} tables have been checked against the printed rules.",
+        };
+}

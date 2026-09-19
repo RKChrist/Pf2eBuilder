@@ -1,0 +1,17 @@
+<ul class="traits">
+    @foreach (var trait in Shown)
+    {
+        <li class="trait">@trait</li>
+    }
+</ul>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<string> Traits { get; set; } = [];
+
+    // Rarity is already drawn as its own marked tag beside this list, and AoN publishes it as a
+    // trait too. Printing it twice reads as a mistake.
+    [Parameter] public string? AlreadyShown { get; set; }
+
+    IEnumerable<string> Shown => Traits.Where(trait =>
+        !string.Equals(trait, AlreadyShown, StringComparison.OrdinalIgnoreCase));
+}

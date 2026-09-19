@@ -1,0 +1,36 @@
+.empty {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    margin: var(--space-4) var(--layout-gutter);
+    padding: var(--space-5) var(--space-4);
+    border: var(--border-hair) dashed var(--line-subtle);
+    border-radius: var(--radius-card);
+    background: var(--surface-raised);
+}
+
+.message {
+    color: var(--text-secondary);
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--tap-separation);
+}
+
+/* The suggestion is the control. A sentence telling a player to widen the range, with no way to
+   widen it, is worse than no sentence. */
+::deep .actions button {
+    min-height: var(--tap-default);
+    padding-inline: var(--space-4);
+    border: var(--border-hair) solid var(--accent-base);
+    border-radius: var(--radius-card);
+    background: var(--surface-raised);
+    color: var(--accent-base);
+    font-weight: var(--font-weight-semibold);
+}
+
+::deep .actions button:active {
+    background: var(--accent-wash);
+}

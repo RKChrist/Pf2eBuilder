@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.12" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.12" PrivateAssets="all" />
+    <PackageReference Include="Fluxor.Blazor.Web" Version="6.11.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Pf2e.Contracts\Pf2e.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
+  </ItemGroup>
+
+  <!-- wwwroot is globbed at evaluation, so on a clean tree the copy below does not exist yet and
+       the glob misses it. Naming the item explicitly makes it a static web asset either way. -->
+  <ItemGroup>
+    <Content Remove="wwwroot\css\tokens.css" />
+    <Content Include="wwwroot\css\tokens.css" />
+  </ItemGroup>
+
+  <Target Name="SyncDesignTokens" BeforeTargets="ResolveStaticWebAssetsInputs;BeforeBuild">
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\..\tools\tokens\dist\tokens.css"
+          DestinationFiles="$(MSBuildThisFileDirectory)wwwroot\css\tokens.css"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

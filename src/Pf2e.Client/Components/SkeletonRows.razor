@@ -1,0 +1,14 @@
+@* Nothing here reveals before the delay in the stylesheet, so a fast answer never shows it. *@
+<div class="skeleton" aria-hidden="true">
+    @for (var row = 0; row < Rows; row++)
+    {
+        <div class="row">
+            <div class="line wide"></div>
+            <div class="line narrow"></div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int Rows { get; set; } = 6;
+}
