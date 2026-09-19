@@ -7,7 +7,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
-const PORT = 9333;
+// Overridable so two checkouts can each drive their own Chrome at once.
+const PORT = Number(process.env.CDP_LAUNCH_PORT ?? 9333);
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

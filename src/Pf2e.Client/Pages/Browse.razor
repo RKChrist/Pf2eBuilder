@@ -171,11 +171,7 @@ else
     </RemoteView>
 }
 
-<RuleSheet RuleId="@OpenRuleId" />
-
 @code {
-    [Parameter, SupplyParameterFromQuery(Name = "rule")] public string? OpenRuleId { get; set; }
-
     RulesBrowserState State => Browser.Value;
 
     string Heading => State.ActiveCategory is { } category
@@ -212,7 +208,7 @@ else
 
     void Open(string category) => Dispatcher.Dispatch(new CategorySelected(category));
 
-    void OpenRule(string id) => Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("rule", id));
+    void OpenRule(string id) => Navigation.NavigateTo(Navigation.Rule(id));
 
     void OnQuery(string? query) => Dispatcher.Dispatch(new QueryChanged(query ?? string.Empty));
 }

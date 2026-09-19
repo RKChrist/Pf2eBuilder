@@ -1,6 +1,7 @@
 <div @attributes="Attributes" class="pf-search @Class">
     <span class="pf-search__icon" aria-hidden="true"></span>
-    <input class="pf-search__input"
+    <input @attributes="InputAttributes"
+           class="pf-search__input"
            type="search"
            value="@Value"
            @oninput="OnInput"
@@ -18,6 +19,10 @@
     public IReadOnlyDictionary<string, object>? Attributes { get; set; }
 
     [Parameter] public string? Class { get; set; }
+
+    /// <summary>Lands on the input itself rather than the wrapper, for a host that makes the field
+    /// a combobox and has to describe it as one.</summary>
+    [Parameter] public IReadOnlyDictionary<string, object>? InputAttributes { get; set; }
 
     [Parameter] public string? Value { get; set; }
 

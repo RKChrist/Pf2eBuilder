@@ -1,0 +1,29 @@
+@if (Parts.Count > 0)
+{
+    <span class="glance @Class">
+        @for (var index = 0; index < Parts.Count; index++)
+        {
+            var part = Parts[index];
+            @if (index > 0)
+            {
+                <span class="dot" aria-hidden="true">@Glance.Separator</span>
+            }
+            @if (part.Cost is { } cost)
+            {
+                <ActionCost Cost="cost" />
+            }
+            else
+            {
+                <span>@part.Text</span>
+            }
+        }
+    </span>
+}
+
+@code {
+    [Parameter, EditorRequired] public RuleSummary Rule { get; set; } = default!;
+
+    [Parameter] public string? Class { get; set; }
+
+    IReadOnlyList<GlancePart> Parts => Glance.Of(Rule);
+}

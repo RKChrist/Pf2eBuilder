@@ -50,8 +50,9 @@
 </BottomSheet>
 
 @code {
-    /// <summary>Owned by the query string so the phone's back button closes the sheet.</summary>
-    [Parameter] public string? RuleId { get; set; }
+    /// <summary>Owned by the query string so the phone's back button closes the sheet, on any
+    /// screen: the sheet lives in the layout.</summary>
+    [Parameter, SupplyParameterFromQuery(Name = "rule")] public string? RuleId { get; set; }
 
     string Title => Detail.Value.Detail is RemoteData<RuleDetail>.Loaded loaded
         ? loaded.Value.Summary.Name

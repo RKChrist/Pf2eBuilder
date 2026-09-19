@@ -51,6 +51,84 @@ await waitFor('.pf-bottomnav__item');
 check.eq('six navigation items', await count('.pf-bottomnav__item'), 6);
 check('the group opens its category list', await waitFor('.pf-row'));
 
+const topSearch = '[data-site-search]';
+const typeTop = (typed) => page.eval(`(() => {
+  const field = document.querySelector(${JSON.stringify(topSearch)});
+  field.focus();
+  field.value = ${JSON.stringify(typed)};
+  field.dispatchEvent(new Event('input', { bubbles: true }));
+  return true;
+})()`);
+const counted = () => page.eval(
+  `performance.getEntriesByType('resource').filter(e => e.name.includes('/rules/counts?')).length`);
+
+check('the search field is at the top of the screen', await page.eval(`(() => {
+  const box = document.querySelector(${JSON.stringify(topSearch)}).getBoundingClientRect();
+  return box.top >= 0 && box.top < 40;
+})()`));
+
+const topBefore = { searched: (await searches()).length, counted: await counted() };
+for (const typed of ['s', 'sh', 'shi', 'shie', 'shiel', 'shield']) {
+  await typeTop(typed);
+  await sleep(50);
+}
+check('typing in the top search shows results underneath it', await waitFor('.site-search .option'));
+await sleep(300);
+const topAfter = await searches();
+check.eq('six keystrokes at the top make one search', topAfter.length - topBefore.searched, 1);
+check.eq('and one count', (await counted()) - topBefore.counted, 1);
+check('the top search asked for the last keystroke', topAfter.at(-1).includes('Name=shield'), topAfter.at(-1));
+check('the dropdown opens below the field, not over it', await page.eval(`(() => {
+  const field = document.querySelector('.site-search .pf-search').getBoundingClientRect();
+  const panel = document.querySelector('.site-search .panel').getBoundingClientRect();
+  return panel.top >= field.bottom - 1 && panel.height > 100;
+})()`));
+check.eq('the exact name is the best match', await text('.site-search .option .name'), 'Shield');
+check('each match says what kind of record it is', (await text('.site-search .option .kind'))?.length > 0);
+check('matches are counted by category', await page.eval(
+  `[...document.querySelectorAll('.site-search .chip')].some(chip => /\\d/.test(chip.textContent))`));
+
+await page.key('Escape', 'Escape', 27);
+await sleep(200);
+check.eq('Escape closes the dropdown', await count('.site-search .panel'), 0);
+check.eq('and keeps what was typed', await page.eval(`document.querySelector(${JSON.stringify(topSearch)}).value`), 'shield');
+
+await page.key('Enter', 'Enter', 13);
+await sleep(300);
+check('Enter goes to the full results', (await page.eval('location.pathname')) === '/search'
+  && (await page.eval('location.search')).includes('q=shield'), await page.eval('location.href'));
+check('the full results are grouped by kind', await waitFor('.scopes .scope') && await count('.scopes .scope') > 2);
+check('the full results list records', await waitFor('.rule'));
+check('the full results label each record', (await text('.rule .kind'))?.length > 0);
+
+await typeTop('longsword');
+await waitFor('.site-search .option');
+await page.eval(`document.activeElement.blur()`);
+await sleep(100);
+await page.key('/', 'Slash', 191);
+check('/ focuses the search on a pointer device', await page.eval(
+  `document.activeElement === document.querySelector(${JSON.stringify(topSearch)})`));
+await typeTop('longsword');
+await waitFor('.site-search .option');
+await sleep(600);
+check.eq('on the results page the dropdown stays shut', await count('.site-search .panel'), 0);
+await page.goto(client);
+await waitFor('.pf-bottomnav__item');
+await typeTop('longsword');
+await waitFor('.site-search .option');
+await sleep(300);
+await page.key('ArrowDown', 'ArrowDown', 40);
+await sleep(100);
+check('ArrowDown marks the first match', await count('.site-search .option.active') === 1);
+await page.key('Enter', 'Enter', 13);
+check('Enter on a match opens that record', await waitFor('.pf-sheet__panel'));
+await sleep(500);
+check.eq('the opened record is the match', await text('.pf-sheet__title'), 'Longsword');
+await page.eval('history.back()');
+await sleep(600);
+await typeTop('');
+await sleep(300);
+
 await openFeats();
 check('a category lists its records', await count('.pf-row') > 1);
 check('the level filter is one dual-thumb range', await count('.pf-slider--range') === 1);
@@ -58,7 +136,7 @@ check('the level filter is one dual-thumb range', await count('.pf-slider--range
 const before = (await searches()).length;
 for (const typed of ['s', 'sh', 'shi', 'shie', 'shiel', 'shield']) {
   await page.eval(`(() => {
-    const field = document.querySelector('.pf-search__input');
+    const field = document.querySelector('.filters .pf-search__input');
     field.value = ${JSON.stringify(typed)};
     field.dispatchEvent(new Event('input', { bubbles: true }));
     return true;
@@ -73,7 +151,7 @@ check('the results are the searched ones',
   (await text('.pf-row__title')).toLowerCase().includes('shield'), await text('.pf-row__title'));
 
 await page.eval(`(() => {
-  const field = document.querySelector('.pf-search__input');
+  const field = document.querySelector('.filters .pf-search__input');
   field.value = '';
   field.dispatchEvent(new Event('input', { bubbles: true }));
   return true;

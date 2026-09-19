@@ -1,0 +1,73 @@
+.top {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-4) var(--layout-gutter) var(--space-2);
+}
+
+.heading {
+    font-size: var(--font-size-subhead);
+    font-weight: var(--font-weight-semibold);
+    overflow-wrap: anywhere;
+}
+
+.summary {
+    color: var(--text-secondary);
+    font-size: var(--font-size-data);
+}
+
+/* A strip on a phone, where a thumb flicks it sideways; it wraps once there is width. */
+.scopes {
+    display: flex;
+    gap: var(--tap-separation);
+    overflow-x: auto;
+    padding: var(--space-2) var(--layout-gutter);
+    scrollbar-width: none;
+}
+
+.scope {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--tap-min);
+    padding-inline: var(--space-3);
+    border: var(--border-hair) solid var(--line-strong);
+    border-radius: var(--radius-chip);
+    background: var(--surface-raised);
+    color: var(--text-primary);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.scope[aria-current='page'] {
+    border-color: var(--accent-base);
+    background: var(--accent-wash);
+    color: var(--accent-press);
+}
+
+.count {
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.rows {
+    margin: var(--space-0);
+    padding: var(--space-0);
+    list-style: none;
+}
+
+@media (hover: hover) {
+    .scope:hover {
+        background: var(--surface-sunken);
+    }
+}
+
+@media (min-width: 600px) {
+    .scopes {
+        flex-wrap: wrap;
+        overflow-x: visible;
+    }
+}
