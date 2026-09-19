@@ -2,7 +2,7 @@
     position: sticky;
     top: 0;
     z-index: 2;
-    padding: var(--space-3) var(--layout-gutter) var(--space-3);
+    padding: var(--space-3) var(--layout-gutter);
     background: var(--surface-page);
     border-bottom: var(--border-hair) solid var(--line-subtle);
 }
@@ -12,49 +12,9 @@
     font-weight: var(--font-weight-semibold);
 }
 
-.back {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    min-height: var(--tap-min);
-    margin-bottom: var(--space-1);
-    padding: var(--space-0);
-    border: 0;
-    background: none;
-    color: var(--accent-base);
-    font-size: var(--font-size-data);
-    font-weight: var(--font-weight-semibold);
-}
-
-.categories {
-    margin: var(--space-0);
-    padding: var(--space-0);
-    list-style: none;
-}
-
-.category {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    width: 100%;
-    min-height: var(--tap-primary);
-    padding: var(--space-2) var(--layout-gutter);
-    border: 0;
-    border-bottom: var(--border-hair) solid var(--line-subtle);
-    background: var(--surface-raised);
-    color: var(--text-primary);
-    font-size: var(--font-size-body);
-    text-align: start;
-    text-decoration: none;
-}
-
-.category:active {
-    background: var(--surface-sunken);
-}
-
-.chevron {
-    color: var(--text-muted);
+/* Pulled back by the quiet button's own inset so its label starts on the heading's line. */
+.top ::deep .back {
+    margin-inline-start: calc(var(--space-3) * -1);
 }
 
 .filters {
@@ -65,15 +25,9 @@
     padding: var(--space-3) var(--layout-gutter);
 }
 
-.name {
+.filters ::deep .name {
     flex: 1;
-    min-width: 0;
-    min-height: var(--tap-default);
-    padding-inline: var(--space-3);
-    border: var(--border-hair) solid var(--line-strong);
-    border-radius: var(--radius-card);
-    background: var(--surface-raised);
-    font-size: var(--font-size-body);
+    min-width: var(--space-0);
 }
 
 .active-trait {
@@ -96,30 +50,7 @@
 }
 
 .levels {
-    display: flex;
-    align-items: end;
-    gap: var(--tap-separation);
     padding: var(--space-0) var(--layout-gutter) var(--space-3);
-}
-
-.level-field {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-}
-
-.level-label {
-    color: var(--text-muted);
-    font-size: var(--font-size-chip);
-}
-
-.level-field select {
-    min-height: var(--tap-default);
-    padding-inline: var(--space-2);
-    border: var(--border-hair) solid var(--line-strong);
-    border-radius: var(--radius-card);
-    background: var(--surface-raised);
-    font-size: var(--font-size-body);
 }
 
 .trait-scroller {
@@ -149,74 +80,31 @@
     font-weight: var(--font-weight-bold);
 }
 
-.records {
-    margin: var(--space-0);
-    padding: var(--space-0);
-    list-style: none;
-}
-
-.record {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    width: 100%;
-    min-height: var(--tap-default);
-    padding: var(--space-3) var(--layout-gutter);
-    border: 0;
-    border-bottom: var(--border-hair) solid var(--line-subtle);
-    background: var(--surface-raised);
-    color: var(--text-primary);
-    text-align: start;
-}
-
-.record:active {
-    background: var(--surface-sunken);
-}
-
-.record-name {
-    font-size: var(--font-size-body);
-    font-weight: var(--font-weight-semibold);
-    line-height: var(--font-leading-snug);
-}
-
-.record-marks {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-}
-
-.record-level {
-    color: var(--text-muted);
-    font-size: var(--font-size-chip);
+.level {
     letter-spacing: var(--font-tracking-wide);
+    white-space: nowrap;
 }
 
-.pager {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--tap-separation);
-    padding: var(--space-4) var(--layout-gutter);
+/* 600px and 1024px are layout.viewport-wide and layout.viewport-desk; a media query cannot read
+   a custom property. */
+@media (min-width: 600px) {
+    /* Seventy-four category names are short labels, so they take the width as more columns. */
+    .categories {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    /* The records are one column at any width: the row is already as wide as it reads, and at a
+       laptop width the space beside it is where the record itself opens. */
+    .filters,
+    .levels,
+    .trait-scroller {
+        max-width: var(--layout-content-max);
+    }
 }
 
-.pager button {
-    min-height: var(--tap-default);
-    padding-inline: var(--space-4);
-    border: var(--border-hair) solid var(--accent-base);
-    border-radius: var(--radius-card);
-    background: var(--surface-raised);
-    color: var(--accent-base);
-    font-weight: var(--font-weight-semibold);
-}
-
-.pager button:disabled {
-    border-color: var(--line-subtle);
-    color: var(--text-muted);
-    cursor: default;
-}
-
-.count {
-    color: var(--text-secondary);
-    font-size: var(--font-size-data);
-    text-align: center;
+@media (min-width: 1024px) {
+    .categories {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }

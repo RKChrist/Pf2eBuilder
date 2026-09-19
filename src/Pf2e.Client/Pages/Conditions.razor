@@ -12,10 +12,21 @@
 
 <RemoteView T="IReadOnlyList<ConditionSummary>" Data="Store.Value.Conditions">
     <Loading>
-        <SkeletonRows Rows="4" />
+        <div class="pending">
+            <Spinner ShowLabel="true" Label="Loading conditions" />
+        </div>
     </Loading>
     <Failed Context="message">
-        <FailureState Message="@message" OnRetry="Load" />
+        <div class="panel">
+            <Card>
+                <ErrorState Title="Could not load the conditions">
+                    <ChildContent>@message</ChildContent>
+                    <Action>
+                        <Button Variant="ButtonVariant.Secondary" OnClick="Load">Try again</Button>
+                    </Action>
+                </ErrorState>
+            </Card>
+        </div>
     </Failed>
     <Loaded Context="conditions">
         <div class="preamble">
@@ -26,49 +37,47 @@
             <p class="checked">@Checked(conditions)</p>
         </div>
 
-        <ul class="cards">
+        <div class="cards">
             @foreach (var condition in conditions)
             {
-                <li class="card">
-                    <div class="card-top">
-                        <h2 class="name">@condition.Name</h2>
+                <Card Title="@condition.Name">
+                    <HeadContent>
                         @if (condition.HasValue)
                         {
                             <span class="valued">Takes a value</span>
                         }
-                    </div>
+                    </HeadContent>
+                    <ChildContent>
+                        <ul class="modifiers">
+                            @foreach (var modifier in condition.Modifiers)
+                            {
+                                <li class="modifier">
+                                    <ModifierValue Value="modifier.Value"
+                                                   Kind="RuleDisplay.KindOf(modifier.Type)" />
+                                    <span class="effect">to @string.Join(" and ", modifier.Applies)</span>
+                                </li>
+                            }
+                        </ul>
 
-                    <ul class="modifiers">
-                        @foreach (var modifier in condition.Modifiers)
-                        {
-                            <li class="modifier">
-                                <span class="amount">@Amount(modifier)</span>
-                                <span class="effect">
-                                    <span class="kind">@modifier.Type.ToLowerInvariant()</span>
-                                    to @string.Join(" and ", modifier.Applies)
+                        <div class="foot">
+                            @if (!condition.Verified)
+                            {
+                                <span class="unverified">
+                                    <span class="glyph" aria-hidden="true">▲</span>
+                                    Unverified
                                 </span>
-                            </li>
-                        }
-                    </ul>
-
-                    <div class="card-foot">
-                        @if (!condition.Verified)
-                        {
-                            <span class="unverified">
-                                <span class="glyph" aria-hidden="true">▲</span>
-                                Unverified
-                            </span>
-                        }
-                        @if (condition.SourceUrl is { } url)
-                        {
-                            <a class="archives" href="@url" target="_blank" rel="noopener">
-                                Archives of Nethys
-                            </a>
-                        }
-                    </div>
-                </li>
+                            }
+                            @if (condition.SourceUrl is { } url)
+                            {
+                                <a class="archives" href="@url" target="_blank" rel="noopener">
+                                    Archives of Nethys
+                                </a>
+                            }
+                        </div>
+                    </ChildContent>
+                </Card>
             }
-        </ul>
+        </div>
     </Loaded>
 </RemoteView>
 
@@ -90,10 +99,6 @@
     }
 
     void Load() => Dispatcher.Dispatch(new ConditionsRequested());
-
-    // U+2212, not a hyphen, so the sign keeps the width of a digit under tabular-nums.
-    static string Amount(ModifierSummary modifier) =>
-        modifier.Value < 0 ? $"−{Math.Abs(modifier.Value)}" : $"+{modifier.Value}";
 
     static string Checked(IReadOnlyList<ConditionSummary> conditions) =>
         conditions.Count(condition => condition.Verified) switch

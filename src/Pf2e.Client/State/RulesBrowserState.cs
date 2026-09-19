@@ -1,4 +1,5 @@
 using Fluxor;
+using Pf2e.Components;
 using Pf2e.Contracts.Rules;
 
 namespace Pf2e.Client.State;
@@ -14,9 +15,9 @@ public sealed record RulesBrowserState
 
     public string Query { get; init; } = string.Empty;
 
-    public int? MinLevel { get; init; }
-
-    public int? MaxLevel { get; init; }
+    /// <summary>Whole scale means unfiltered. The two bounds cannot cross, so there is no
+    /// arrangement of this filter that matches nothing.</summary>
+    public IntRange Levels { get; init; } = LevelScale.Whole;
 
     public string? Trait { get; init; }
 
@@ -33,7 +34,7 @@ public sealed record CategoryCleared;
 
 public sealed record QueryChanged(string Query);
 
-public sealed record LevelRangeChanged(int? MinLevel, int? MaxLevel);
+public sealed record LevelRangeChanged(IntRange Levels);
 
 public sealed record TraitSelected(string? Trait);
 

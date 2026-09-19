@@ -1315,13 +1315,56 @@
   overflow-y: auto;
 }
 
+/* What a sheet costs is the list behind it, and on a phone there is no way round that. Given
+   laptop width there is: a sheet marked --dock stands at the side instead, so the place you had
+   in six thousand feats is still there when you look up from one. The host reserves the same
+   width for it, which is why the width is published here rather than decided twice. */
+:root {
+  --pf-sheet-dock-width: min(var(--layout-content-max), 40%);
+}
+
+/* 1024px is layout.viewport-desk; a media query cannot read a custom property. */
+@media (min-width: 1024px) {
+  .pf-sheet--dock {
+    /* Read by the behaviour file, which refuses the drag-to-dismiss while this is set: a panel
+       at the side does not go down, and the stylesheet is the one place that knows it is one. */
+    --pf-sheet-docked: 1;
+    inset-inline-start: auto;
+    width: var(--pf-sheet-dock-width);
+  }
+
+  /* Nothing is dimmed, because the list beside it stays in use. */
+  .pf-sheet--dock .pf-sheet__scrim,
+  .pf-sheet--dock .pf-sheet__grab {
+    display: none;
+  }
+
+  .pf-sheet--dock .pf-sheet__panel {
+    height: 100%;
+    max-height: none;
+    border-start-start-radius: var(--radius-grid);
+    border-start-end-radius: var(--radius-grid);
+    border-inline-start: var(--border-hair) solid var(--line-subtle);
+    animation-name: pf-sheet-slide;
+  }
+}
+
+@keyframes pf-sheet-slide {
+  from {
+    transform: translateX(100%);
+  }
+}
+
 /* ---------------------------------------------------------------- bottom nav */
 
+/* No inline gutter: six items at the tap floor, separated, already spend 304 of the 320px
+   minimum viewport, so a bar that also reserved one overran it on the right and left the row
+   sitting a gutter off centre. */
 .pf-bottomnav {
   display: flex;
   gap: var(--tap-separation);
   min-height: var(--layout-bottom-bar);
-  padding: var(--space-1) var(--layout-gutter) calc(var(--space-1) + var(--layout-safe-bottom));
+  padding: var(--space-1) var(--space-0) calc(var(--space-1) + var(--layout-safe-bottom));
   border-top: var(--border-hair) solid var(--line-subtle);
   background: var(--surface-raised);
 }
@@ -1368,6 +1411,35 @@
   width: 100%;
   height: 100%;
   fill: currentColor;
+}
+
+/* A bar at the bottom is a phone's answer, because that is where a thumb reaches. A pointer has
+   no thumb arc and the bottom edge is the furthest part of a laptop screen from the cursor, so a
+   nav marked --rail stands up beside the content once there is width for one. The width is the
+   bar's own thickness: a rail is the bar turned on its side, not a new size.
+   1024px is layout.viewport-desk; a media query cannot read a custom property. */
+@media (min-width: 1024px) {
+  .pf-bottomnav--rail {
+    flex-direction: column;
+    justify-content: flex-start;
+    width: var(--layout-bottom-bar);
+    height: 100%;
+    padding: var(--space-3) var(--space-0);
+    border-top: none;
+    border-inline-end: var(--border-hair) solid var(--line-subtle);
+  }
+
+  /* Not flex: 1, which would share the whole column height between six items. */
+  .pf-bottomnav--rail .pf-bottomnav__item {
+    flex: none;
+    width: 100%;
+    padding-block: var(--space-2);
+  }
+
+  /* The rule moves to the edge the content is on, which is the edge the eye reads against. */
+  .pf-bottomnav--rail .pf-bottomnav__item[aria-current='page'] {
+    box-shadow: inset calc(var(--border-focus) * -1) 0 0 0 var(--accent-base);
+  }
 }
 
 /* ---------------------------------------------------------------- pager */
@@ -1428,6 +1500,19 @@
   font-size: var(--font-size-data);
   font-variant-numeric: tabular-nums;
   text-align: center;
+}
+
+/* ---------------------------------------------------------------- hover */
+
+/* A pointer expects whatever is under it to answer, and until design/003 nothing here had a
+   pointer to answer. Fenced behind the query so a tap never leaves a row looking pressed. */
+@media (hover: hover) {
+  .pf-row:hover,
+  .pf-bottomnav__item:hover,
+  .pf-pager__btn:not(:disabled):hover,
+  .pf-sheet__close:hover {
+    background: var(--surface-sunken);
+  }
 }
 
 /* ---------------------------------------------------------------- spinner */

@@ -52,7 +52,13 @@ public sealed class RulesBrowserEffects(RulesApi api, IState<RulesBrowserState> 
 
             var now = state.Value;
             var result = await api.SearchAsync(
-                now.ActiveCategory, now.Query, now.MinLevel, now.MaxLevel, now.Trait, now.Page, ct);
+                now.ActiveCategory,
+                now.Query,
+                LevelScale.LowBound(now.Levels),
+                LevelScale.HighBound(now.Levels),
+                now.Trait,
+                now.Page,
+                ct);
 
             dispatcher.Dispatch(new SearchSucceeded(result));
         }

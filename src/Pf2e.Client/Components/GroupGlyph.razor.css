@@ -1,0 +1,4 @@
+/* The kit paints a navigation icon with fill, and these are drawn with strokes. */
+.glyph {
+    fill: none;
+}
