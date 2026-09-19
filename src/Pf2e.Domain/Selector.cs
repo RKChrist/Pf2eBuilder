@@ -9,6 +9,9 @@ public abstract record Selector
 {
     public abstract bool Matches(StatTarget target);
 
+    /// <summary>Readable enough to put in a breakdown the player reads.</summary>
+    public abstract string Describe();
+
     /// <summary>One named statistic. A skill selector with no name means every skill.</summary>
     public static Selector Exactly(StatKind kind, string? skillName = null) => new ExactSelector(kind, skillName);
 
@@ -26,25 +29,35 @@ public abstract record Selector
     {
         public override bool Matches(StatTarget target) =>
             Kind == target.Kind && (SkillName is null || SkillName.Equals(target.SkillName, StringComparison.OrdinalIgnoreCase));
+
+        public override string Describe() => SkillName ?? Kind.ToString();
     }
 
     sealed record AttributeSelector(AttributeKind Attribute) : Selector
     {
         public override bool Matches(StatTarget target) => target.GovernedBy == Attribute;
+
+        public override string Describe() => $"{Attribute}-based";
     }
 
     sealed record AllChecksAndDcsSelector : Selector
     {
         public override bool Matches(StatTarget target) => target.IsCheck || target.IsDc;
+
+        public override string Describe() => "all checks and DCs";
     }
 
     sealed record SavingThrowSelector : Selector
     {
         public override bool Matches(StatTarget target) => target.IsSavingThrow;
+
+        public override string Describe() => "saving throws";
     }
 
     sealed record SpeedSelector : Selector
     {
         public override bool Matches(StatTarget target) => target.Kind is StatKind.Speed;
+
+        public override string Describe() => "speed";
     }
 }

@@ -21,6 +21,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Pf2e.Domain\Pf2e.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Pf2e.Contracts\Pf2e.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\Pf2e.Application\Pf2e.Application.csproj" />
   </ItemGroup>
 
 </Project>

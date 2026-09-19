@@ -1,0 +1,23 @@
+using MediatR;
+using Pf2e.Application.Features.Conditions;
+using Pf2e.Application.Features.Rules;
+
+namespace Pf2e.Api.Endpoints;
+
+/// <summary>
+/// Endpoints translate HTTP into a request and nothing else. No querying, no mapping, no rules.
+/// If an endpoint grows a second statement, the logic belongs in a handler.
+/// </summary>
+public static class RulesEndpoints
+{
+    public static IEndpointRouteBuilder MapRules(this IEndpointRouteBuilder app)
+    {
+        app.MapGet("/rules", (ISender sender, [AsParameters] SearchRules query, CancellationToken ct) =>
+            sender.Send(query, ct));
+
+        app.MapGet("/conditions", (ISender sender, CancellationToken ct) =>
+            sender.Send(new GetConditions(), ct));
+
+        return app;
+    }
+}

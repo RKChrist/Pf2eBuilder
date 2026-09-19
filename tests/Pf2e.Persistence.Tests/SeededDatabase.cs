@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using Pf2e.Api.Infrastructure.Persistence;
+using Pf2e.Infrastructure.Persistence;
 
 namespace Pf2e.Persistence.Tests;
 

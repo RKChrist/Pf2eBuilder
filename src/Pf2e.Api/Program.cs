@@ -1,31 +1,39 @@
+using FluentValidation;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Pf2e.Api.Infrastructure.Configuration;
-using Pf2e.Api.Infrastructure.Persistence;
+using Pf2e.Api.Endpoints;
+using Pf2e.Application;
+using Pf2e.Infrastructure;
+using Pf2e.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSection<PersistenceOptions>(builder.Configuration, PersistenceOptions.Section);
-builder.Services.AddSection<SeedingOptions>(builder.Configuration, SeedingOptions.Section);
-
-builder.Services.AddDbContext<RulesDbContext>((services, db) =>
-{
-    var persistence = services.GetRequiredService<IOptions<PersistenceOptions>>().Value;
-    switch (persistence.Provider)
-    {
-        case "Sqlite":
-            db.UseSqlite(persistence.ConnectionString);
-            break;
-        default:
-            throw new InvalidOperationException(
-                $"Database:Provider is '{persistence.Provider}', which this build does not support. " +
-                "Supported providers: Sqlite.");
-    }
-});
-
-builder.Services.AddScoped<RulesSeeder>();
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddProblemDetails();
 
 var app = builder.Build();
+
+// A failed validator is a bad request, not a server fault. Translating it here keeps every
+// handler free of HTTP concerns.
+app.UseExceptionHandler(handler => handler.Run(async context =>
+{
+    var error = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+    if (error is ValidationException validation)
+    {
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        await context.Response.WriteAsJsonAsync(new
+        {
+            title = "The request was not valid.",
+            errors = validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }),
+        });
+        return;
+    }
+
+    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+    await context.Response.WriteAsJsonAsync(new { title = "Something went wrong." });
+}));
 
 await using (var scope = app.Services.CreateAsyncScope())
 {
@@ -42,6 +50,8 @@ await using (var scope = app.Services.CreateAsyncScope())
         await scope.ServiceProvider.GetRequiredService<RulesSeeder>().SeedAsync();
     }
 }
+
+app.MapRules();
 
 app.MapGet("/health", async (RulesDbContext db) => Results.Ok(new
 {

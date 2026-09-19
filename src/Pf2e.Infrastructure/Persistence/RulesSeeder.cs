@@ -1,11 +1,12 @@
+using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Pf2e.Api.Features.Rules;
+using Pf2e.Domain.Rules;
 
-namespace Pf2e.Api.Infrastructure.Persistence;
+namespace Pf2e.Infrastructure.Persistence;
 
 public sealed record SeedingReport(
     bool Skipped,

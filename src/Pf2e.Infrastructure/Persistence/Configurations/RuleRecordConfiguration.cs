@@ -2,30 +2,9 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Pf2e.Domain.Rules;
 
-namespace Pf2e.Api.Features.Rules;
-
-/// <summary>
-/// One record from Archives of Nethys. The fields a query filters on are columns; the other
-/// ninety-odd, which are sparse and differ per category, live in <see cref="Mechanics"/>.
-/// Eighteen tables of mostly-null columns would be a schema nobody could hold in their head.
-/// </summary>
-public sealed class RuleRecord
-{
-    public required string Id { get; init; }
-    public required string Category { get; init; }
-    public required string Name { get; init; }
-    public required string SourceUrl { get; init; }
-    public required string RulesetVersion { get; init; }
-    public int? Level { get; init; }
-    public string? Rarity { get; init; }
-    public string? Type { get; init; }
-    public string? PrimarySource { get; init; }
-    public List<string> Traits { get; init; } = [];
-
-    /// <summary>Every allow-listed field not promoted to a column, as a JSON object.</summary>
-    public required string Mechanics { get; init; }
-}
+namespace Pf2e.Infrastructure.Persistence.Configurations;
 
 public sealed class RuleRecordConfiguration : IEntityTypeConfiguration<RuleRecord>
 {

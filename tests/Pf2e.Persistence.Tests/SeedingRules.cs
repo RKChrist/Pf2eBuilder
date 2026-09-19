@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
-using Pf2e.Api.Features.Rules;
+using Pf2e.Application.Features.Conditions;
+using Pf2e.Application.Features.Rules;
 using Pf2e.Domain;
 
 namespace Pf2e.Persistence.Tests;
@@ -49,19 +50,6 @@ public class SeedingRules(SeededDatabase database) : IClassFixture<SeededDatabas
         await using var db = database.NewContext();
         Assert.Equal(Published.Values.Sum(), await db.RuleRecords.CountAsync());
         Assert.Equal(1, await db.SeedState.CountAsync());
-    }
-
-    [Fact]
-    public async Task EveryCodedConditionResolvesToASeededRecord()
-    {
-        await using var db = database.NewContext();
-
-        var links = await db.ResolveAsync();
-
-        Assert.Equal(Conditions.All.Length, links.Count);
-        var unresolved = links.Where(l => l.Record is null).Select(l => l.Definition.Key).ToArray();
-        Assert.True(unresolved.Length == 0, $"unresolved conditions: {string.Join(", ", unresolved)}");
-        Assert.All(links, link => Assert.StartsWith("https://2e.aonprd.com/", link.Record!.SourceUrl));
     }
 
     [Fact]

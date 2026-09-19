@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace Pf2e.Api.Infrastructure.Persistence;
+namespace Pf2e.Infrastructure.Persistence;
 
 /// <summary>
 /// Exists so `dotnet ef` never executes Program.cs, which migrates and seeds on startup.

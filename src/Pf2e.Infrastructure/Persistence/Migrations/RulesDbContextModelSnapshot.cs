@@ -3,11 +3,11 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Pf2e.Api.Infrastructure.Persistence;
+using Pf2e.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace Pf2e.Api.Infrastructure.Persistence.Migrations
+namespace Pf2e.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(RulesDbContext))]
     partial class RulesDbContextModelSnapshot : ModelSnapshot
@@ -17,7 +17,7 @@ namespace Pf2e.Api.Infrastructure.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
 
-            modelBuilder.Entity("Pf2e.Api.Features.Rules.RuleRecord", b =>
+            modelBuilder.Entity("Pf2e.Domain.Rules.RuleRecord", b =>
                 {
                     b.Property<string>("Id")
                         .HasMaxLength(64)
@@ -75,7 +75,7 @@ namespace Pf2e.Api.Infrastructure.Persistence.Migrations
                     b.ToTable("RuleRecords", (string)null);
                 });
 
-            modelBuilder.Entity("Pf2e.Api.Infrastructure.Persistence.SeedState", b =>
+            modelBuilder.Entity("Pf2e.Infrastructure.Persistence.SeedState", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()

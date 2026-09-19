@@ -20,6 +20,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Pf2e.Api\Pf2e.Api.csproj" />
+    <ProjectReference Include="..\..\src\Pf2e.Application\Pf2e.Application.csproj" />
+    <ProjectReference Include="..\..\src\Pf2e.Infrastructure\Pf2e.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

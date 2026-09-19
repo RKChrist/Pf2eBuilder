@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Pf2e.Domain\Pf2e.Domain.csproj" />
+    <ProjectReference Include="..\Pf2e.Infrastructure\Pf2e.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

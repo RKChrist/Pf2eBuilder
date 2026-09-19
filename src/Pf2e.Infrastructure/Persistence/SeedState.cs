@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Pf2e.Api.Infrastructure.Persistence;
+namespace Pf2e.Infrastructure.Persistence;
 
 /// <summary>
 /// What the database already holds. The seeder compares against this and does nothing when it

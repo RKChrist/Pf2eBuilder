@@ -1,6 +1,8 @@
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace Pf2e.Api.Infrastructure.Configuration;
+namespace Pf2e.Infrastructure.Configuration;
 
 public static class OptionsRegistration
 {

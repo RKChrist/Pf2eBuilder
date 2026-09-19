@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Pf2e.Api.Infrastructure.Persistence;
+namespace Pf2e.Infrastructure.Persistence;
 
 public sealed class PersistenceOptions
 {
