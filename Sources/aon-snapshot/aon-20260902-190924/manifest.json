@@ -1,6 +1,6 @@
 {
   "index": "aon-20260902-190924",
-  "pulledAtUtc": "2026-09-19T09:19:06Z",
+  "pulledAtUtc": "2026-09-19T19:16:07Z",
   "endpoint": "https://elasticsearch.aonprd.com/aon/_search",
   "pageSize": 500,
   "sort": "id.keyword:asc",
@@ -511,6 +511,24 @@
       "indexed": 10,
       "written": 10,
       "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "creature": {
+      "indexed": 4791,
+      "written": 3832,
+      "droppedAsLegacy": 959,
+      "legacyTargetMissing": 0
+    },
+    "creature-family": {
+      "indexed": 647,
+      "written": 441,
+      "droppedAsLegacy": 206,
+      "legacyTargetMissing": 0
+    },
+    "creature-ability": {
+      "indexed": 85,
+      "written": 45,
+      "droppedAsLegacy": 40,
       "legacyTargetMissing": 0
     }
   }

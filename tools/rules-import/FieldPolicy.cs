@@ -30,6 +30,11 @@ static class FieldPolicy
         "draconic-exemplar", "tactic", "class-kit", "relic", "set-relic", "curse",
         "deity-category", "mythic-calling", "skill-general-action", "hellknight-order",
         "deviant-ability-classification",
+
+        // The encounter side. Creature records carry hp, ac, the three saves, perception,
+        // speed, traits and attribute modifiers as structured fields, so a DM searches for an
+        // Ogre Warrior instead of typing one in mid-fight.
+        "creature", "creature-family", "creature-ability",
     ];
 
     // What we withhold is Paizo's expression, meaning flavour text and rule descriptions. Short
@@ -65,7 +70,7 @@ static class FieldPolicy
     // never reaches the seed, so a new AoN field is withheld until someone reviews and lists it.
     public static readonly FrozenSet<string> SeedAllowList = new[]
     {
-        "hardness", "hardness_raw", "item_bonus_value", "item_bonus_note", "item_bonus_consumable", "item_subcategory", "trait_group", "source_raw", "ac", "actions", "actions_number", "ammunition", "archetype", "area", "area_raw", "area_type",
+        "hardness", "hardness_raw", "item_bonus_value", "item_bonus_note", "item_bonus_consumable", "item_subcategory", "trait_group", "source_raw", "fortitude_save", "reflex_save", "will_save", "perception", "dexterity", "constitution", "intelligence", "wisdom", "charisma", "sense", "creature_family", "npc", "strike_damage_average", "attack_bonus", "strongest_save", "weakest_save", "size_id", "alignment", "trait_raw", "ac", "actions", "actions_number", "ammunition", "archetype", "area", "area_raw", "area_type",
         "armor_category", "armor_group", "attack_proficiency", "attribute", "attribute_flaw",
         "base_item", "bloodline", "bulk", "bulk_raw", "check_penalty", "class", "cleric_spell",
         "component", "cost", "damage", "damage_die", "damage_type", "defense_proficiency", "deity",

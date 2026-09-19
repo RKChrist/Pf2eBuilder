@@ -111,7 +111,10 @@ deity-category 40
 mythic-calling 15
 skill-general-action 25
 hellknight-order 14
-deviant-ability-classification 10'
+deviant-ability-classification 10
+creature 4791
+creature-family 647
+creature-ability 85'
 
 SNAPSHOT_DIR=""
 for candidate in "$SNAPSHOT_ROOT"/*/; do

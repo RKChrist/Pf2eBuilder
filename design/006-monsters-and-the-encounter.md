@@ -79,3 +79,23 @@ reading a feat into finding every feat like it.
 
 Exploration and Downtime modes. The PDF defines both and neither is needed to run a fight.
 They come after the encounter works.
+
+## Three corrections from the owner, all of which change the screen
+
+**Hit points are typed, not tapped.** The stepper sends one point per tap, so losing 100 hit
+points is 100 taps and 100 round trips. That is unusable in the moment it exists for. The
+primary control becomes a numeric field with Damage and Heal, one round trip per application
+whatever the amount. The steppers stay for the nudge case, and the field carries
+`inputmode="numeric"` so a phone offers the keypad.
+
+**Party-wide buffs read as party-wide.** Rallying Anthem is one effect on five characters, and
+five identical chips on five cards says something different from what happened. An effect
+applied to many targets is shown once, above the party, with the targets it reached; an effect
+on one character stays on that character. The model already needs multi-target application
+because the PDF asks for "all PCs" and "all monsters", so this is a display consequence of a
+decision already made rather than new state.
+
+**Add a player or add a monster, from the tracker.** Putting a combatant into the fight is the
+encounter screen's own job, not something you leave to do elsewhere. Adding a monster searches
+the 3,832 seeded creatures and drops in real numbers. Adding a player pulls from the table's
+roster. Both are DM actions.
