@@ -19,3 +19,6 @@ src/Pf2e.Client/wwwroot/css/tokens.css
 *.db
 *.db-shm
 *.db-wal
+
+# Published output produced by serve.cmd, rebuilt in seconds.
+artifacts/
