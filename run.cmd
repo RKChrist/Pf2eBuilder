@@ -7,6 +7,9 @@ rem That is the architecture, not a bug, but it does mean one project is never e
 
 cd /d "%~dp0"
 
+rem A previous run holds the build output open, so stop it before doing anything else.
+call "%~dp0stop.cmd" >nul 2>&1
+
 if not exist "tools\rules-import\out\seed\class.json" (
   echo Seed data is missing, generating it from the tracked snapshot...
   dotnet run --project tools\rules-import -- transform

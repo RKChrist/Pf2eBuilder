@@ -69,3 +69,17 @@ from cropped screenshots that measurement disproved.
 Only re-pull when Archives of Nethys publishes a new index, and be a polite client when you do:
 
     dotnet run --project tools/rules-import -- pull --force
+
+## When the build says a file is locked
+
+A running API or client holds `Pf2e.Domain.dll` open, and the next build fails with
+`MSB3027: could not copy ... the file is locked by "Pf2e.Api"`. Nothing is wrong with the code.
+
+    stop.cmd
+
+`run.cmd` calls it first, so restarting never hits this. Stopping by hand from PowerShell:
+
+    Get-Process Pf2e.Api, Pf2e.Client -ErrorAction SilentlyContinue | Stop-Process -Force
+
+`pkill -f Pf2e.Api` from a bash shell does **not** work here; the process is a Windows
+executable and pkill silently matches nothing, which looks like the kill succeeded.
