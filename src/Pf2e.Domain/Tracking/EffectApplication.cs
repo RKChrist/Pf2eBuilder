@@ -57,9 +57,9 @@ public sealed class EffectApplication
 
     public DurationTiming Timing { get; set; }
 
-    /// <summary>The combatant whose turn <see cref="DurationTiming.SourceTurnStart"/> counts
-    /// down on. Null outside an encounter, and for an effect nobody caused.</summary>
-    public Guid? SourceCombatantId { get; set; }
+    /// <summary>The creature whose turn <see cref="DurationTiming.SourceTurnStart"/> counts
+    /// down on. Null outside an encounter, and for an effect nobody claimed.</summary>
+    public Guid? SourceCreatureId { get; set; }
 
     /// <summary>Dealt at the end of the affected creature's turn, then a DC 15 flat check ends
     /// it. Nothing here applies it: the turn clock raises a reminder and the DM rolls.</summary>
@@ -77,7 +77,7 @@ public sealed class EffectApplication
     public ActiveEffect AsActiveOn(EffectTarget target) =>
         new(Id, Name, target.Value, Source, Duration);
 
-    public void Overwrite(ActiveEffect active, DurationTiming timing, Guid? sourceCombatantId)
+    public void Overwrite(ActiveEffect active, DurationTiming timing, Guid? sourceCreatureId)
     {
         Name = active.Name;
         Duration = active.Duration;
@@ -85,7 +85,7 @@ public sealed class EffectApplication
         SourceKey = active.Source.StoredKey;
         Modifiers = [.. active.Source.StoredModifiers];
         Timing = timing;
-        SourceCombatantId = sourceCombatantId;
+        SourceCreatureId = sourceCreatureId;
     }
 }
 

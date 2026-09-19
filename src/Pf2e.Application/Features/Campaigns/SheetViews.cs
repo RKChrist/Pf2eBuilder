@@ -69,7 +69,7 @@ internal static class SheetViews
             && application.SourceKind == "Seeded",
         application.Duration,
         application.Timing.ToString(),
-        application.SourceCombatantId,
+        application.SourceCreatureId,
         application.PersistentDamage,
         application.PersistentDamageType,
         [.. application.Modifiers.Select(Of)],

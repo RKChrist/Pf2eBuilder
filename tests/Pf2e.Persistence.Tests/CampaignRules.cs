@@ -25,6 +25,17 @@ sealed class RecordingBroadcaster : ICampaignBroadcaster
         Modes.Add((code, mode));
         return Task.CompletedTask;
     }
+
+    /// <summary>Both projections are kept, so a test can assert what the players were sent and
+    /// not only what the caller was answered.</summary>
+    public Task CampaignChangedAsync(
+        string code, CampaignView forDm, CampaignView forPlayers, CancellationToken ct)
+    {
+        Campaigns.Add((code, forDm, forPlayers));
+        return Task.CompletedTask;
+    }
+
+    public List<(string Code, CampaignView ForDm, CampaignView ForPlayers)> Campaigns { get; } = [];
 }
 
 /// <summary>
@@ -52,11 +63,18 @@ public class CampaignRules(SeededDatabase database) : IClassFixture<SeededDataba
             .Handle(new ImportCharacter(code, pathbuilder), default);
     }
 
-    async Task<CharacterSheetView?> Damage(string code, Guid characterId, int delta)
+    /// <summary>A signed delta reads better in a test than an amount and a word, and the
+    /// command's own shape is asserted separately.</summary>
+    async Task<CharacterSheetView?> Damage(string code, Guid characterId, int delta, string? dmKey = null)
     {
         await using var db = database.NewContext();
-        return await new ChangeHitPointsHandler(db, Broadcaster)
-            .Handle(new ChangeHitPoints(code, characterId, delta), default);
+        var campaign = await new ChangeHitPointsHandler(db, Broadcaster).Handle(
+            new ChangeHitPoints(
+                code, dmKey, characterId, Math.Abs(delta),
+                delta < 0 ? HitPointDirection.Damage : HitPointDirection.Heal),
+            default);
+
+        return campaign.Characters.FirstOrDefault(c => c.Id == characterId);
     }
 
     /// <summary>Applies to one character, which is what every caller below wants. The target
@@ -147,14 +165,22 @@ public class CampaignRules(SeededDatabase database) : IClassFixture<SeededDataba
         Assert.Equal(59, Assert.Single((await Read(campaign.Code)).Characters).CurrentHitPoints);
     }
 
+    // A creature nothing answers to is a refusal naming the id, not a silent success. An effect
+    // applied to nobody would sit in the database looking applied and doing nothing.
     [Fact]
-    public async Task AnAbsentCharacterIsNullRatherThanAFault()
+    public async Task AnAbsentCreatureIsRefusedByNameRatherThanQuietlyAccepted()
     {
         var campaign = await NewCampaign();
         await Import(campaign.Code, Fixture("gnibbo.json"));
+        var nobody = Guid.NewGuid();
 
-        Assert.Null(await Damage(campaign.Code, Guid.NewGuid(), -1));
-        Assert.Null(await Set(campaign.Code, Guid.NewGuid(), Guid.NewGuid(), null));
+        await Assert.ThrowsAsync<CombatantNotFoundException>(() => Damage(campaign.Code, nobody, -1));
+        await Assert.ThrowsAsync<CombatantNotFoundException>(
+            () => Set(campaign.Code, nobody, Guid.NewGuid(), Custom("Bless", "Status", 1, "Will")));
+
+        // Removing an application that is not there still succeeds, because a retry of a removal
+        // has to converge rather than fail.
+        Assert.Null(await Set(campaign.Code, nobody, Guid.NewGuid(), null));
     }
 
     [Fact]

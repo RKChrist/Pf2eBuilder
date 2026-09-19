@@ -8,45 +8,69 @@ using Pf2e.Domain.Tracking;
 
 namespace Pf2e.Application.Features.Campaigns;
 
-/// <summary>A signed delta and never an absolute. Two people applying damage at once must sum,
-/// and last-write-wins on an absolute silently loses one of them.</summary>
-public sealed record ChangeHitPoints(string Code, Guid CharacterId, int Delta)
-    : IRequest<CharacterSheetView?>;
+/// <summary>
+/// An amount and a direction, so losing 37 hit points is one request whatever the number. The
+/// stepper sent one point per tap, which made the control unusable in the moment it exists for.
+/// <para>It is still a delta and never an absolute. Two people applying damage at the same
+/// moment must sum, and last-write-wins on an absolute silently loses one of them; the
+/// direction is what the caller types, and the signed number is what the database adds.</para>
+/// </summary>
+public sealed record ChangeHitPoints(
+    string Code, string? DmKey, Guid CreatureId, int Amount, HitPointDirection Direction)
+    : IRequest<CampaignView>;
+
+public enum HitPointDirection
+{
+    Damage,
+    Heal,
+}
 
 public sealed class ChangeHitPointsValidator : AbstractValidator<ChangeHitPoints>
 {
     public ChangeHitPointsValidator()
     {
         RuleFor(c => c.Code).Must(CampaignCode.IsValid)
-                                 .WithMessage("A campaign code is four to twelve letters and digits.");
-        RuleFor(c => c.Delta).NotEqual(0).WithMessage("A change of no hit points is not a change.");
-        RuleFor(c => c.Delta).InclusiveBetween(-999, 999);
+                            .WithMessage("A campaign code is four to twelve letters and digits.");
+        RuleFor(c => c.CreatureId).NotEmpty();
+        RuleFor(c => c.Amount).GreaterThan(0).WithMessage("A change of no hit points is not a change.");
+        RuleFor(c => c.Amount).LessThanOrEqualTo(999);
+        RuleFor(c => c.Direction).IsInEnum().WithMessage("Direction is Damage or Heal.");
     }
 }
 
 public sealed class ChangeHitPointsHandler(ITrackerDbContext db, ICampaignBroadcaster broadcaster)
-    : IRequestHandler<ChangeHitPoints, CharacterSheetView?>
+    : IRequestHandler<ChangeHitPoints, CampaignView>
 {
-    public async Task<CharacterSheetView?> Handle(ChangeHitPoints command, CancellationToken ct)
+    public async Task<CampaignView> Handle(ChangeHitPoints command, CancellationToken ct)
     {
-        var (campaign, _) = await CampaignAccess.LoadAsync(db, command.Code, null, ct, tracking: false);
-        var code = campaign.Code;
+        var (campaign, role) = await CampaignAccess.LoadAsync(db, command.Code, command.DmKey, ct);
+        var delta = command.Direction is HitPointDirection.Damage ? -command.Amount : command.Amount;
 
-        if (campaign.Characters.FirstOrDefault(c => c.Id == command.CharacterId) is not { } character)
+        if (campaign.Encounter?.Find(command.CreatureId) is MonsterCombatant monster)
         {
-            return null;
+            // A monster's hit points are the DM's, both to read and to change.
+            CampaignAccess.RequireDm(role, "change a monster's hit points");
+            monster.CurrentHitPoints =
+                HitPoints.AfterDelta(monster.CurrentHitPoints, delta, monster.Stats.MaxHitPoints);
+
+            await db.SaveChangesAsync(ct);
+            return await CampaignAccess.PublishAsync(broadcaster, campaign, role, ct);
+        }
+
+        if (campaign.Characters.FirstOrDefault(c => c.Id == command.CreatureId) is not { } character)
+        {
+            throw new CombatantNotFoundException("Nothing in this campaign has that id.");
         }
 
         var max = CharacterSheet
             .Compute(character.ToBuild(), character.ToSession(campaign.EffectApplications))
             .MaxHitPoints;
-        var delta = command.Delta;
 
-        // The arithmetic happens in the database, in one statement, so two people applying damage
-        // at the same moment sum. Reading the value here and writing it back would reinstate
-        // last-write-wins one layer below an API whose whole shape exists to prevent it. The
-        // maximum is safe to carry from the read above: it moves only when the build or drained
-        // changes, and this command changes neither.
+        // The arithmetic happens in the database, in one statement, so two people applying
+        // damage at the same moment sum. Reading the value here and writing it back would
+        // reinstate last-write-wins one layer below an API whose whole shape exists to prevent
+        // it. The maximum is safe to carry from the read above: it moves only when the build or
+        // drained changes, and this command changes neither.
         await db.Characters
             .Where(c => c.Id == character.Id)
             .ExecuteUpdateAsync(
@@ -56,17 +80,9 @@ public sealed class ChangeHitPointsHandler(ITrackerDbContext db, ICampaignBroadc
                 ct);
 
         // Read back rather than adjusting the instance above, which the statement left stale.
-        // Both reads are untracked, so this cannot be handed the same stale object by identity
-        // resolution, which is what makes it a real re-read rather than one that looks like one.
-        var (after, _) = await CampaignAccess.LoadAsync(db, code, null, ct, tracking: false);
-
-        if (after.Characters.FirstOrDefault(c => c.Id == command.CharacterId) is not { } updated)
-        {
-            return null;
-        }
-
-        var sheet = SheetViews.Of(updated, after.EffectApplications);
-        await broadcaster.CharacterChangedAsync(code, sheet, ct);
-        return sheet;
+        // The re-read is untracked, so identity resolution cannot hand back the same stale
+        // object, which is what makes this a real re-read rather than one that looks like one.
+        var (after, _) = await CampaignAccess.LoadAsync(db, campaign.Code, command.DmKey, ct, tracking: false);
+        return await CampaignAccess.PublishAsync(broadcaster, after, role, ct);
     }
 }

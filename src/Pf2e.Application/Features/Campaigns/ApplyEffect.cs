@@ -128,7 +128,7 @@ public sealed class ApplyEffectHandler(ITrackerDbContext db, ICampaignBroadcaste
             CampaignId = campaign.Id,
         };
 
-        application.Overwrite(active, timing, spec.SourceCombatantId);
+        application.Overwrite(active, timing, spec.SourceCreatureId);
         application.PersistentDamage = spec.PersistentDamage;
         application.PersistentDamageType = spec.PersistentDamageType;
 
@@ -136,6 +136,16 @@ public sealed class ApplyEffectHandler(ITrackerDbContext db, ICampaignBroadcaste
             .Select(target => (Kind: Enum.Parse<EffectTargetKind>(target.Kind, ignoreCase: true), Id: target.Id!.Value))
             .DistinctBy(target => target.Id)
             .ToList();
+
+        // A target nothing in this campaign answers to would become a row nobody ever reads,
+        // and the effect would look applied while doing nothing.
+        foreach (var (_, id) in wanted)
+        {
+            if (campaign.Characters.All(c => c.Id != id) && campaign.Encounter?.Find(id) is null)
+            {
+                throw new CombatantNotFoundException($"Nothing in this campaign has the id {id}.");
+            }
+        }
 
         application.Targets.RemoveAll(target => wanted.All(w => w.Id != target.TargetId));
 

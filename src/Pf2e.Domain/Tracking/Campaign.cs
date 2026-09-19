@@ -26,6 +26,9 @@ public sealed class Campaign
     /// campaign rather than off a creature because one application can reach several.</summary>
     public List<EffectApplication> EffectApplications { get; init; } = [];
 
+    /// <summary>At most one, and null until somebody adds the first combatant.</summary>
+    public Encounter? Encounter { get; set; }
+
     public static Campaign Create(string code) => new()
     {
         Id = Guid.NewGuid(),

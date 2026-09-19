@@ -15,4 +15,11 @@ public interface ICampaignBroadcaster
     Task CharacterChangedAsync(string code, CharacterSheetView sheet, CancellationToken ct);
 
     Task ModeChangedAsync(string code, CampaignModeView mode, CancellationToken ct);
+
+    /// <summary>
+    /// Anything an encounter changed. It takes the two values the projection already produced
+    /// and only chooses which group each goes to, so no decision about what a player may see is
+    /// taken here. A DM payload has nowhere to go but the DM group.
+    /// </summary>
+    Task CampaignChangedAsync(string code, CampaignView forDm, CampaignView forPlayers, CancellationToken ct);
 }

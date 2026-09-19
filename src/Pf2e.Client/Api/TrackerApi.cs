@@ -33,13 +33,15 @@ public sealed class TrackerApi(HttpClient http)
             Carrying(HttpMethod.Post, $"{Campaign(code)}/characters", new ImportCharacterRequest(pathbuilder)),
             ct);
 
-    public Task<CharacterSheetView> ChangeHitPointsAsync(
-        string code, Guid character, int delta, CancellationToken ct) =>
-        SendAsync<CharacterSheetView>(
+    /// <summary>An amount and a direction, so a hundred points of damage is one request rather
+    /// than a hundred taps.</summary>
+    public Task<CampaignView> ChangeHitPointsAsync(
+        string code, Guid creature, int amount, string direction, CancellationToken ct) =>
+        SendAsync<CampaignView>(
             Carrying(
                 HttpMethod.Post,
-                $"{Campaign(code)}/characters/{character}/hit-points",
-                new ChangeHitPointsRequest(delta)),
+                $"{Campaign(code)}/creatures/{creature}/hit-points",
+                new ChangeHitPointsRequest(amount, direction)),
             ct);
 
     public Task<CampaignView> ApplyEffectAsync(

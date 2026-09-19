@@ -26,6 +26,10 @@ public sealed class CampaignHub : IAsyncDisposable
         _connection.On<CharacterSheetView>("CharacterChanged", sheet => CharacterChanged?.Invoke(sheet));
         _connection.On<CampaignModeView>("ModeChanged", mode => ModeChanged?.Invoke(mode));
 
+        // Already projected for this connection's role by the time it arrives, so there is
+        // nothing for the client to filter and nothing for it to get wrong.
+        _connection.On<CampaignView>("CampaignChanged", campaign => CampaignChanged?.Invoke(campaign));
+
         // A reconnection is a new connection to the server, which knows nothing of the groups the
         // old one was in, so the campaign has to be rejoined or the page goes quietly stale. The
         // key goes with it, because the role is decided per connection.
@@ -41,6 +45,8 @@ public sealed class CampaignHub : IAsyncDisposable
     public event Action<CharacterSheetView>? CharacterChanged;
 
     public event Action<CampaignModeView>? ModeChanged;
+
+    public event Action<CampaignView>? CampaignChanged;
 
     public async Task JoinAsync(string code, string? dmKey, CancellationToken ct)
     {

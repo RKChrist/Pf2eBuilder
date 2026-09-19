@@ -37,5 +37,10 @@ public sealed class CampaignConfiguration : IEntityTypeConfiguration<Campaign>
               .WithOne()
               .HasForeignKey(e => e.CampaignId)
               .OnDelete(DeleteBehavior.Cascade);
+
+        campaigns.HasOne(t => t.Encounter)
+              .WithOne()
+              .HasForeignKey<Encounter>(e => e.CampaignId)
+              .OnDelete(DeleteBehavior.Cascade);
     }
 }

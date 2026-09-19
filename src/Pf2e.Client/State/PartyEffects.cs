@@ -33,6 +33,7 @@ public sealed class PartyEffects
 
         hub.CharacterChanged += sheet => dispatcher.Dispatch(new CharacterUpdated(sheet));
         hub.ModeChanged += mode => dispatcher.Dispatch(new ModeChanged(mode));
+        hub.CampaignChanged += campaign => dispatcher.Dispatch(new CampaignRefreshed(campaign));
     }
 
     [EffectMethod]
@@ -126,8 +127,12 @@ public sealed class PartyEffects
 
     [EffectMethod]
     public Task Handle(HitPointsNudged action, IDispatcher dispatcher) =>
-        ApplyAsync(dispatcher, code =>
-            _tracker.ChangeHitPointsAsync(code, action.CharacterId, action.Delta, CancellationToken.None));
+        ApplyToCampaignAsync(dispatcher, code => _tracker.ChangeHitPointsAsync(
+            code,
+            action.CharacterId,
+            Math.Abs(action.Delta),
+            action.Delta < 0 ? "Damage" : "Heal",
+            CancellationToken.None));
 
     [EffectMethod]
     public Task Handle(EffectSet action, IDispatcher dispatcher) =>

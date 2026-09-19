@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Pf2e.Application.Abstractions;
+using Pf2e.Contracts.Tracker;
 using Pf2e.Domain;
 using Pf2e.Domain.Tracking;
 
@@ -33,6 +34,7 @@ internal static class CampaignAccess
         var query = db.Campaigns
             .Include(c => c.Characters)
             .Include(c => c.EffectApplications).ThenInclude(application => application.Targets)
+            .Include(c => c.Encounter!).ThenInclude(encounter => encounter.Combatants)
             .AsQueryable();
 
         if (!tracking)
@@ -52,5 +54,19 @@ internal static class CampaignAccess
         {
             throw new NotTheDmException(action);
         }
+    }
+
+    /// <summary>
+    /// Projects once per role, pushes each to its own group, and answers the caller with theirs.
+    /// Every encounter command ends here, so "what does each role get told" is decided once.
+    /// </summary>
+    public static async Task<CampaignView> PublishAsync(
+        ICampaignBroadcaster broadcaster, Campaign campaign, ViewerRole role, CancellationToken ct)
+    {
+        var forDm = CampaignProjection.For(ViewerRole.Dm, campaign);
+        var forPlayers = CampaignProjection.For(ViewerRole.Player, campaign);
+
+        await broadcaster.CampaignChangedAsync(campaign.Code, forDm, forPlayers, ct);
+        return role is ViewerRole.Dm ? forDm : forPlayers;
     }
 }

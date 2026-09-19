@@ -23,7 +23,7 @@ public sealed record EffectSpec(
     IReadOnlyList<EffectModifierView> Modifiers,
     string? Timing = null,
     int? Rounds = null,
-    Guid? SourceCombatantId = null,
+    Guid? SourceCreatureId = null,
     int? PersistentDamage = null,
     string? PersistentDamageType = null);
 
@@ -51,7 +51,7 @@ public sealed record EffectApplicationView(
     bool HasValue,
     string? Duration,
     string Timing,
-    Guid? SourceCombatantId,
+    Guid? SourceCreatureId,
     int? PersistentDamage,
     string? PersistentDamageType,
     IReadOnlyList<EffectModifierView> Modifiers,
@@ -86,6 +86,50 @@ public sealed record CharacterSheetView(
     IReadOnlyList<ActiveEffectView> Effects);
 
 /// <summary>
+/// A monster's hit points and stat line. This type exists so that "a player never sees these"
+/// is one nullable field on one view rather than seven fields a projection has to remember to
+/// blank. A player projection never populates it, at any reveal state.
+/// </summary>
+public sealed record MonsterStatLineView(
+    int CurrentHitPoints,
+    int MaxHitPoints,
+    int TemporaryHitPoints,
+    int Level,
+    int ArmorClass,
+    int Fortitude,
+    int Reflex,
+    int Will,
+    int Perception,
+    string RuleId,
+    IReadOnlyList<string> Traits);
+
+/// <summary>
+/// One creature in the initiative order. Kind is "PlayerCharacter" or "Adversary".
+/// <para>A player character's hit points are not here: they are on the character sheet in the
+/// same payload, which is the one place they live. Monster is null for a player character and
+/// for every monster in a player's projection.</para>
+/// </summary>
+public sealed record CombatantView(
+    Guid Id,
+    string Kind,
+    string Name,
+    int Initiative,
+    bool IsCurrentTurn,
+    bool Revealed,
+    IReadOnlyList<ActiveEffectView> Effects,
+    MonsterStatLineView? Monster);
+
+/// <summary>
+/// Round is zero before initiative is rolled. Reminders are what the last turn change left for
+/// the DM to do; a reminder about a creature the viewer cannot see is not in their copy.
+/// </summary>
+public sealed record EncounterView(
+    int Round,
+    Guid? CurrentCombatantId,
+    IReadOnlyList<CombatantView> Combatants,
+    IReadOnlyList<string> Reminders);
+
+/// <summary>
 /// Mode is "Exploration", "Encounter" or "Downtime"; Role is "Player" or "Dm". Role is here so
 /// the screen can offer the DM's controls, and not so it can decide what to hide: anything a
 /// player may not see has already been left out of this value by the projection.
@@ -94,7 +138,9 @@ public sealed record CampaignView(
     string Code,
     string Mode,
     string Role,
-    IReadOnlyList<CharacterSheetView> Characters);
+    IReadOnlyList<CharacterSheetView> Characters,
+    IReadOnlyList<EffectApplicationView> Effects,
+    EncounterView? Encounter);
 
 /// <summary>The one payload that ever carries the DM key. Whoever asked for it is the DM, and
 /// no later response repeats it.</summary>
@@ -107,5 +153,50 @@ public sealed record SetModeRequest(string Mode);
 
 public sealed record ImportCharacterRequest(string Pathbuilder);
 
-public sealed record ChangeHitPointsRequest(int Delta);
+/// <summary>An amount and a direction, so 37 points of damage is one request. Direction is
+/// "Damage" or "Heal"; the signed delta the database adds is derived from it, because two
+/// people damaging one creature at once have to sum.</summary>
+public sealed record ChangeHitPointsRequest(int Amount, string Direction);
+
+/// <summary>Name a creature record to add a monster, or a character to add somebody from the
+/// roster. Name is an optional label, so "Ogre 2" is a name the DM can read.</summary>
+public sealed record AddCombatantRequest(string? RuleId, Guid? CharacterId, string? Name, int? Initiative);
+
+public sealed record InitiativeRoll(Guid CombatantId, int Initiative);
+
+/// <summary>A combatant the rolls do not name has its initiative rolled by the server.</summary>
+public sealed record RollInitiativeRequest(IReadOnlyList<InitiativeRoll> Rolls);
+
+public sealed record RevealMonsterRequest(bool Revealed);
+
+/// <summary>
+/// The fields that feed the calculator, in the form the screen edits them. Everything here is
+/// the build layer; the session layer is not in this value and an edit does not touch it.
+/// Ranks are "Untrained", "Trained", "Expert", "Master" or "Legendary".
+/// </summary>
+public sealed record CharacterBuildEdit(
+    string Name,
+    int Level,
+    string ClassName,
+    string AncestryName,
+    string KeyAttribute,
+    int Strength,
+    int Dexterity,
+    int Constitution,
+    int Intelligence,
+    int Wisdom,
+    int Charisma,
+    string Fortitude,
+    string Reflex,
+    string Will,
+    string Perception,
+    string ClassDc,
+    string ArmorRank,
+    string ArmorName,
+    int ArmorItemBonus,
+    int? ArmorDexCap,
+    int AncestryHitPoints,
+    int ClassHitPoints,
+    int BonusHitPoints,
+    int BonusHitPointsPerLevel);
 
