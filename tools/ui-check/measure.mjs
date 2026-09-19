@@ -78,7 +78,7 @@ const report = await evaluate(`(() => {
   const items = [...bar.querySelectorAll('button, a')].map(item => {
     const box = item.getBoundingClientRect();
     return {
-      label: (item.textContent ?? '').trim().split(/s+/).slice(-1)[0] || '?',
+      label: ((item.textContent ?? '').trim().split(/\\s+/).pop()) || '?',
       left: Math.round(box.left),
       right: Math.round(box.right),
       width: Math.round(box.width),
