@@ -77,6 +77,7 @@
         else if (table.Mode == "Exploration" && table.Characters.Count > 0)
         {
             @Exploring(table)
+            @Attempts(table)
             @Camp(table)
         }
         else if (table.Mode == "Downtime" && table.Characters.Count > 0)
@@ -921,6 +922,66 @@
     /// the DC and the modifier side by side rather than opening a card to find one of them.</summary>
     static int SkillOf(CharacterSheetView character, string skill) =>
         character.Skills.FirstOrDefault(entry => entry.Name == skill)?.Value.Total ?? 0;
+
+    /// <summary>
+    /// What each character can attempt, and what they cannot.
+    /// <para>The server decides both, from the character's own ranks, so this draws a list and
+    /// holds no rules. What it can do is put the ones they can try first: a player scanning for
+    /// something to do is not scanning for the things they are not trained for.</para>
+    /// <para>The ones they cannot are still shown, behind a summary, because "why can nobody
+    /// here read this?" is a question a table asks and an app that hid the answer would leave
+    /// them guessing.</para>
+    /// </summary>
+    RenderFragment Attempts(CampaignView table) => @<div class="attempts">
+        <Card Class="attempts__card">
+            <ChildContent>
+                <h2 class="attempts__heading">What you can attempt</h2>
+
+                @foreach (var character in table.Characters)
+                {
+                    <details class="trying" data-trying="@character.Id">
+                        <summary class="trying__summary">
+                            <span class="trying__name">@character.Name</span>
+                            <span class="trying__count">
+                                @character.CanAttempt.Count(a => a.Met) of @character.CanAttempt.Count
+                            </span>
+                        </summary>
+
+                        <div class="tries">
+                            @foreach (var attempt in character.CanAttempt.Where(a => a.Met)
+                                .OrderByDescending(a => a.Modifier).ThenBy(a => a.Name, StringComparer.Ordinal))
+                            {
+                                <div class="try" data-try="@attempt.Key">
+                                    <span class="try__name">@attempt.Name</span>
+                                    <span class="try__skill">@attempt.Skill</span>
+                                    <span class="try__value">@Signed(attempt.Modifier)</span>
+                                </div>
+                            }
+                        </div>
+
+                        @if (character.CanAttempt.Any(a => !a.Met))
+                        {
+                            <details class="trying__rest">
+                                <summary class="trying__rest-summary">Not trained enough for</summary>
+                                <div class="tries">
+                                    @foreach (var attempt in character.CanAttempt.Where(a => !a.Met)
+                                        .OrderBy(a => a.Name, StringComparer.Ordinal))
+                                    {
+                                        <div class="try try--barred" data-try="@attempt.Key">
+                                            <span class="try__name">@attempt.Name</span>
+                                            <span class="try__skill">
+                                                needs @attempt.Required.ToLowerInvariant() in @attempt.Skill
+                                            </span>
+                                        </div>
+                                    }
+                                </div>
+                            </details>
+                        }
+                    </details>
+                }
+            </ChildContent>
+        </Card>
+    </div>;
 
     /// <summary>
     /// What the party does when they stop, and how long they have been at it.

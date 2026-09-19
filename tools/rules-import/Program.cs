@@ -23,7 +23,7 @@ static class Program
         }
 
         var verb = args[0];
-        if (verb is not ("pull" or "transform"))
+        if (verb is not ("pull" or "transform" or "aliases"))
         {
             return Usage($"unknown verb '{verb}'");
         }
@@ -66,9 +66,9 @@ static class Program
                     break;
 
                 case "--index":
-                    if (verb != "transform")
+                    if (verb is not ("transform" or "aliases"))
                     {
-                        return Usage("--index is only valid on transform");
+                        return Usage("--index is only valid on transform and aliases");
                     }
 
                     if (i + 1 >= args.Length)
@@ -87,9 +87,12 @@ static class Program
         var categories = only.Count > 0
             ? FieldPolicy.Categories.Where(only.Contains).ToList()
             : (IReadOnlyList<string>)FieldPolicy.Categories;
-        return verb == "pull"
-            ? await Pull.RunAsync(categories, force)
-            : Transform.Run(categories, index);
+        return verb switch
+        {
+            "pull" => await Pull.RunAsync(categories, force),
+            "aliases" => await Aliases.Run(index ?? Snapshot.LatestIndex()),
+            _ => Transform.Run(categories, index),
+        };
     }
 
     static int Usage(string problem)
@@ -99,6 +102,7 @@ static class Program
         Console.Error.WriteLine("usage:");
         Console.Error.WriteLine("  rules-import pull [--only <category>]... [--force]");
         Console.Error.WriteLine("  rules-import transform [--only <category>]... [--index <name>]");
+        Console.Error.WriteLine("  rules-import aliases [--index <name>]");
         Console.Error.WriteLine();
         Console.Error.WriteLine($"categories: {string.Join(", ", FieldPolicy.Categories)}");
         return 2;

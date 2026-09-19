@@ -103,15 +103,12 @@ const owned = await dm.eval(`(() => {
 check('the party panel counts what each character has', /\d+ feats, \d+ spells/.test(owned.summary), owned.summary);
 check('grouped the way a character sheet is', owned.kinds.includes('Class Feat') && owned.kinds.includes('Cantrip'),
   owned.kinds.join(', '));
-// Three of the bard's names are pre-Remaster ones whose current records are called something
-// else. The pull drops superseded records, so there is no alias table in the repo to follow
-// and the honest contract is that every entry either opens or says why it cannot.
-check('most of them open their rule', owned.openable >= owned.named.length - 4,
+// Three of the bard's names are pre-Remaster ones whose records are called something else now.
+// The rename index closes them, so every name on this sheet opens something.
+check('every one of them opens its rule', owned.openable === owned.named.length,
   `${owned.openable} of ${owned.named.length}`);
-check('and the rest say why rather than looking broken',
-  owned.openable + owned.unopenable.length === owned.named.length
-  && owned.unopenable.every(t => t.includes('no record under this name')),
-  owned.unopenable.join(' | ') || 'all of them opened');
+check('including the pre-Remaster ones', owned.named.includes('Inspire Competence'),
+  owned.named.slice(0, 6).join(', '));
 check('including a spell off the repertoire', owned.named.includes('Invisibility'), owned.named.slice(0, 8).join(', '));
 await shot(dm, 'dm-08-reference');
 
@@ -137,6 +134,32 @@ check('choosing one says what it means at the table', await dm.eval(
   `document.querySelector('.doing__says')?.textContent.trim() ?? ''`).then(t => t.includes('initiative')),
   await dm.eval(`document.querySelector('.doing__says')?.textContent.trim() ?? 'nothing'`));
 await shot(dm, 'dm-05-exploration');
+
+// What this character can attempt, decided from their own ranks.
+await waitFor(dm, '[data-trying]');
+const trying = await dm.eval(`(() => {
+  const panel = document.querySelector('[data-trying]');
+  panel.open = true;
+  panel.querySelector('.trying__rest').open = true;
+  const read = selector => [...panel.querySelectorAll(selector)].map(e => ({
+    name: e.querySelector('.try__name').textContent.trim(),
+    skill: e.querySelector('.try__skill').textContent.trim(),
+  }));
+  return {
+    summary: panel.querySelector('.trying__count').textContent.trim(),
+    can: read('.try:not(.try--barred)'),
+    cannot: read('.try--barred'),
+  };
+})()`);
+check('the panel counts what this character can try', /^\d+ of \d+$/.test(trying.summary), trying.summary);
+check('Decipher Writing is open to a bard trained in Society',
+  trying.can.some(t => t.name === 'Decipher Writing'),
+  trying.can.slice(0, 5).map(t => t.name).join(', '));
+check('and Treat Wounds is not, because they are untrained in Medicine',
+  trying.cannot.some(t => t.name === 'Treat Wounds' && t.skill.includes('trained in Medicine')),
+  trying.cannot.slice(0, 5).map(t => t.name + ' (' + t.skill + ')').join(', '));
+await shot(dm, 'dm-09-attempts');
+
 
 // Camp: the ten-minute activities and the clock they add to.
 check('the camp panel starts at no time at all', await dm.eval(

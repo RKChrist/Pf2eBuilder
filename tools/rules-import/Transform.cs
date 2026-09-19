@@ -100,7 +100,118 @@ static class Transform
         }
 
         PrintSummary(rows);
+        WriteAliases(manifest.Index, seedDir);
         return 0;
+    }
+
+    /// <summary>
+    /// Trims the snapshot's alias file down to the renames that matter and writes it beside the
+    /// seed.
+    /// <para>Most of what the source calls superseded is a renumbering: the record moved and kept
+    /// its name, and 8,650 of the 10,140 whose successor is seeded are exactly that. Those are
+    /// dropped, because a direct name match already finds them and an alias that agreed with the
+    /// name would only be a second way to get the same answer.</para>
+    /// <para>What is left is the genuine renames — Inspire Competence to Uplifting Overture,
+    /// Dimension Door to Translocate — which is the only case a Pathbuilder export written before
+    /// the Remaster needs.</para>
+    /// </summary>
+    static void WriteAliases(string index, string seedDir)
+    {
+        var source = Snapshot.AliasFile(index);
+        if (!File.Exists(source))
+        {
+            Console.WriteLine($"no alias file at {source}; run: rules-import aliases");
+            return;
+        }
+
+        var seeded = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var file in Directory.EnumerateFiles(seedDir, "*.json"))
+        {
+            if (JsonNode.Parse(File.ReadAllText(file)) is not JsonArray records)
+            {
+                continue;
+            }
+
+            foreach (var record in records.OfType<JsonObject>())
+            {
+                var category = Str(record, "category") ?? string.Empty;
+                var name = Str(record, "name");
+                var id = Str(record, "id");
+                if (id is not null)
+                {
+                    ids.Add(id);
+                }
+
+                if (name is not null)
+                {
+                    if (!seeded.TryGetValue(category, out var names))
+                    {
+                        names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                        seeded[category] = names;
+                    }
+
+                    names.Add(name);
+                }
+            }
+        }
+
+        // Keyed case-insensitively because an export's capitalisation is its own, but the name
+        // is stored as the source printed it: this file is a record of what things were called.
+        var candidates = new Dictionary<(string Category, string Was), (string Printed, HashSet<string> Targets)>();
+        foreach (var alias in (JsonNode.Parse(File.ReadAllText(source)) as JsonArray ?? []).OfType<JsonObject>())
+        {
+            var was = Str(alias, "was");
+            var category = Str(alias, "category") ?? string.Empty;
+            var nowId = Str(alias, "nowId");
+
+            // Useless unless the successor is actually in the seed, and redundant when the old
+            // name still names something.
+            if (was is null || nowId is null || !ids.Contains(nowId))
+            {
+                continue;
+            }
+
+            if (seeded.TryGetValue(category, out var names) && names.Contains(was))
+            {
+                continue;
+            }
+
+            var key = (category, was.ToLowerInvariant());
+            if (!candidates.TryGetValue(key, out var found))
+            {
+                found = (was, new HashSet<string>(StringComparer.Ordinal));
+                candidates[key] = found;
+            }
+
+            found.Targets.Add(nowId);
+        }
+
+        var kept = new JsonArray();
+        var ambiguous = 0;
+        foreach (var ((category, _), (printed, targets)) in candidates.OrderBy(pair => pair.Key.Was, StringComparer.Ordinal))
+        {
+            // An old name that became several different records is not a rename anybody can
+            // follow. "Ability Boosts" was a class feature on twenty-one classes and each of them
+            // renamed to its own; answering with one of the twenty-one would be a coin toss
+            // dressed up as a lookup.
+            if (targets.Count != 1)
+            {
+                ambiguous++;
+                continue;
+            }
+
+            kept.Add(new JsonObject
+            {
+                ["was"] = printed,
+                ["category"] = category,
+                ["nowId"] = targets.Single(),
+            });
+        }
+
+        var path = Path.Combine(seedDir, "_aliases.json");
+        Write(path, kept);
+        Console.WriteLine($"{kept.Count} renames kept, {ambiguous} dropped as ambiguous");
     }
 
     static JsonObject Project(

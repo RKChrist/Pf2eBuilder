@@ -9,6 +9,7 @@ public sealed class RulesDbContext(DbContextOptions<RulesDbContext> options)
     : DbContext(options), IRulesDbContext, ITrackerDbContext
 {
     public DbSet<RuleRecord> RuleRecords => Set<RuleRecord>();
+    public DbSet<RuleAlias> RuleAliases => Set<RuleAlias>();
     public DbSet<SeedState> SeedState => Set<SeedState>();
     public DbSet<Campaign> Campaigns => Set<Campaign>();
     public DbSet<TrackedCharacter> Characters => Set<TrackedCharacter>();

@@ -1,10 +1,11 @@
 # 010 — Exploration, Downtime and Reference
 
-**Status**: accepted, with two gaps this record exists to explain
+**Status**: accepted
 **Completes the mode shell from 007 and 009.**
 
 Encounter was built first because it is the mode with the most rules in it. This record covers
-the other three, and the two things the design document asks for that the data cannot support.
+the other three, and the two things the design document asks for that I first said the data could
+not support and was wrong about twice.
 
 ## Exploration
 
@@ -63,44 +64,69 @@ skill, searchable, with trait sheets and deep links. The half that was missing i
 own.
 
 A character's feats and spells now come off the Pathbuilder export and are joined to the seeded
-records **by name, at import**, so a row opens the rule. 23 of this bard's 26 open.
+records **by name, at import**, so a row opens the rule. All 26 of this bard's open, which took
+closing the gap below.
 
-## The first gap: three names that do not join
+## The names that did not join, and now do
 
-The three that do not open are `Inspire Competence`, `Inspire Heroics` and `Dimension Door`. All
-three are pre-Remaster names whose current records are called something else.
+Three did not open: `Inspire Competence`, `Inspire Heroics` and `Dimension Door`. All three are
+pre-Remaster names whose records are called something else now — Uplifting Overture, Fortissimo
+Composition and Translocate.
 
-There is no alias table to follow, and the reason is structural rather than an oversight. The
-pull drops every record superseded by a `remaster_id` **at pull time**, so the snapshot in this
-repo holds 1,836 spells and none of them is the legacy entry that would name the successor. The
-mapping exists on Archives of Nethys and does not exist here.
+The first version of this record said there was no alias table to follow, because the pull drops
+every superseded record **at pull time** and the snapshot holds only survivors. That was true of
+the snapshot and not true of the source, and the difference is the fix.
 
-So the row shows the name and says **"no record under this name"**. That wording is deliberate:
-homebrew, a feat printed after the snapshot, and a pre-Remaster name are three different reasons
-and all three are true of the *name* rather than of the thing it names. Saying "not in the
-ruleset" would have been a claim about the feat.
+`rules-import aliases` asks Archives of Nethys for every record carrying a `remaster_id` and
+takes **the name, the category and the successor id, and nothing else**. Not a level, not a
+trait, not a price: the superseded record's mechanics are not wanted and are not taken. Names are
+what the Community Use Policy covers and names are what the file is. Check 12 of the licensing
+audit enforces exactly that, failing on any fourth key.
 
-Closing this needs a pull that keeps superseded records for their names alone, which is a
-decision about what the seed carries and belongs to whoever next touches the ingest.
+The raw answer is 11,881 names. The transform trims it twice:
 
-## The second gap: "what can I attempt"
+- **8,650 are renumberings, not renames.** The record moved and kept its name, so a direct name
+  match already finds it and an alias agreeing with the name would only be a second route to the
+  same answer.
+- **13 are ambiguous.** "Ability Boosts" was a class feature on twenty-one classes and each
+  renamed to its own; answering with one of the twenty-one would be a coin toss dressed as a
+  lookup. An old name with two answers is not a rename.
+
+What survives is 1,367 genuine renames, 151 KB, seeded into `RuleAliases`. The importer tries the
+name first and the index second, so a current name can never be redirected by an old one.
+
+The name on the sheet stays the one the player typed. Their character sheet says Inspire
+Competence, and renaming it under them would be its own surprise; what changes is that it now
+opens.
+
+## "What can I attempt"
 
 The document asks for a per-character list of every exploration skill action with its requirement
-met or not met, computed from the sheet, and gives a walkthrough: *Rune's PC can attempt Decipher
-Writing because his sheet says trained in Society.*
+met or not, and its walkthrough is *Rune's PC can attempt Decipher Writing because his sheet says
+trained in Society.*
 
-**This cannot be built from the seed, and the walkthrough's own example is the proof.** Of the 38
-actions carrying the Exploration trait, 7 state a requirement at all, and exactly 1 of those 7 is
-a plain proficiency phrase. Decipher Writing carries no requirement field: its "trained in Arcana,
-Occultism, Religion, or Society" lives in the rule prose, and this project imports no rule prose
-by licence. The requirements that are present are mostly equipment — a healer's toolkit, a repair
-kit — which is not on the sheet either.
+The blocker was real and the conclusion drawn from it was wrong. Of the 38 actions carrying the
+Exploration trait, 7 state a requirement at all and one of those is a plain proficiency phrase;
+Decipher Writing states none, because its "trained in Arcana, Occultism, Religion, or Society"
+lives in rule prose this project does not import. So the requirement cannot come from the seed.
 
-A list titled "what can I attempt" that had not actually checked anything would be worse than no
-list, so there is no list. The catalogue already browses actions and filters by the Exploration
-trait, and the character card already shows every skill modifier, which is the same information
-without the claim.
+It does not have to. `Pf2e.Domain.SkillActions` is the same shape as `Buffs`, `Conditions`,
+`ExplorationActivities`, `CampActivities` and `DowntimeActivities`: hand-written against the
+printed rules, every entry `Verified` false and naming its page. Forty-six actions, each with the
+skills it can be rolled with and the rank it needs in one of them.
 
-Closing this needs either the requirement text in the seed, which the licence rules out, or a
-hand-written table of action-to-requirement in the shape of `Pf2e.Domain.Buffs` — plausible, and
-a decision about scope rather than a thing to do quietly.
+Two things the model has to keep apart, which the walkthrough itself shows:
+
+- **Whether you may attempt it** is met by *any* of the skills the action allows. This bard is
+  trained in Society and untrained in Arcana, so Decipher Writing is open to him.
+- **What you roll** is the *best* of them. He is expert in Occultism, so that is the number,
+  not Society. My first test asserted Society and the code was right.
+
+The server decides both, from the character's own ranks, and hands the screen a list. A screen
+that decided it would be a second copy of the rules and the one that goes stale. Seek is rolled
+with Perception, which is not a skill, so a name the skill list does not hold falls through to the
+sheet's own Perception rather than to zero.
+
+The ones a character can try come first, sorted by the number, because a player scanning this is
+looking for the thing they are best at. The ones they cannot are behind a summary rather than
+hidden, because "why can nobody here read this?" is a question a table asks.

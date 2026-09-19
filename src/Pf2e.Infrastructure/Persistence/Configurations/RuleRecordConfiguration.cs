@@ -40,3 +40,20 @@ public sealed class RuleRecordConfiguration : IEntityTypeConfiguration<RuleRecor
         rules.HasIndex(r => new { r.Category, r.Name });
     }
 }
+
+/// <summary>
+/// The rename index. Keyed by the old name and the category it was in, because a renamed feat
+/// must not resolve to a renamed spell, and because the pair is what an importer holds when it
+/// is looking one up.
+/// </summary>
+public sealed class RuleAliasConfiguration : IEntityTypeConfiguration<RuleAlias>
+{
+    public void Configure(EntityTypeBuilder<RuleAlias> aliases)
+    {
+        aliases.ToTable("RuleAliases");
+        aliases.HasKey(a => new { a.Was, a.Category });
+        aliases.Property(a => a.Was).HasMaxLength(256);
+        aliases.Property(a => a.Category).HasMaxLength(64);
+        aliases.Property(a => a.NowId).HasMaxLength(64).IsRequired();
+    }
+}

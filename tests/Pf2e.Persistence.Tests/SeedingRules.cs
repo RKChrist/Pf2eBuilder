@@ -47,6 +47,9 @@ public class SeedingRules(SeededDatabase database) : IClassFixture<SeededDatabas
             .Select(g => new { Category = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Category, x => x.Count);
 
+        // The rename index sits beside the seed and is not a category of rules, so it is not
+        // in this table and must not be counted as one.
+        Assert.DoesNotContain("_aliases", actual.Keys);
         Assert.Equal(Published.Count, actual.Count);
         foreach (var (category, expected) in Published)
         {

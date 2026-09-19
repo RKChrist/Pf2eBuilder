@@ -26,8 +26,18 @@ sealed class AonClient : IDisposable
 
     public AonClient() => _http.DefaultRequestHeaders.Add("User-Agent", UserAgent);
 
-    public async Task<JsonDocument> SearchAsync(JsonObject body, CancellationToken ct = default)
+    /// <summary>
+    /// <paramref name="index"/> names the index to search instead of the "aon" alias. The alias
+    /// follows whatever Archives of Nethys published last, and a pull that mixed one index's ids
+    /// with another's names would produce an alias file pointing at records the snapshot does
+    /// not hold. Naming the index is how the two stay the same vintage.
+    /// </summary>
+    public async Task<JsonDocument> SearchAsync(
+        JsonObject body, string? index = null, CancellationToken ct = default)
     {
+        var url = index is { Length: > 0 }
+            ? $"https://elasticsearch.aonprd.com/{Uri.EscapeDataString(index)}/_search"
+            : Endpoint;
         var payload = body.ToJsonString();
 
         for (var attempt = 0; ; attempt++)
@@ -35,7 +45,7 @@ sealed class AonClient : IDisposable
             if (_requests >= RequestCap)
             {
                 throw new InvalidOperationException(
-                    $"the request cap of {RequestCap} tripped, refusing to send another request to {Endpoint}");
+                    $"the request cap of {RequestCap} tripped, refusing to send another request to {url}");
             }
 
             _requests++;
@@ -43,7 +53,7 @@ sealed class AonClient : IDisposable
             try
             {
                 using var content = new StringContent(payload, Encoding.UTF8, "application/json");
-                response = await _http.PostAsync(Endpoint, content, ct);
+                response = await _http.PostAsync(url, content, ct);
             }
             catch (Exception ex) when (attempt < Backoff.Length && IsTransient(ex, ct))
             {

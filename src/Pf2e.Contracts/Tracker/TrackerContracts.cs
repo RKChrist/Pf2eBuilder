@@ -115,7 +115,19 @@ public sealed record CharacterSheetView(
     /// record where the ruleset holds one, and null for homebrew or a name newer than the
     /// snapshot, which still shows and simply does not open.</summary>
     IReadOnlyList<SheetEntryView> Feats,
-    IReadOnlyList<SheetEntryView> Spells);
+    IReadOnlyList<SheetEntryView> Spells,
+    /// <summary>What this character can attempt and what they cannot, computed from their own
+    /// ranks. The server does the deciding so no screen holds a copy of the rules.</summary>
+    IReadOnlyList<AttemptView> CanAttempt);
+
+/// <summary>
+/// One skill action as it stands for one character. <paramref name="Skill"/> is the one they
+/// would actually roll, which is the best of the ones the action allows, and
+/// <paramref name="Modifier"/> is their total in it with every condition and buff already on
+/// it. <paramref name="Met"/> is false when they are not trained enough to try.
+/// </summary>
+public sealed record AttemptView(
+    string Key, string Name, string Skill, int Modifier, bool Met, string Required, string When);
 
 public sealed record SheetEntryView(string Name, string Kind, int Level, string? RuleId);
 

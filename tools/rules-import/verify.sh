@@ -141,6 +141,10 @@ else
 fi
 
 cat > "$TMP/policy.js" <<'JS'
+// The rename index sits beside the seed and is not a category of rule records: it has three
+// keys, no sourceUrl and no mechanics, so the per-record scans would all fail on it. It is
+// checked on its own terms in section 12.
+const ALIAS_FILE = '_aliases.json';
 const fs = require('fs');
 const src = fs.readFileSync(process.argv[2], 'utf8').replace(/\r/g, '');
 const outDir = process.argv[3];
@@ -251,6 +255,10 @@ run_search() {
 }
 
 cat > "$TMP/manifest.js" <<'JS'
+// The rename index sits beside the seed and is not a category of rule records: it has three
+// keys, no sourceUrl and no mechanics, so the per-record scans would all fail on it. It is
+// checked on its own terms in section 12.
+const ALIAS_FILE = '_aliases.json';
 const fs = require('fs');
 const m = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 const cats = m.categories || {};
@@ -330,6 +338,10 @@ for phrase in 'struggle to control your nerves' 'always includes a value' 'Sourc
 done
 
 cat > "$TMP/seedscan.js" <<'JS'
+// The rename index sits beside the seed and is not a category of rule records: it has three
+// keys, no sourceUrl and no mechanics, so the per-record scans would all fail on it. It is
+// checked on its own terms in section 12.
+const ALIAS_FILE = '_aliases.json';
 const fs = require('fs');
 const path = require('path');
 const dir = process.argv[2];
@@ -351,7 +363,7 @@ let records = 0, urlChecked = 0, urlMalformed = 0, urlIdDerived = 0, oversize = 
 const keys = new Set(), bad = new Set(), leak = new Set(), pages = new Map();
 const malformedSamples = [], oversizeSamples = [];
 
-for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.json')).sort()) {
+for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.json') && f !== ALIAS_FILE).sort()) {
   const arr = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
   for (const r of arr) {
     records++;
@@ -431,6 +443,10 @@ else
 fi
 
 cat > "$TMP/snapscan.js" <<'JS'
+// The rename index sits beside the seed and is not a category of rule records: it has three
+// keys, no sourceUrl and no mechanics, so the per-record scans would all fail on it. It is
+// checked on its own terms in section 12.
+const ALIAS_FILE = '_aliases.json';
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
@@ -559,11 +575,15 @@ else
 fi
 
 cat > "$TMP/unmapped.js" <<'JS'
+// The rename index sits beside the seed and is not a category of rule records: it has three
+// keys, no sourceUrl and no mechanics, so the per-record scans would all fail on it. It is
+// checked on its own terms in section 12.
+const ALIAS_FILE = '_aliases.json';
 const fs = require('fs');
 const path = require('path');
 const dir = process.argv[2];
 const oversizeDir = process.argv[3];
-const jsonFiles = d => fs.existsSync(d) ? fs.readdirSync(d).filter(f => f.endsWith('.json')).sort() : [];
+const jsonFiles = d => fs.existsSync(d) ? fs.readdirSync(d).filter(f => f.endsWith('.json') && f !== ALIAS_FILE).sort() : [];
 
 const oversize = new Map();
 for (const file of jsonFiles(oversizeDir)) {
@@ -612,6 +632,10 @@ if [ -n "$SNAPSHOT_DIR" ]; then
 fi
 
 cat > "$TMP/sitehidden.js" <<'JS'
+// The rename index sits beside the seed and is not a category of rule records: it has three
+// keys, no sourceUrl and no mechanics, so the per-record scans would all fail on it. It is
+// checked on its own terms in section 12.
+const ALIAS_FILE = '_aliases.json';
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
@@ -669,6 +693,10 @@ else
 fi
 
 cat > "$TMP/markup.js" <<'JS'
+// The rename index sits beside the seed and is not a category of rule records: it has three
+// keys, no sourceUrl and no mechanics, so the per-record scans would all fail on it. It is
+// checked on its own terms in section 12.
+const ALIAS_FILE = '_aliases.json';
 const fs = require('fs');
 const path = require('path');
 const dir = process.argv[2];
@@ -695,7 +723,7 @@ const visit = (r, key, value) => {
     for (const [k, v] of Object.entries(value)) visit(r, key + '.' + k, v);
   }
 };
-for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.json')).sort()) {
+for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.json') && f !== ALIAS_FILE).sort()) {
   for (const r of JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'))) {
     for (const [key, value] of Object.entries(r)) {
       if (key !== 'sourceUrl') visit(r, key, value);
@@ -734,6 +762,81 @@ else
   fi
 fi
 
+cat > "$TMP/aliases.js" <<'JS'
+const fs = require("fs");
+const path = process.argv[2];
+if (!fs.existsSync(path)) {
+  console.log("MISSING");
+  process.exit(0);
+}
+
+// Three keys and no others. This file exists to say what a record used to be called, and a
+// name is what the Community Use Policy covers; a level, a trait or a price would be the
+// superseded record's mechanics coming in through a side door.
+const allowed = new Set(["was", "category", "nowId"]);
+const entries = JSON.parse(fs.readFileSync(path, "utf8"));
+const keys = new Set();
+const seen = new Set();
+let duplicates = 0;
+let malformed = 0;
+
+for (const entry of entries) {
+  for (const key of Object.keys(entry)) keys.add(key);
+  if (typeof entry.was !== "string" || typeof entry.category !== "string"
+      || typeof entry.nowId !== "string" || entry.was.length === 0 || entry.nowId.length === 0) {
+    malformed++;
+  }
+  const id = entry.category + "|" + String(entry.was).toLowerCase();
+  if (seen.has(id)) duplicates++;
+  seen.add(id);
+}
+
+console.log("COUNT " + entries.length);
+console.log("KEYS " + [...keys].sort().join(","));
+console.log("EXTRA " + [...keys].filter(k => !allowed.has(k)).sort().join(","));
+console.log("DUPLICATES " + duplicates);
+console.log("MALFORMED " + malformed);
+JS
+
+heading "12. The rename index"
+ALIAS_JSON="$SEED_DIR/_aliases.json"
+if ! command -v node >/dev/null 2>&1; then
+  fail "check 12 could not run: node is not on PATH"
+else
+  ALIAS_OUT=$(node "$(winpath "$TMP/aliases.js")" "$(winpath "$ALIAS_JSON")" 2>&1)
+  alias_value() { printf '%s\n' "$ALIAS_OUT" | awk -v k="$1" '$1 == k { $1 = ""; print substr($0, 2) }'; }
+  if printf '%s\n' "$ALIAS_OUT" | grep -q '^MISSING'; then
+    info "no rename index at $ALIAS_JSON; a pre-Remaster export will show names it cannot open"
+    info "produce one with: rules-import aliases, then rules-import transform"
+  else
+    alias_count=$(alias_value COUNT)
+    alias_keys=$(alias_value KEYS)
+    alias_extra=$(alias_value EXTRA)
+    alias_dupes=$(alias_value DUPLICATES)
+    alias_bad=$(alias_value MALFORMED)
+    if [ -z "$alias_count" ]; then
+      fail "check 12 could not run"
+      printf '%s\n' "$ALIAS_OUT" | head -n 5 | sed 's/^/      /'
+    else
+      info "$alias_count renames, keys: $alias_keys"
+      if [ -n "$alias_extra" ]; then
+        fail "the rename index carries more than a name and an id: $alias_extra"
+      else
+        pass "the rename index carries a name, a category and an id, and nothing else"
+      fi
+      if [ "$alias_dupes" -ne 0 ]; then
+        fail "$alias_dupes names appear twice; a rename with two answers is not a rename"
+      else
+        pass "every old name answers with exactly one record"
+      fi
+      if [ "$alias_bad" -ne 0 ]; then
+        fail "$alias_bad entries are missing a name, a category or an id"
+      else
+        pass "every entry is complete"
+      fi
+    fi
+  fi
+fi
 heading "Summary"
 printf '%d check(s) FAILED\n' "$FAILURES"
 exit "$FAILURES"

@@ -42,11 +42,26 @@ public sealed class RulesSeeder(RulesDbContext db, IOptions<SeedingOptions> opti
         }
 
         var records = new List<RuleRecord>();
+        var aliases = new List<RuleAlias>();
         var perCategory = new Dictionary<string, int>(StringComparer.Ordinal);
 
         foreach (var file in files)
         {
             var category = Path.GetFileNameWithoutExtension(file);
+
+            // The rename index is not a category of rules, so it does not land in the record
+            // list and does not show up in the per-category counts the tests pin.
+            if (category == AliasFileName)
+            {
+                await using var alias = File.OpenRead(file);
+                foreach (var node in (await JsonNode.ParseAsync(alias, cancellationToken: ct))!.AsArray())
+                {
+                    aliases.Add(ToAlias(node!.AsObject()));
+                }
+
+                continue;
+            }
+
             await using var stream = File.OpenRead(file);
             var array = (await JsonNode.ParseAsync(stream, cancellationToken: ct))!.AsArray();
 
@@ -73,6 +88,8 @@ public sealed class RulesSeeder(RulesDbContext db, IOptions<SeedingOptions> opti
         // whatever the database held before.
         await db.RuleRecords.ExecuteDeleteAsync(ct);
         db.RuleRecords.AddRange(records);
+        await db.RuleAliases.ExecuteDeleteAsync(ct);
+        db.RuleAliases.AddRange(aliases);
 
         if (existing is null)
         {
@@ -94,8 +111,9 @@ public sealed class RulesSeeder(RulesDbContext db, IOptions<SeedingOptions> opti
 
         await db.SaveChangesAsync(ct);
 
-        log.LogInformation("Seeded {Count} records across {Categories} categories in {Elapsed}.",
-            records.Count, perCategory.Count, started.Elapsed);
+        log.LogInformation(
+            "Seeded {Count} records across {Categories} categories and {Aliases} renames in {Elapsed}.",
+            records.Count, perCategory.Count, aliases.Count, started.Elapsed);
 
         return new SeedingReport(false, records.Count, perCategory, started.Elapsed);
     }
@@ -112,6 +130,17 @@ public sealed class RulesSeeder(RulesDbContext db, IOptions<SeedingOptions> opti
 
         return Convert.ToHexString(hash.GetHashAndReset());
     }
+
+    /// <summary>The file the transform writes the trimmed rename index to. Leading underscore so
+    /// it sorts away from the categories and reads as not-a-category at a glance.</summary>
+    const string AliasFileName = "_aliases";
+
+    static RuleAlias ToAlias(JsonObject source) => new()
+    {
+        Was = source["was"]!.GetValue<string>(),
+        Category = source["category"]!.GetValue<string>(),
+        NowId = source["nowId"]!.GetValue<string>(),
+    };
 
     RuleRecord ToRecord(JsonObject source)
     {

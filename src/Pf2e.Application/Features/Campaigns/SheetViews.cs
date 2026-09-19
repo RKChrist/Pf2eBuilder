@@ -48,10 +48,46 @@ internal static class SheetViews
             character.DowntimeTaskLevel,
             character.DowntimeTaskLevel is { } task ? LevelBasedDc.For(task) : null,
             [.. character.Feats.Select(Of)],
-            [.. character.Spells.Select(Of)]);
+            [.. character.Spells.Select(Of)],
+            Attempts(character.ToBuild(), sheet));
     }
 
     static NamedBreakdownView Of(NamedBreakdown named) => new(named.Name, Of(named.Value), named.Rank?.ToString());
+
+    /// <summary>
+    /// What this character can attempt, decided here rather than on a screen, because a screen
+    /// that decided it would be a second copy of the rules and the one that goes stale.
+    /// <para>Perception is not a skill and Seek is rolled with it, so a name the skill list does
+    /// not hold falls through to the sheet's own Perception rather than to zero.</para>
+    /// </summary>
+    static IReadOnlyList<AttemptView> Attempts(Character build, Sheet sheet)
+    {
+        ProficiencyRank RankOf(string skill) =>
+            string.Equals(skill, "Perception", StringComparison.OrdinalIgnoreCase)
+                ? build.Perception
+                : build.Skills.FirstOrDefault(entry => entry.Name == skill).Rank;
+
+        int TotalOf(string skill) =>
+            string.Equals(skill, "Perception", StringComparison.OrdinalIgnoreCase)
+                ? sheet.Perception.Total
+                : sheet.Skills.FirstOrDefault(entry => entry.Name == skill)?.Value.Total ?? 0;
+
+        return
+        [
+            .. SkillActions.All.Select(action =>
+            {
+                var skill = action.Best(RankOf, TotalOf);
+                return new AttemptView(
+                    action.Key,
+                    action.Name,
+                    skill,
+                    TotalOf(skill),
+                    action.MetBy(RankOf),
+                    action.Required.ToString(),
+                    action.When);
+            }),
+        ];
+    }
 
     static SheetEntryView Of(SheetEntry entry) =>
         new(entry.Name, entry.Kind, entry.Level, entry.RuleId);

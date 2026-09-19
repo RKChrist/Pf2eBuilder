@@ -991,3 +991,93 @@ a.owned__entry:hover {
 .owned__entry--unknown .owned__entry-name {
     color: var(--text-secondary);
 }
+
+.attempts {
+    padding: 0 var(--layout-gutter);
+}
+
+.attempts__heading {
+    margin: 0 0 var(--space-2);
+    font-size: var(--font-size-subhead);
+}
+
+.trying {
+    border-top: var(--border-hair) solid var(--line-subtle);
+}
+
+.trying__summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-height: var(--tap-min);
+    padding: var(--space-2) 0;
+    cursor: pointer;
+}
+
+.trying__name {
+    font-size: var(--font-size-body);
+}
+
+.trying__count {
+    font-size: var(--font-size-chip);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+}
+
+.trying__rest {
+    margin-top: var(--space-3);
+}
+
+.trying__rest-summary {
+    display: flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    font-size: var(--font-size-chip);
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.tries {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+    gap: var(--space-1);
+}
+
+/* The name, what it is rolled with, and the number. Sorted by the number, because a player
+   scanning this is looking for the thing they are best at. */
+.try {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    gap: 0 var(--space-2);
+    min-height: var(--tap-min);
+    align-content: center;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-chip);
+}
+
+.try__name {
+    font-size: var(--font-size-data);
+}
+
+.try__skill {
+    grid-column: 1;
+    font-size: var(--font-size-chip);
+    color: var(--text-muted);
+}
+
+.try__value {
+    grid-row: 1 / span 2;
+    grid-column: 2;
+    align-self: center;
+    font-size: var(--font-size-data);
+    font-weight: var(--font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Not an error. Being untrained in Thievery is a character choice, not a fault. */
+.try--barred .try__name {
+    color: var(--text-secondary);
+}

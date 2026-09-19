@@ -13,5 +13,9 @@ public interface IRulesDbContext
 {
     DbSet<RuleRecord> RuleRecords { get; }
 
+    /// <summary>What records used to be called. Only genuine renames, so a lookup here is
+    /// the second thing tried and never the first.</summary>
+    DbSet<RuleAlias> RuleAliases { get; }
+
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

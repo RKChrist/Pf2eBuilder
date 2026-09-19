@@ -107,10 +107,21 @@ public sealed class ImportCharacterHandler(
             .Where(r => wanted.Contains(r.Name))
             .ToList();
 
+        // An export written before the Remaster carries the old names, so a name that matches
+        // nothing is tried again against the rename index. Inspire Competence is Uplifting
+        // Overture now, and a character sheet that showed the old name and opened nothing was
+        // telling the player their own feat did not exist.
+        var renamed = (await rules.RuleAliases.AsNoTracking()
+                .Where(a => a.Category == "feat" || a.Category == "spell")
+                .ToListAsync(ct))
+            .Where(a => wanted.Contains(a.Was))
+            .ToDictionary(a => (a.Category, a.Was), a => a.NowId, TupleComparer);
+
         string? Resolve(string category, string name) =>
             records.FirstOrDefault(r =>
                 r.Category == category
-                && string.Equals(r.Name, name, StringComparison.OrdinalIgnoreCase))?.Id;
+                && string.Equals(r.Name, name, StringComparison.OrdinalIgnoreCase))?.Id
+            ?? (renamed.TryGetValue((category, name), out var nowId) ? nowId : null);
 
         return build with
         {
@@ -209,6 +220,13 @@ public sealed class ImportCharacterHandler(
             ArmorDexCap = mechanics?["dex_cap"] is JsonValue cap && cap.TryGetValue(out int value) ? value : null,
         };
     }
+
+    /// <summary>Case-insensitive on the name, because an export's capitalisation is its own.</summary>
+    static readonly IEqualityComparer<(string Category, string Was)> TupleComparer =
+        EqualityComparer<(string Category, string Was)>.Create(
+            (a, b) => string.Equals(a.Category, b.Category, StringComparison.Ordinal)
+                      && string.Equals(a.Was, b.Was, StringComparison.OrdinalIgnoreCase),
+            value => HashCode.Combine(value.Category, value.Was.ToLowerInvariant()));
 
     static int Number(JsonObject? mechanics, string key, int fallback) =>
         mechanics?[key] is JsonValue value && value.TryGetValue(out int number) ? number : fallback;

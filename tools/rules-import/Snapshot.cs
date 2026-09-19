@@ -49,6 +49,29 @@ static class Snapshot
     public static string CategoryFileIn(string dir, string category) =>
         Path.Combine(dir, category + ".ndjson.gz");
 
+    /// <summary>The snapshot directory that has a manifest, which is the one the transform and
+    /// the alias fetch both work against. Named rather than guessed, because two snapshots side
+    /// by side would otherwise be resolved by whichever sorted last.</summary>
+    public static string LatestIndex()
+    {
+        var found = Directory.Exists(SnapshotsRoot)
+            ? Directory.EnumerateDirectories(SnapshotsRoot)
+                       .Where(dir => File.Exists(Path.Combine(dir, "manifest.json")))
+                       .OrderBy(Path.GetFileName, StringComparer.Ordinal)
+                       .LastOrDefault()
+            : null;
+
+        return found is null
+            ? throw new InvalidOperationException(
+                $"no snapshot with a manifest.json under {SnapshotsRoot}; run the pull first")
+            : Path.GetFileName(found)!;
+    }
+
+    /// <summary>What records used to be called, beside the snapshot they belong to, because an
+    /// alias only means anything against the ids of its own vintage.</summary>
+    public static string AliasFile(string index) =>
+        Path.Combine(SnapshotDir(index), "aliases.json");
+
     public static string StagingFile(string index, string category) =>
         Path.Combine(SnapshotDir(index), category + ".staging.ndjson");
 
