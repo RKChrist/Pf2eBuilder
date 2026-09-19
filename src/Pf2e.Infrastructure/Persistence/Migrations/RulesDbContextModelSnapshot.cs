@@ -78,7 +78,6 @@ namespace Pf2e.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Pf2e.Domain.Tracking.TrackedCharacter", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("AncestryHitPoints")
@@ -183,7 +182,6 @@ namespace Pf2e.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Pf2e.Domain.Tracking.TrackedEffect", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("CharacterId")
@@ -224,7 +222,6 @@ namespace Pf2e.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Pf2e.Domain.Tracking.TrackedTable", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Code")
