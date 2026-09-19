@@ -76,6 +76,7 @@
         else if (table.Mode == "Exploration" && table.Characters.Count > 0)
         {
             @Exploring(table)
+            @Camp(table)
         }
 
         @if (!State.Live)
@@ -754,6 +755,86 @@
     static RenderFragment Line(string text) => @<span class="line">@text</span>;
 
     void Edit(CharacterBuildEdit draft) => Dispatcher.Dispatch(new EditDraftChanged(draft));
+
+    /// <summary>
+    /// What the party does when they stop, and how long they have been at it.
+    /// <para>None of the ten-minute activities changes a number. Treat Wounds heals dice this
+    /// app does not roll for a table that has dice in front of it; what it keeps is the hour of
+    /// immunity afterwards, which is the half people forget. A full night is different: what it
+    /// restores is arithmetic, so the engine does it.</para>
+    /// </summary>
+    RenderFragment Camp(CampaignView table) => @<div class="camp">
+        <Card Class="camp__card">
+            <ChildContent>
+                <div class="camp__top">
+                    <h2 class="camp__heading">When you stop</h2>
+                    <p class="camp__clock" role="status">
+                        <span class="camp__clock-label">Here</span>
+                        <span class="camp__clock-value">@Duration.Spoken(table.ElapsedMinutes)</span>
+                    </p>
+                </div>
+
+                @foreach (var character in table.Characters)
+                {
+                    <div class="camping" data-camping="@character.Id">
+                        <div class="camping__who">
+                            <span class="camping__name">@character.Name</span>
+                            @if (character.TreatWoundsImmuneFor > 0)
+                            {
+                                <span class="camping__immune">
+                                    Treated. Immune for @Duration.Spoken(character.TreatWoundsImmuneFor).
+                                </span>
+                            }
+                        </div>
+
+                        <div class="camping__acts">
+                            @foreach (var activity in ExplorationStore.Value.Camp)
+                            {
+                                <Button Variant="ButtonVariant.Secondary"
+                                        Class="camping__act"
+                                        Disabled="@(activity.Key == "treat-wounds" && character.TreatWoundsImmuneFor > 0)"
+                                        OnClick="() => Dispatcher.Dispatch(new CampActivityTaken(character.Id, activity.Key))">
+                                    @activity.Name
+                                </Button>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @* Once, under the buttons, rather than four sentences beside every character's
+                   copy of them. Folded away because a table reads them the first session and
+                   never again. *@
+                <details class="camp__what">
+                    <summary class="camp__what-summary">What these do</summary>
+                    <dl class="camp__list">
+                        @foreach (var activity in ExplorationStore.Value.Camp)
+                        {
+                            <div class="camp__entry">
+                                <dt>
+                                    @activity.Name
+                                    <span class="camp__cost">@activity.Minutes min</span>
+                                </dt>
+                                <dd>@activity.What</dd>
+                            </div>
+                        }
+                    </dl>
+                </details>
+
+                @if (table.Role == "Dm")
+                {
+                    <Button Class="camp__rest"
+                            OnClick="() => Dispatcher.Dispatch(new NightRested())">
+                        Rest for the night
+                    </Button>
+                    <p class="camp__rest-says">
+                        Eight hours. Everyone recovers Constitution times level in hit points,
+                        temporary hit points expire, fatigued ends, and drained and doomed each
+                        step down by one.
+                    </p>
+                }
+            </ChildContent>
+        </Card>
+    </div>;
 
     /// <summary>
     /// What everyone is doing while the party moves. One row per character, because that is the

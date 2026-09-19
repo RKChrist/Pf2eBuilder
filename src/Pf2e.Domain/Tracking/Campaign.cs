@@ -20,6 +20,13 @@ public sealed class Campaign
 
     public CampaignMode Mode { get; set; } = CampaignMode.Exploration;
 
+    /// <summary>
+    /// How long the party has been at this since somebody started counting, in minutes. The
+    /// camp panel adds to it and nothing subtracts, because it answers "how long have we been
+    /// here?" and that question has never had a smaller answer than the last time it was asked.
+    /// </summary>
+    public int ElapsedMinutes { get; set; }
+
     public List<TrackedCharacter> Characters { get; init; } = [];
 
     /// <summary>Every effect in play, on characters and on monsters alike. They hang off the

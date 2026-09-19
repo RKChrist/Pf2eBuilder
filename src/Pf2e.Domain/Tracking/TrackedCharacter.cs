@@ -64,6 +64,13 @@ public sealed class TrackedCharacter
     public string? ExplorationActivity { get; set; }
 
     /// <summary>
+    /// The campaign minute this character was last Treated, and null if they never have been.
+    /// Treat Wounds leaves the target immune for an hour, which is the half of that activity
+    /// four adults reliably lose track of, so it is the half this app keeps.
+    /// </summary>
+    public int? TreatedAtMinute { get; set; }
+
+    /// <summary>
     /// Effects are not here. They belong to the campaign, one row per application, because one
     /// application can reach five characters and a monster, and a list hanging off each
     /// character could not say that.

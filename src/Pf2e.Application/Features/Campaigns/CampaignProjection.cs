@@ -38,11 +38,12 @@ internal static class CampaignProjection
             role.ToString(),
             [.. campaign.Characters
                 .OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
-                .Select(character => SheetViews.Of(character, campaign.EffectApplications))],
+                .Select(character => SheetViews.Of(character, campaign.EffectApplications, campaign.ElapsedMinutes))],
             [.. campaign.EffectApplications
                 .Select(application => Of(role, application, campaign, visibleIds))
                 .OfType<EffectApplicationView>()],
-            campaign.Encounter is { } present ? Of(role, present, campaign, visible, visibleIds) : null);
+            campaign.Encounter is { } present ? Of(role, present, campaign, visible, visibleIds) : null,
+            campaign.ElapsedMinutes);
     }
 
     /// <summary>The list a viewer is allowed to know exists. For the DM that is everybody; for a

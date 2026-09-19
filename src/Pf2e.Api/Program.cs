@@ -106,6 +106,16 @@ app.UseExceptionHandler(handler => handler.Run(async context =>
         return;
     }
 
+    // Treating somebody who is still immune is a state, like an empty undo stack: the request
+    // is well formed, the campaign is there, and the hour simply is not up. The sentence says
+    // how much of it is left, which is the only thing the player can act on.
+    if (error is StillImmuneException immune)
+    {
+        context.Response.StatusCode = StatusCodes.Status409Conflict;
+        await context.Response.WriteAsJsonAsync(new { title = immune.Message });
+        return;
+    }
+
     // Which creature is the whole question, so the sentence carries it.
     if (error is CombatantNotFoundException absent)
     {

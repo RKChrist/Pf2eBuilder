@@ -100,13 +100,21 @@ public sealed record CharacterSheetView(
     CharacterBuildEdit Build,
     /// <summary>What this character is doing while the party travels, by key, and null when
     /// nobody has said. Session state: a level-up does not stop them scouting.</summary>
-    string? ExplorationActivity);
+    string? ExplorationActivity,
+    /// <summary>Minutes left on this character's Treat Wounds immunity, and zero when there is
+    /// none. Computed against the campaign clock so a screen never has to subtract.</summary>
+    int TreatWoundsImmuneFor);
 
 /// <summary>One thing a character can be doing between fights, with the sentence a screen
 /// shows under it. The list is the engine's, so a screen never spells one out itself.</summary>
 public sealed record ExplorationActivityView(string Key, string Name, string Consequence);
 
 public sealed record SetExplorationActivityRequest(string? Activity);
+
+/// <summary>One ten-minute activity, with what it costs and what it does.</summary>
+public sealed record CampActivityView(string Key, string Name, int Minutes, string What);
+
+public sealed record CampActivityRequest(string Activity);
 
 /// <summary>A computed number with a name of its own rather than a slot on the sheet: one skill,
 /// one weapon. Rank is the skill's proficiency by name and null for a weapon.</summary>
@@ -167,7 +175,9 @@ public sealed record CampaignView(
     string Role,
     IReadOnlyList<CharacterSheetView> Characters,
     IReadOnlyList<EffectApplicationView> Effects,
-    EncounterView? Encounter);
+    EncounterView? Encounter,
+    /// <summary>How long the party has been at this, in minutes. Only ever goes up.</summary>
+    int ElapsedMinutes);
 
 /// <summary>The one payload that ever carries the DM key. Whoever asked for it is the DM, and
 /// no later response repeats it.</summary>

@@ -113,6 +113,22 @@ public sealed class TrackerApi(HttpClient http)
                 new SetExplorationActivityRequest(activity)),
             ct);
 
+    public Task<IReadOnlyList<CampActivityView>> GetCampActivitiesAsync(CancellationToken ct) =>
+        SendAsync<IReadOnlyList<CampActivityView>>(
+            new HttpRequestMessage(HttpMethod.Get, "camp-activities"), ct);
+
+    public Task<CampaignView> TakeCampActivityAsync(
+        string code, Guid character, string activity, CancellationToken ct) =>
+        SendAsync<CampaignView>(
+            Carrying(
+                HttpMethod.Post,
+                $"{Campaign(code)}/characters/{character}/camp",
+                new CampActivityRequest(activity)),
+            ct);
+
+    public Task<CampaignView> RestAsync(string code, CancellationToken ct) =>
+        SendAsync<CampaignView>(new HttpRequestMessage(HttpMethod.Post, $"{Campaign(code)}/rest"), ct);
+
     /// <summary>Whether this browser holds a DM key at all, which is what the shell reads to
     /// decide between offering the DM controls and not drawing them.</summary>
     public bool HoldsDmKey => _dmKey is { Length: > 0 };

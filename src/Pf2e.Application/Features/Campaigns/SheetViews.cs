@@ -12,7 +12,10 @@ namespace Pf2e.Application.Features.Campaigns;
 /// </summary>
 internal static class SheetViews
 {
-    public static CharacterSheetView Of(TrackedCharacter character, IEnumerable<EffectApplication> effects)
+    public static CharacterSheetView Of(
+        TrackedCharacter character,
+        IEnumerable<EffectApplication> effects,
+        int elapsedMinutes = 0)
     {
         var sheet = CharacterSheet.Compute(character.ToBuild(), character.ToSession(effects));
 
@@ -39,10 +42,19 @@ internal static class SheetViews
             sheet.SpellDc is { } dc ? Of(dc) : null,
             character.Spellcasting?.Tradition,
             Edit(character.ToBuild()),
-            character.ExplorationActivity);
+            character.ExplorationActivity,
+            ImmuneFor(character, elapsedMinutes));
     }
 
     static NamedBreakdownView Of(NamedBreakdown named) => new(named.Name, Of(named.Value), named.Rank?.ToString());
+
+    /// <summary>Minutes left on the Treat Wounds immunity, subtracted here so no screen has to.
+    /// Zero for somebody who has never been Treated, which is the same answer as somebody whose
+    /// hour is up and is the answer both of them want.</summary>
+    static int ImmuneFor(TrackedCharacter character, int elapsedMinutes) =>
+        character.TreatedAtMinute is { } treated
+            ? Math.Max(0, CampActivities.TreatWoundsImmunityMinutes - (elapsedMinutes - treated))
+            : 0;
 
     /// <summary>The build as the edit screen holds it. Ranks and the key attribute travel by
     /// name, because a number would make the wire depend on the order of an enum.</summary>

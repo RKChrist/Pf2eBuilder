@@ -18,6 +18,10 @@ public sealed record ExplorationState
     public RemoteData<IReadOnlyList<ExplorationActivityView>> Activities { get; init; } =
         new RemoteData<IReadOnlyList<ExplorationActivityView>>.NotAsked();
 
+    /// <summary>The ten-minute activities. Fetched with the exploration ones, in the same
+    /// round trip's worth of latency, because both are needed by the same screen.</summary>
+    public IReadOnlyList<CampActivityView> Camp { get; init; } = [];
+
     /// <summary>What the picker offers, with an empty key for "nothing in particular", because a
     /// character who has not chosen is the normal case and needs a way back to it.</summary>
     public IReadOnlyList<ChoiceOption<string>> Options =>
@@ -38,6 +42,13 @@ public sealed record ExplorationState
 
 public sealed record ExplorationActivitiesRequested;
 
+public sealed record CampActivitiesLoaded(IReadOnlyList<CampActivityView> Activities);
+
+/// <summary>A ten-minute activity, by one character.</summary>
+public sealed record CampActivityTaken(Guid CharacterId, string Activity);
+
+public sealed record NightRested;
+
 public sealed record ExplorationActivitiesLoaded(IReadOnlyList<ExplorationActivityView> Activities);
 
 public sealed record ExplorationActivitiesFailed(string Message);
@@ -55,6 +66,10 @@ public static class ExplorationReducers
     [ReducerMethod]
     public static ExplorationState On(ExplorationState state, ExplorationActivitiesFailed action) =>
         state with { Activities = new RemoteData<IReadOnlyList<ExplorationActivityView>>.Failed(action.Message) };
+
+    [ReducerMethod]
+    public static ExplorationState On(ExplorationState state, CampActivitiesLoaded action) =>
+        state with { Camp = action.Activities };
 }
 
 public sealed class ExplorationEffects(TrackerApi tracker)
@@ -66,6 +81,8 @@ public sealed class ExplorationEffects(TrackerApi tracker)
         {
             dispatcher.Dispatch(new ExplorationActivitiesLoaded(
                 await tracker.GetExplorationActivitiesAsync(CancellationToken.None)));
+            dispatcher.Dispatch(new CampActivitiesLoaded(
+                await tracker.GetCampActivitiesAsync(CancellationToken.None)));
         }
         catch (CampaignApiException failure)
         {

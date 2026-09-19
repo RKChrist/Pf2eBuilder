@@ -687,3 +687,127 @@
     color: var(--text-secondary);
     text-wrap: pretty;
 }
+
+.camp {
+    padding: 0 var(--layout-gutter) var(--space-6);
+}
+
+.camp__top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.camp__heading {
+    margin: 0;
+    font-size: var(--font-size-subhead);
+}
+
+/* The one number this panel exists for. "How long have we been here?" is asked out loud, so it
+   is answered in words rather than in minutes. */
+.camp__clock {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    margin: 0;
+}
+
+.camp__clock-label {
+    font-size: var(--font-size-chip);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.camp__clock-value {
+    font-size: var(--font-size-data);
+    font-weight: var(--font-weight-semibold);
+}
+
+.camping {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-3) 0;
+    border-top: var(--border-hair) solid var(--line-subtle);
+}
+
+.camping__who {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-width: 0;
+}
+
+.camping__name {
+    font-size: var(--font-size-body);
+}
+
+/* Not a warning. Being immune to Treat Wounds for an hour is the normal consequence of having
+   just been Treated, and the button being off already says it cannot be done. */
+.camping__immune {
+    font-size: var(--font-size-chip);
+    color: var(--text-muted);
+}
+
+.camping__acts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--tap-separation);
+}
+
+.camp__what {
+    margin-top: var(--space-4);
+}
+
+.camp__what-summary {
+    display: flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    font-size: var(--font-size-chip);
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.camp__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+    gap: var(--space-3);
+    margin: var(--space-2) 0 0;
+}
+
+.camp__entry dt {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    font-size: var(--font-size-data);
+    font-weight: var(--font-weight-semibold);
+}
+
+.camp__cost {
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-regular);
+    color: var(--text-muted);
+}
+
+.camp__entry dd {
+    margin: var(--space-1) 0 0;
+    font-size: var(--font-size-chip);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}
+
+.camp__rest {
+    margin-top: var(--space-5);
+}
+
+.camp__rest-says {
+    margin: var(--space-2) 0 0;
+    font-size: var(--font-size-chip);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}

@@ -55,6 +55,15 @@ public sealed class EncounterEffects
             code, action.CombatantId, action.Revealed, CancellationToken.None));
 
     [EffectMethod]
+    public Task Handle(CampActivityTaken action, IDispatcher dispatcher) =>
+        RunAsync(dispatcher, code => _tracker.TakeCampActivityAsync(
+            code, action.CharacterId, action.Activity, CancellationToken.None));
+
+    [EffectMethod]
+    public Task Handle(NightRested _, IDispatcher dispatcher) =>
+        RunAsync(dispatcher, code => _tracker.RestAsync(code, CancellationToken.None));
+
+    [EffectMethod]
     public Task Handle(ExplorationActivityChosen action, IDispatcher dispatcher) =>
         RunAsync(dispatcher, code => _tracker.SetExplorationActivityAsync(
             code, action.CharacterId, action.Activity, CancellationToken.None));

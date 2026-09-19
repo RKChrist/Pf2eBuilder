@@ -109,6 +109,36 @@ check('choosing one says what it means at the table', await dm.eval(
   await dm.eval(`document.querySelector('.doing__says')?.textContent.trim() ?? 'nothing'`));
 await shot(dm, 'dm-05-exploration');
 
+// Camp: the ten-minute activities and the clock they add to.
+check('the camp panel starts at no time at all', await dm.eval(
+  `document.querySelector('.camp__clock-value')?.textContent.trim() ?? ''`).then(t => t === 'no time at all'),
+  await dm.eval(`document.querySelector('.camp__clock-value')?.textContent.trim() ?? 'missing'`));
+
+await clickText(dm, '.camping__act', 'Treat Wounds');
+const treated = await dm.eval(`({
+  clock: document.querySelector('.camp__clock-value')?.textContent.trim() ?? '',
+  immune: document.querySelector('.camping__immune')?.textContent.trim() ?? '',
+  off: [...document.querySelectorAll('.camping__act')].some(b => b.textContent.trim() === 'Treat Wounds' && b.disabled),
+})`);
+check('Treat Wounds costs ten minutes', treated.clock === '10 minutes', treated.clock);
+check('and leaves an hour of immunity on the target', treated.immune.includes('1 hour'), treated.immune);
+check('with the button off while it runs', treated.off);
+
+await clickText(dm, '.camping__act', 'Refocus');
+check('another activity moves the clock on', await dm.eval(
+  `document.querySelector('.camp__clock-value')?.textContent.trim() ?? ''`).then(t => t === '20 minutes'),
+  await dm.eval(`document.querySelector('.camp__clock-value')?.textContent.trim() ?? ''`));
+
+await clickText(dm, '.camp__rest', 'Rest for the night');
+const morning = await dm.eval(`({
+  clock: document.querySelector('.camp__clock-value')?.textContent.trim() ?? '',
+  immune: document.querySelector('.camping__immune')?.textContent.trim() ?? 'none',
+})`);
+check('a night adds eight hours to the clock', morning.clock === '8 hours 20 minutes', morning.clock);
+check('and nobody is still immune in the morning', morning.immune === 'none', morning.immune);
+await shot(dm, 'dm-06-camp');
+
+
 // Into a fight.
 await clickText(dm, '.shell__modes button', 'Fight');
 await waitFor(dm, '.fight');

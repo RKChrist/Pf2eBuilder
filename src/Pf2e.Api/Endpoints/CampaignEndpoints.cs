@@ -38,6 +38,19 @@ public static class CampaignEndpoints
              SetExplorationActivityRequest body, CancellationToken ct) =>
                 sender.Send(new SetExplorationActivity(code, DmKeyOf(request), id, body.Activity), ct));
 
+        app.MapPost("/campaigns/{code}/characters/{id:guid}/camp",
+            (ISender sender, HttpRequest request, string code, Guid id,
+             CampActivityRequest body, CancellationToken ct) =>
+                sender.Send(new TakeCampActivity(code, DmKeyOf(request), id, body.Activity), ct));
+
+        app.MapPost("/campaigns/{code}/rest",
+            (ISender sender, HttpRequest request, string code, CancellationToken ct) =>
+                sender.Send(new RestForTheNight(code, DmKeyOf(request)), ct));
+
+        app.MapGet("/camp-activities", () => Results.Ok(
+            Pf2e.Domain.CampActivities.All
+                .Select(a => new CampActivityView(a.Key, a.Name, a.Minutes, a.What))));
+
         app.MapGet("/exploration-activities", () => Results.Ok(
             Pf2e.Domain.ExplorationActivities.All
                 .Select(a => new ExplorationActivityView(a.Key, a.Name, a.Consequence))));
