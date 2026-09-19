@@ -330,4 +330,17 @@ public class TrackerRules(SeededDatabase database) : IClassFixture<SeededDatabas
         Assert.All(answers, answer => Assert.Single(answer!.Effects));
         Assert.Single(Assert.Single((await Read("GNIB22")).Characters).Effects);
     }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void AMissingExportIsRejectedByNameRatherThanThrowing(string? payload)
+    {
+        // Without Cascade.Stop the length rule dereferences the null the previous rule just
+        // rejected, and the caller gets a 500 naming nothing instead of a 400 naming the field.
+        var result = new ImportCharacterValidator().Validate(new ImportCharacter("TABLE1", payload!));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName == "Pathbuilder");
+    }
 }

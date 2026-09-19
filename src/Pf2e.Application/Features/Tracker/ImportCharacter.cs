@@ -19,7 +19,11 @@ public sealed class ImportCharacterValidator : AbstractValidator<ImportCharacter
     {
         RuleFor(c => c.TableCode).Must(TableCode.IsValid)
                                  .WithMessage("A table code is four to twelve letters and digits.");
-        RuleFor(c => c.Pathbuilder).NotEmpty()
+        // Cascade.Stop, because without it FluentValidation runs every rule in the chain and
+        // the length check dereferences the null that NotEmpty just rejected. A request with
+        // the field missing then answers 500 instead of naming the missing field.
+        RuleFor(c => c.Pathbuilder).Cascade(CascadeMode.Stop)
+                                   .NotEmpty()
                                    .Must(payload => payload.Length <= MaxPayload)
                                    .WithMessage("A Pathbuilder export is smaller than 512 KB.");
     }

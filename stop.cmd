@@ -24,3 +24,6 @@ for /f "tokens=2 delims=," %%I in ('tasklist /fi "imagename eq dotnet.exe" /fo c
 
 timeout /t 1 /nobreak >nul
 echo Done. Nothing is holding the build output now.
+
+rem wmic is deprecated and can leave a non-zero code behind even when everything worked.
+exit /b 0

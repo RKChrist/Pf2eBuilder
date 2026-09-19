@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.SignalR;
@@ -68,6 +69,20 @@ app.UseExceptionHandler(handler => handler.Run(async context =>
     {
         context.Response.StatusCode = StatusCodes.Status400BadRequest;
         await context.Response.WriteAsJsonAsync(new { title = pathbuilder.Message });
+        return;
+    }
+
+    // A body the model binder could not read is the caller's mistake too. Left as a 500 it
+    // reads as a server fault, and the caller with a wrong field name goes looking for a bug
+    // that is not there. I did exactly that against this endpoint before fixing it.
+    if (error is BadHttpRequestException or JsonException)
+    {
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        await context.Response.WriteAsJsonAsync(new
+        {
+            title = "The request body could not be read.",
+            detail = error is BadHttpRequestException bad ? bad.Message : error.Message,
+        });
         return;
     }
 
