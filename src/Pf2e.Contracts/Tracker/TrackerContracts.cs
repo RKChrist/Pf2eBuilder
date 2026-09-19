@@ -44,7 +44,16 @@ public sealed record CharacterSheetView(
     int MaxHitPoints,
     int TemporaryHitPoints,
     int HeroPoints,
-    IReadOnlyList<ActiveEffectView> Effects);
+    IReadOnlyList<ActiveEffectView> Effects,
+    IReadOnlyList<NamedBreakdownView> Skills,
+    IReadOnlyList<NamedBreakdownView> Attacks,
+    BreakdownSummary? SpellAttack,
+    BreakdownSummary? SpellDc,
+    string? SpellTradition);
+
+/// <summary>A computed number with a name of its own rather than a slot on the sheet: one skill,
+/// one weapon. Rank is the skill's proficiency by name and null for a weapon.</summary>
+public sealed record NamedBreakdownView(string Name, BreakdownSummary Value, string? Rank);
 
 /// <summary>Exists is false for a code nobody has imported into yet. Anyone with a code is at
 /// that table, so an unknown code is a table waiting to be started rather than an error; the

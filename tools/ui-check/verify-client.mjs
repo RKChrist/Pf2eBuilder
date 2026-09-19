@@ -21,6 +21,13 @@ const check = reporter();
 const browser = await launch({ headless: true });
 const page = await openPage(browser);
 await page.send('Network.enable');
+
+// The resource timing buffer holds 250 entries and then silently stops recording. This run makes
+// more requests than that, so without this the search assertions late in the file read a stale
+// last entry and report that a working filter is broken. That happened to the level slider.
+await page.send('Page.addScriptToEvaluateOnNewDocument', {
+  source: "performance.setResourceTimingBufferSize(5000);",
+});
 await page.viewport(390, 844, true);
 
 const click = (selector) => page.eval(

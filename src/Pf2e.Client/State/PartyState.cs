@@ -11,7 +11,7 @@ public enum PickerArm
     Custom,
 }
 
-public sealed record OpenBreakdown(Guid CharacterId, StatSlot Stat);
+public sealed record OpenBreakdown(Guid CharacterId, StatAddress Stat);
 
 /// <summary>The rules arm's search lives here rather than beside the browse screen's, because
 /// looking for a buff must not disturb whatever the player had filtered on the other screen,
@@ -95,7 +95,7 @@ public sealed record LiveJoined;
 
 public sealed record LiveLost;
 
-public sealed record BreakdownOpened(Guid CharacterId, StatSlot Stat);
+public sealed record BreakdownOpened(Guid CharacterId, StatAddress Stat);
 
 public sealed record BreakdownClosed;
 

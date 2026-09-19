@@ -35,24 +35,64 @@ public class BuffsAtTheTable
     }
 
     [Fact]
-    public void AnAnthemChangesNothingOnThisSheetYetBecauseTheSheetHasNoAttackRoll()
+    public void AnAnthemAndAFrighteningMonsterBothReachTheSameAttackRoll()
     {
-        // Courageous Anthem and bless both land on attack rolls and damage, and this sheet
-        // computes armour class, three saves, Perception and a class DC. So the modifier is
-        // real, the stacking rule sees it, and the player sees nothing. That is the gap, and
-        // this test exists to fail the moment attacks join the sheet, which is when it should
-        // be rewritten into the assertion it wants to be.
+        var bare = Gnibbo.SheetWith();
+        var sung = Gnibbo.SheetWith(Buff("courageous-anthem"));
+        var sungAndScared = Gnibbo.SheetWith(Buff("courageous-anthem"), Gnibbo.Condition("frightened", 2));
+
+        static int Rapier(Sheet sheet) =>
+            sheet.Attacks.Single(attack => attack.Name == "+1 Striking Rapier").Value.Total;
+
+        Assert.Equal(2, bare.Attacks.Length);
+        Assert.Equal(Rapier(bare) + 1, Rapier(sung));
+
+        // Both are status, so the rule takes the best bonus and the worst penalty and applies
+        // one of each rather than summing them: +1 and -2 leave the roll one worse than bare.
+        Assert.Equal(Rapier(bare) - 1, Rapier(sungAndScared));
+    }
+
+    [Fact]
+    public void AnAnthemReachesASpellAttackTheSameWayItReachesAWeaponOne()
+    {
         var bare = Gnibbo.SheetWith();
         var sung = Gnibbo.SheetWith(Buff("courageous-anthem"));
 
-        Assert.Equal(bare.ArmorClass.Total, sung.ArmorClass.Total);
-        Assert.Equal(bare.Will.Total, sung.Will.Total);
-        Assert.Equal(bare.Perception.Total, sung.Perception.Total);
-        Assert.Equal(bare.ClassDc.Total, sung.ClassDc.Total);
+        Assert.Equal(bare.SpellAttack!.Total + 1, sung.SpellAttack!.Total);
 
-        // It is applied all the same, and the effect is on the character where a screen can
-        // show it as a chip.
-        Assert.Single(sung.Effects);
+        // A spell DC is a DC and not an attack roll, so the anthem leaves it alone.
+        Assert.Equal(bare.SpellDc!.Total, sung.SpellDc!.Total);
+    }
+
+    [Fact]
+    public void HeroismReachesEverySkillAndClumsyReachesOnlyTheDexterousOnes()
+    {
+        var bare = Gnibbo.SheetWith();
+        var heroic = Gnibbo.SheetWith(Buff("heroism", 2));
+        var clumsy = Gnibbo.SheetWith(Gnibbo.Condition("clumsy", 1));
+
+        static int Of(Sheet sheet, string name) =>
+            sheet.Skills.Single(skill => skill.Name == name).Value.Total;
+
+        Assert.All(bare.Skills, skill => Assert.Equal(Of(bare, skill.Name) + 2, Of(heroic, skill.Name)));
+
+        // Clumsy is every Dexterity-based statistic, which is Stealth and not Performance.
+        Assert.Equal(Of(bare, "Stealth") - 1, Of(clumsy, "Stealth"));
+        Assert.Equal(Of(bare, "Performance"), Of(clumsy, "Performance"));
+    }
+
+    [Fact]
+    public void AnUntrainedSkillIsTheAttributeAloneAndATrainedOneAddsLevelAndRank()
+    {
+        var sheet = Gnibbo.SheetWith();
+
+        // Athletics is untrained and Strength 10, so it is exactly zero. Stealth is expert at
+        // level 7 with Dexterity 16: 7 + 4 + 3.
+        Assert.Equal(0, sheet.Skills.Single(skill => skill.Name == "Athletics").Value.Total);
+        Assert.Equal(14, sheet.Skills.Single(skill => skill.Name == "Stealth").Value.Total);
+
+        // A lore is governed by Intelligence like any other Lore, and this one is trained.
+        Assert.Equal(7 + 2 + 1, sheet.Skills.Single(skill => skill.Name == "Warfare Lore").Value.Total);
     }
 
     [Fact]

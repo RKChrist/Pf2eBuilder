@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text.Json;
 using Pf2e.Domain;
 
@@ -40,6 +41,18 @@ internal sealed record PathbuilderBuild(Character Build, int ArmorPotency)
             ["wis"] = AttributeKind.Wisdom,
             ["cha"] = AttributeKind.Charisma,
         };
+
+    // The sixteen skills the export states a rank for, keyed by the field it writes them under.
+    // A lore is not here because the export puts those in a list of its own with its own shape.
+    static readonly (string Field, string Name)[] SkillFields =
+    [
+        ("acrobatics", "Acrobatics"), ("arcana", "Arcana"), ("athletics", "Athletics"),
+        ("crafting", "Crafting"), ("deception", "Deception"), ("diplomacy", "Diplomacy"),
+        ("intimidation", "Intimidation"), ("medicine", "Medicine"), ("nature", "Nature"),
+        ("occultism", "Occultism"), ("performance", "Performance"), ("religion", "Religion"),
+        ("society", "Society"), ("stealth", "Stealth"), ("survival", "Survival"),
+        ("thievery", "Thievery"),
+    ];
 
     static readonly Dictionary<string, string> ArmorRankFieldByCategory =
         new(StringComparer.OrdinalIgnoreCase)
@@ -101,6 +114,9 @@ internal sealed record PathbuilderBuild(Character Build, int ArmorPotency)
                 ArmorName: String(armor, "name") ?? "Unarmored",
                 ArmorItemBonus: 0,
                 ArmorDexCap: null,
+                Skills: ReadSkills(proficiencies, build),
+                Weapons: ReadWeapons(build),
+                Spellcasting: ReadSpellcasting(build),
                 AncestryHitPoints: Int(attributes, "ancestryhp", 0),
                 ClassHitPoints: Int(attributes, "classhp", 0),
                 BonusHitPoints: Int(attributes, "bonushp", 0),
@@ -109,6 +125,106 @@ internal sealed record PathbuilderBuild(Character Build, int ArmorPotency)
             return new PathbuilderBuild(character, Int(armor, "pot", 0));
         }
     }
+
+    /// <summary>The sixteen named skills, then every Lore the character wrote down. A lore is
+    /// stored as ["Warfare", 2], a name and a rank bonus, and reads at the table as "Warfare
+    /// Lore".</summary>
+    static ImmutableArray<SkillProficiency> ReadSkills(JsonElement? proficiencies, JsonElement? build)
+    {
+        var skills = SkillFields
+            .Select(field => new SkillProficiency(field.Name, Rank(proficiencies, field.Field)))
+            .ToList();
+
+        if (build is { } parent && parent.TryGetProperty("lores", out var lores) && lores.ValueKind is JsonValueKind.Array)
+        {
+            foreach (var lore in lores.EnumerateArray())
+            {
+                if (lore.ValueKind is not JsonValueKind.Array)
+                {
+                    continue;
+                }
+
+                var pair = lore.EnumerateArray().ToList();
+                if (pair.Count < 2 || pair[0].ValueKind is not JsonValueKind.String || !pair[1].TryGetInt32(out var bonus))
+                {
+                    continue;
+                }
+
+                var name = pair[0].GetString();
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    skills.Add(new SkillProficiency(
+                        name.EndsWith(" Lore", StringComparison.OrdinalIgnoreCase) ? name : $"{name} Lore",
+                        RankByBonus.GetValueOrDefault(bonus, ProficiencyRank.Untrained)));
+                }
+            }
+        }
+
+        return [.. skills];
+    }
+
+    /// <summary>
+    /// The export states each weapon's finished attack bonus, and that is what is taken. A class
+    /// grants proficiency in weapons it names, which no field of the export states: this bard is
+    /// untrained in martial weapons and expert with a rapier, so recomputing gives +4 where the
+    /// export says +15. The governing attribute is left at Strength here and settled at import
+    /// against the seeded weapon's traits, which are the only thing that knows about finesse.
+    /// </summary>
+    static ImmutableArray<WeaponAttack> ReadWeapons(JsonElement? build)
+    {
+        if (build is not { } parent
+            || !parent.TryGetProperty("weapons", out var weapons)
+            || weapons.ValueKind is not JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        return
+        [
+            .. weapons.EnumerateArray()
+                .Where(w => w.ValueKind is JsonValueKind.Object)
+                .Select(w => (Name: String(w, "name"), Display: String(w, "display"), Bonus: Int(w, "attack", 0)))
+                .Where(w => !string.IsNullOrWhiteSpace(w.Name))
+                .Select(w => new WeaponAttack(
+                    w.Name!,
+                    string.IsNullOrWhiteSpace(w.Display) ? w.Name! : w.Display!,
+                    w.Bonus,
+                    AttributeKind.Strength)),
+        ];
+    }
+
+    /// <summary>The first caster block. A dual-class character can hold two and this shows the
+    /// first, which is a limit worth naming rather than a bug worth hiding.</summary>
+    static Spellcasting? ReadSpellcasting(JsonElement? build)
+    {
+        if (build is not { } parent
+            || !parent.TryGetProperty("spellCasters", out var casters)
+            || casters.ValueKind is not JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        foreach (var caster in casters.EnumerateArray().Where(c => c.ValueKind is JsonValueKind.Object))
+        {
+            var rank = Rank(caster, "proficiency");
+            if (rank is ProficiencyRank.Untrained)
+            {
+                continue;
+            }
+
+            var tradition = String(caster, "magicTradition");
+            return new Spellcasting(
+                string.IsNullOrWhiteSpace(tradition) ? "Spell" : Capitalised(tradition),
+                rank,
+                AttributeByCode.GetValueOrDefault(String(caster, "ability") ?? string.Empty));
+        }
+
+        return null;
+    }
+
+    static string Capitalised(string word) => char.ToUpperInvariant(word[0]) + word[1..];
+
+    static ProficiencyRank Rank(JsonElement caster, string name) => Rank((JsonElement?)caster, name);
 
     static JsonElement? WornArmor(JsonElement? build)
     {

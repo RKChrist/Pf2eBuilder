@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Pf2e.Domain.Tracking;
 
 /// <summary>
@@ -42,6 +44,13 @@ public sealed class TrackedCharacter
     public int BonusHitPoints { get; private set; }
     public int BonusHitPointsPerLevel { get; private set; }
 
+    // Build data that is a list rather than a column. It is read whole and replaced whole on
+    // re-import and nothing queries inside it, so it is stored as one JSON value per list and
+    // not as two more tables.
+    public ImmutableArray<SkillProficiency> Skills { get; private set; } = [];
+    public ImmutableArray<WeaponAttack> Weapons { get; private set; } = [];
+    public Spellcasting? Spellcasting { get; private set; }
+
     public int CurrentHitPoints { get; set; }
     public int TemporaryHitPoints { get; set; }
     public int HeroPoints { get; set; }
@@ -83,7 +92,10 @@ public sealed class TrackedCharacter
         AncestryHitPoints,
         ClassHitPoints,
         BonusHitPoints,
-        BonusHitPointsPerLevel);
+        BonusHitPointsPerLevel,
+        Skills,
+        Weapons,
+        Spellcasting);
 
     public SessionState ToSession() => new(
         CurrentHitPoints,
@@ -121,5 +133,8 @@ public sealed class TrackedCharacter
         ClassHitPoints = build.ClassHitPoints;
         BonusHitPoints = build.BonusHitPoints;
         BonusHitPointsPerLevel = build.BonusHitPointsPerLevel;
+        Skills = build.Skills;
+        Weapons = build.Weapons;
+        Spellcasting = build.Spellcasting;
     }
 }

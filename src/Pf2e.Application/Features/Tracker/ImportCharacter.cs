@@ -37,7 +37,7 @@ public sealed class ImportCharacterHandler(
     public async Task<CharacterSheetView> Handle(ImportCharacter command, CancellationToken ct)
     {
         var parsed = PathbuilderBuild.Parse(command.Pathbuilder);
-        var build = await WithSeededArmor(parsed, ct);
+        var build = await WithSeededGear(parsed, ct);
         var code = TableCode.Normalize(command.TableCode);
 
         var table = await tracker.Tables
@@ -81,6 +81,71 @@ public sealed class ImportCharacterHandler(
     /// so +1 studded leather is one +3 item bonus and not a +2 and a +1 that the stacking rule
     /// would then refuse to combine.
     /// </summary>
+    async Task<Character> WithSeededGear(PathbuilderBuild parsed, CancellationToken ct) =>
+        await WithSeededWeapons(await WithSeededArmor(parsed, ct), ct);
+
+    /// <summary>
+    /// Which attribute governs an attack is not in the export and is in the ruleset: a ranged
+    /// weapon uses Dexterity, a finesse weapon the better of Strength and Dexterity, and anything
+    /// else Strength. It matters because a selector reads it. Clumsy has to reach a rapier and
+    /// must not reach a greatsword, and leaving every weapon on Strength gets both wrong.
+    /// </summary>
+    async Task<Character> WithSeededWeapons(Character build, CancellationToken ct)
+    {
+        if (build.Weapons.Length == 0)
+        {
+            return build;
+        }
+
+        var names = build.Weapons.Select(w => w.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // Traits are a column of their own and not part of the mechanics JSON, because the seeder
+        // promotes them out of it. Reading mechanics["trait"] here found nothing and quietly made
+        // every weapon Strength-governed, which a clumsy rapier is not.
+        var seeded = (await rules.RuleRecords.AsNoTracking()
+                .Where(r => r.Category == "weapon")
+                .Select(r => new { r.Name, r.Traits, r.Mechanics })
+                .ToListAsync(ct))
+            .Where(r => names.Contains(r.Name))
+            .ToDictionary(
+                r => r.Name,
+                r => (r.Traits, Mechanics: JsonNode.Parse(r.Mechanics) as JsonObject),
+                StringComparer.OrdinalIgnoreCase);
+
+        return build with
+        {
+            Weapons =
+            [
+                .. build.Weapons.Select(weapon =>
+                {
+                    var record = seeded.TryGetValue(weapon.Name, out var found) ? found : default;
+                    return weapon with { GovernedBy = Governs(record.Traits, record.Mechanics, build.Attributes) };
+                }),
+            ],
+        };
+    }
+
+    static AttributeKind Governs(List<string>? traits, JsonObject? mechanics, AttributeModifiers attributes)
+    {
+        // A weapon this ruleset does not hold keeps Strength, which is the commonest answer and
+        // the one a reader can spot as wrong.
+        if (mechanics is null)
+        {
+            return AttributeKind.Strength;
+        }
+
+        if (string.Equals(mechanics["weapon_type"]?.GetValue<string>(), "Ranged", StringComparison.OrdinalIgnoreCase))
+        {
+            return AttributeKind.Dexterity;
+        }
+
+        var finesse = traits?.Contains("Finesse", StringComparer.OrdinalIgnoreCase) ?? false;
+
+        return finesse && attributes.Dexterity > attributes.Strength
+            ? AttributeKind.Dexterity
+            : AttributeKind.Strength;
+    }
+
     async Task<Character> WithSeededArmor(PathbuilderBuild parsed, CancellationToken ct)
     {
         // All 42 armour records are matched in memory rather than by a provider whose collation

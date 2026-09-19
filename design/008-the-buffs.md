@@ -77,17 +77,51 @@ on the trait of the thing being saved against, or on the action being taken, or 
 model. Each omission is written into the definition's own comment rather than left for a reader
 to discover from a wrong number.
 
-## The gap this opened
+## The gap this opened, and how it was closed
 
-The sheet computes armour class, three saves, Perception and a class DC. Bless and Courageous
-Anthem land on attack rolls and damage, so both are applied, both appear as a chip, and neither
-changes a number anyone can see.
+The sheet computed armour class, three saves, Perception and a class DC. Bless and Courageous
+Anthem land on attack rolls and damage, so both were applied, both appeared as a chip, and
+neither changed a number anyone could see.
 
-The data to close this is already in the Pathbuilder export and already discarded at import: a
-rank for every skill, `castingOccult` and its three siblings for spellcasting, and a `weapons`
-array carrying each weapon's proficiency and item bonus. Adding skills, weapon attacks and a
-spell attack and DC to the sheet is the next piece of work, and it is what makes two of these
-seven buffs visible.
+The data was already in the Pathbuilder export and already discarded at import: a rank for every
+skill, the two Lores the player wrote down, the four casting proficiencies with their attribute,
+and a weapons array. The sheet now computes all of it.
 
-`BuffsAtTheTable.AnAnthemChangesNothingOnThisSheetYetBecauseTheSheetHasNoAttackRoll` asserts the
-gap so that it breaks the moment attacks join the sheet.
+Two judgements went into that, and they went opposite ways.
+
+**A skill is recomputed and a weapon is not.** Skills come out of `proficiencies`, which states
+a rank for every one of the sixteen, so level plus rank plus attribute is the whole answer.
+Weapons do not: a class grants proficiency in the weapons it names, and no field of the export
+says so. This bard reads `martial: 0` and hits at +15 with a rapier, because a bard is trained
+in rapiers by name. Recomputing gives +4. So the weapon's bonus is the export's own total, taken
+whole, with the session's modifiers stacked onto it.
+
+**The governing attribute still comes from the ruleset.** A bonus can be taken on trust; a
+selector cannot, because clumsy has to reach a finesse rapier and must not reach a greatsword.
+The seeded weapon record carries `weapon_type` and a Finesse trait, so ranged is Dexterity,
+finesse is the better of the two, and everything else is Strength. The traits are a column of
+their own rather than part of the mechanics JSON, which the first attempt got wrong: reading
+`mechanics["trait"]` found nothing and quietly made every weapon Strength-governed.
+
+Storage. Skills and weapons are one JSON column each on the tracked character, not two more
+tables. They are read whole, replaced whole on re-import, and nothing queries inside them. An
+`ImmutableArray` compares by reference, so the value comparer compares the stored form, which is
+what makes EF see a real change and only a real change.
+
+On screen the card now shows the statistics the character actually has, so a fighter gets no
+empty spell attack; the attacks; the trained skills; and the untrained ones behind a summary,
+because a player reads the four they are good at and a DM occasionally asks for an untrained
+Nature. A roll is written with a sign and a DC is not.
+
+`tools/ui-check/verify-effects.mjs` drives all of it in a real Chrome on a phone viewport: it
+imports the sample bard, opens the picker, raises a shield, blesses the bard, and asserts that
+armour class moved by one, the rapier and the spell attack moved by one, and Performance did
+not.
+
+## What is still missing
+
+Damage is not on the sheet, so the damage half of Courageous Anthem still lands nowhere visible.
+A damage roll needs the weapon's dice and its striking rune, which the export states and this
+import does not yet read.
+
+A dual-class character has two spellcasting blocks and this shows the first.

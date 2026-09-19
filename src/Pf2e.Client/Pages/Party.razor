@@ -76,17 +76,70 @@
                             </div>
 
                             <div class="stats">
-                                @foreach (var line in StatSlots.All)
+                                @foreach (var line in StatSlots.For(character))
                                 {
                                     <button type="button"
                                             class="stat"
                                             aria-label="@line.Name"
-                                            @onclick="() => Open(character.Id, line.Slot)">
+                                            @onclick="() => Open(character.Id, StatAddress.Fixed(line.Slot))">
                                         <span class="stat__label">@line.Short</span>
-                                        <span class="stat__value">@line.Of(character).Total</span>
+                                        <span class="stat__value">@(line.IsRoll ? Signed(line.Of(character)!.Total) : line.Of(character)!.Total.ToString())</span>
                                     </button>
                                 }
                             </div>
+
+                            @if (character.Attacks.Count > 0)
+                            {
+                                <h3 class="rolls__heading">Attacks</h3>
+                                <div class="rolls" aria-label="Attacks">
+                                    @foreach (var roll in character.Attacks)
+                                    {
+                                        <button type="button"
+                                                class="roll"
+                                                @onclick="() => Open(character.Id, StatAddress.Weapon(roll.Name))">
+                                            <span class="roll__name">@roll.Name</span>
+                                            <span class="roll__value">@Signed(roll.Value.Total)</span>
+                                        </button>
+                                    }
+                                </div>
+                            }
+
+                            @if (character.Skills.Count > 0)
+                            {
+                                @* Trained and better in the open, the rest behind a summary. A
+                                   player reads the four they are good at; a DM occasionally asks
+                                   for an untrained Nature, and that has to stay reachable. *@
+                                <h3 class="rolls__heading">Skills</h3>
+                                <div class="rolls" aria-label="Trained skills">
+                                    @foreach (var roll in Trained(character))
+                                    {
+                                        <button type="button"
+                                                class="roll"
+                                                @onclick="() => Open(character.Id, StatAddress.Skilled(roll.Name))">
+                                            <span class="roll__name">@roll.Name</span>
+                                            <span class="roll__value">@Signed(roll.Value.Total)</span>
+                                        </button>
+                                    }
+                                </div>
+
+                                @if (Untrained(character).Count > 0)
+                                {
+                                    <details class="rest">
+                                        <summary class="rest__summary">Untrained skills</summary>
+                                <div class="rolls" aria-label="Untrained skills">
+                                    @foreach (var roll in Untrained(character))
+                                    {
+                                        <button type="button"
+                                                class="roll"
+                                                @onclick="() => Open(character.Id, StatAddress.Skilled(roll.Name))">
+                                            <span class="roll__name">@roll.Name</span>
+                                            <span class="roll__value">@Signed(roll.Value.Total)</span>
+                                        </button>
+                                    }
+                                </div>
+                                    </details>
+                                }
+                            }
 
                             <div class="vitals">
                                 <p class="hp">
@@ -154,10 +207,9 @@
 <BottomSheet Open="@(Opened is not null)"
              Title="@BreakdownTitle"
              OnClose="() => Dispatcher.Dispatch(new BreakdownClosed())">
-    @if (Opened is { } open && Character(open.CharacterId) is { } character)
+    @if (Opened is { } open && Character(open.CharacterId) is { } character
+        && open.Stat.In(character) is { } breakdown)
     {
-        var line = StatSlots.Of(open.Stat);
-        var breakdown = line.Of(character);
 
         <div class="breakdown">
             <p class="breakdown__base">
@@ -431,7 +483,8 @@
 
     string BreakdownTitle =>
         Opened is { } open && Character(open.CharacterId) is { } character
-            ? $"{StatSlots.Of(open.Stat).Name} {StatSlots.Of(open.Stat).Of(character).Total}"
+        && open.Stat.In(character) is { } breakdown
+            ? $"{open.Stat.Label} {breakdown.Total}"
             : "Breakdown";
 
     RenderFragment Entrance => @<div class="join">
@@ -505,8 +558,17 @@
         }
     </text>;
 
-    void Open(Guid characterId, StatSlot slot) =>
-        Dispatcher.Dispatch(new BreakdownOpened(characterId, slot));
+    void Open(Guid characterId, StatAddress address) =>
+        Dispatcher.Dispatch(new BreakdownOpened(characterId, address));
+
+    /// <summary>A roll reads +14 or -1, never 14, because the number is added to a die.</summary>
+    static string Signed(int total) => total >= 0 ? $"+{total}" : total.ToString();
+
+    static IReadOnlyList<NamedBreakdownView> Trained(CharacterSheetView character) =>
+        [.. character.Skills.Where(skill => skill.Rank != nameof(ProficiencyRank.Untrained))];
+
+    static IReadOnlyList<NamedBreakdownView> Untrained(CharacterSheetView character) =>
+        [.. character.Skills.Where(skill => skill.Rank == nameof(ProficiencyRank.Untrained))];
 
     void Nudge(Guid characterId, int delta) =>
         Dispatcher.Dispatch(new HitPointsNudged(characterId, delta));

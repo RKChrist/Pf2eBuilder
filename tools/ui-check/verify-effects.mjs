@@ -90,16 +90,32 @@ const read = `(() => {
     const el = [...document.querySelectorAll('.stat')].find(e => e.getAttribute('aria-label') === label);
     return el ? el.querySelector('.stat__value').textContent.trim() : null;
   };
+  const roll = name => {
+    const el = [...document.querySelectorAll('.roll')].find(e => e.querySelector('.roll__name').textContent.trim() === name);
+    return el ? el.querySelector('.roll__value').textContent.trim() : null;
+  };
   return {
     ac: stat('Armor Class'),
     will: stat('Will'),
+    spellAttack: stat('Spell Attack'),
+    rapier: roll('+1 Striking Rapier'),
+    performance: roll('Performance'),
     labels: [...document.querySelectorAll('.stat')].map(e => e.getAttribute('aria-label')),
+    rolls: [...document.querySelectorAll('.roll__name')].filter(e => !e.closest('details')).map(e => e.textContent.trim()),
+    hidden: [...document.querySelectorAll('details .roll__name')].map(e => e.textContent.trim()),
   };
 })()`;
 
 const before = await page.eval(read);
 check('the sheet shows named statistics', before.labels.length > 0, before.labels.join(', ').slice(0, 160));
 check('armour class is one of them', before.ac !== null, String(before.ac));
+check('a caster gets a spell attack and a spell DC', before.labels.includes('Spell Attack') && before.labels.includes('Spell DC'), before.labels.join(', '));
+check('the weapons the export carried are on the card', before.rapier === '+15', String(before.rapier));
+check('so are the skills', before.performance === '+17', String(before.performance));
+check('an untrained skill is behind the summary, not in the open list',
+  !before.rolls.includes('Athletics') && before.hidden.includes('Athletics'),
+  `open: ${before.rolls.join(', ').slice(0, 120)} | behind: ${before.hidden.join(', ').slice(0, 80)}`);
+check('a save reads as a roll, with a sign', /^[+-]/.test(String(before.will)), String(before.will));
 
 await page.eval(`(() => {
   const open = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Effects');
@@ -137,6 +153,32 @@ const num = v => Number(String(v ?? '').replace(/[^\d-]/g, ''));
 check('raising a shield lifts armour class by one', num(after.ac) === num(before.ac) + 1,
   `${before.ac} -> ${after.ac}`);
 check('and leaves Will where it was', num(after.will) === num(before.will), `${before.will} -> ${after.will}`);
+
+// A bless is the buff that used to land nowhere a player could see. It moves attack rolls and
+// nothing else, so it is the check that the sheet grew the rows the effect was always reaching.
+await page.eval(`(() => {
+  const open = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Effects');
+  if (open) open.click();
+  return !!open;
+})()`);
+await waitFor('.conditions');
+await click('[data-condition="bless"] .pf-switch__input');
+await sleep(900);
+await page.eval(`(() => {
+  const close = document.querySelector('.pf-sheet__close');
+  if (close) close.click();
+  return !!close;
+})()`);
+await sleep(600);
+const blessed = await page.eval(read);
+await shot('04-blessed');
+
+check('a bless lifts the weapon attack', num(blessed.rapier) === num(after.rapier) + 1,
+  `${after.rapier} -> ${blessed.rapier}`);
+check('and the spell attack with it', num(blessed.spellAttack) === num(after.spellAttack) + 1,
+  `${after.spellAttack} -> ${blessed.spellAttack}`);
+check('and leaves a skill alone', num(blessed.performance) === num(after.performance),
+  `${after.performance} -> ${blessed.performance}`);
 
 const errors = page.consoleErrors().filter(e => !e.includes('ERR_BLOCKED_BY_CLIENT'));
 check('no console errors', errors.length === 0, errors.join(' | ').slice(0, 300));

@@ -94,6 +94,53 @@ public class TrackerRules(SeededDatabase database) : IClassFixture<SeededDatabas
     }
 
     [Fact]
+    public async Task ImportingBringsTheSkillsWeaponsAndSpellcastingTheExportAlreadyCarried()
+    {
+        var sheet = await Import("GNIB20", Fixture("gnibbo.json"));
+
+        // Sixteen named skills and the two Lores the player wrote down.
+        Assert.Equal(18, sheet.Skills.Count);
+        Assert.Contains(sheet.Skills, skill => skill.Name == "Warfare Lore");
+
+        // Performance is master at level 7 with Charisma 19: 7 + 6 + 4.
+        var performance = sheet.Skills.Single(skill => skill.Name == "Performance");
+        Assert.Equal("Master", performance.Rank);
+        Assert.Equal(17, performance.Value.Total);
+
+        // Athletics is untrained and Strength 10, so it is the attribute alone, which is zero.
+        var athletics = sheet.Skills.Single(skill => skill.Name == "Athletics");
+        Assert.Equal("Untrained", athletics.Rank);
+        Assert.Equal(0, athletics.Value.Total);
+
+        // The export states each weapon's finished bonus, and those are the numbers shown. The
+        // bard is untrained in martial weapons on paper and hits at +15 with a rapier in fact,
+        // so recomputing from the proficiency table would have shown +4.
+        Assert.Equal(15, sheet.Attacks.Single(a => a.Name == "+1 Striking Rapier").Value.Total);
+        Assert.Equal(14, sheet.Attacks.Single(a => a.Name == "Shortbow").Value.Total);
+
+        // Occult, expert, Charisma 19: 7 + 4 + 4 for the attack and ten more for the DC.
+        Assert.Equal("Occult", sheet.SpellTradition);
+        Assert.Equal(15, sheet.SpellAttack!.Total);
+        Assert.Equal(25, sheet.SpellDc!.Total);
+    }
+
+    [Fact]
+    public async Task AFinesseRapierAndARangedBowAreBothDexterityGoverned()
+    {
+        var character = await Import("GNIB21", Fixture("gnibbo.json"));
+        var before = character.Attacks.ToDictionary(a => a.Name, a => a.Value.Total);
+
+        // Which attribute governs an attack is in the ruleset and not in the export. The rapier
+        // is Finesse and this goblin has more Dexterity than Strength, so clumsy reaches it.
+        var after = await Set(
+            "GNIB21", character.Id, Guid.NewGuid(),
+            new EffectSpec("Clumsy", "Seeded", "clumsy", 2, null, []));
+
+        Assert.Equal(before["+1 Striking Rapier"] - 2, after!.Attacks.Single(a => a.Name == "+1 Striking Rapier").Value.Total);
+        Assert.Equal(before["Shortbow"] - 2, after.Attacks.Single(a => a.Name == "Shortbow").Value.Total);
+    }
+
+    [Fact]
     public async Task ReImportingReplacesTheBuildAndLeavesTheSessionWhereItWas()
     {
         var first = await Import("GNIB02", Fixture("gnibbo.json"));
