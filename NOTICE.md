@@ -13,7 +13,11 @@ Sections marked NEEDS SOURCING are places where I will not invent text. ORC attr
 requires naming each Licensor and each work, including author lists that must be copied from
 the actual books rather than reconstructed.
 
-## The decision that is yours
+## The decision, and it has been made
+
+**Free and non-commercial.** The owner chose this on 19 September 2026, which is what the rest
+of this file assumes. The reasoning is below because the choice is reversible and whoever
+reverses it needs to know what it costs.
 
 The ORC License covers the **mechanics** we store, and covers them well. Section II.c grants
 the right "to extract, reuse, reproduce, and Use all or a substantial portion of the contents
@@ -21,7 +25,7 @@ of the database", and conditions, buffs, debuffs and ability effects are named L
 Material. Our modifier registry sits comfortably inside that.
 
 It does **not** cover names. ORC Section I.h reserves "proper nouns and the adjectives, names,
-and titles derived from proper nouns". We store a `name` on all 22,596 records, plus `deity`
+and titles derived from proper nouns". We store a `name` on all 25,595 records, plus `deity`
 and `domain` fields. "Frightened" and "Courageous Anthem" are fine. Deity names, Lost Omens
 organisations and anything named after a Golarion person are not.
 
@@ -41,13 +45,20 @@ from memory; it names a Library of Congress registration number that must be exa
 
 ## Attribution Notice
 
-NEEDS SOURCING. Must name each Licensor and each work we drew from. Our seed records carry a
-`primary_source` field, so the list of works is derivable from the data with:
+PARTLY SOURCED. ORC attribution names each Licensor and each work.
 
-    dotnet run --project tools/rules-import -- transform
-    # then read the distinct primary_source values out of out/seed/
+The works are done. [NOTICE-works.md](NOTICE-works.md) lists all 252 of them with how many of
+the 25,595 seeded records came from each, derived from the `primary_source` field rather than
+typed, and regenerated with:
 
-Author lists must be copied from each book's own legal page. Do not reconstruct them.
+    node tools/rules-import/works.mjs
+
+The Licensor for every one of them is Paizo Inc.
+
+NEEDS SOURCING: the author list for each work, which is the third column of that table and is
+blank. It has to be copied from each book's own legal page. Do not reconstruct one from memory;
+a wrong author list is a worse failure of attribution than a missing one, and it is the half of
+this that no script can do.
 
 ## Reserved Material Notice
 
