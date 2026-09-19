@@ -54,6 +54,53 @@ public sealed class TrackerApi(HttpClient http)
                 new ApplyEffectRequest(effect, targets)),
             ct);
 
+    /// <summary>The build layer only. A re-import replaces the same fields, so an edit and a
+    /// re-import are the same operation with a different source.</summary>
+    public Task<CharacterSheetView> EditCharacterAsync(
+        string code, Guid character, CharacterBuildEdit edit, CancellationToken ct) =>
+        SendAsync<CharacterSheetView>(
+            Carrying(HttpMethod.Put, $"{Campaign(code)}/characters/{character}", edit), ct);
+
+    /// <summary>A monster names a creature record; a player names somebody already on the
+    /// roster. One route, because it is one command either way.</summary>
+    public Task<CampaignView> AddCombatantAsync(
+        string code, string? ruleId, Guid? characterId, string? name, int? initiative, CancellationToken ct) =>
+        SendAsync<CampaignView>(
+            Carrying(
+                HttpMethod.Post,
+                $"{Campaign(code)}/encounter/combatants",
+                new AddCombatantRequest(ruleId, characterId, name, initiative)),
+            ct);
+
+    /// <summary>Combatants the rolls do not name have their initiative rolled by the server, so
+    /// an empty list rolls the whole encounter.</summary>
+    public Task<CampaignView> RollInitiativeAsync(
+        string code, IReadOnlyList<InitiativeRoll> rolls, CancellationToken ct) =>
+        SendAsync<CampaignView>(
+            Carrying(HttpMethod.Post, $"{Campaign(code)}/encounter/initiative", new RollInitiativeRequest(rolls)),
+            ct);
+
+    public Task<CampaignView> NextTurnAsync(string code, CancellationToken ct) =>
+        SendAsync<CampaignView>(new HttpRequestMessage(HttpMethod.Post, $"{Campaign(code)}/encounter/next-turn"), ct);
+
+    public Task<CampaignView> UndoAsync(string code, CancellationToken ct) =>
+        SendAsync<CampaignView>(new HttpRequestMessage(HttpMethod.Post, $"{Campaign(code)}/encounter/undo"), ct);
+
+    public Task<CampaignView> RevealAsync(string code, Guid combatant, bool revealed, CancellationToken ct) =>
+        SendAsync<CampaignView>(
+            Carrying(
+                HttpMethod.Post,
+                $"{Campaign(code)}/encounter/combatants/{combatant}/reveal",
+                new RevealMonsterRequest(revealed)),
+            ct);
+
+    public Task<CampaignView> EndEncounterAsync(string code, CancellationToken ct) =>
+        SendAsync<CampaignView>(new HttpRequestMessage(HttpMethod.Delete, $"{Campaign(code)}/encounter"), ct);
+
+    /// <summary>Whether this browser holds a DM key at all, which is what the shell reads to
+    /// decide between offering the DM controls and not drawing them.</summary>
+    public bool HoldsDmKey => _dmKey is { Length: > 0 };
+
     static string Campaign(string code) => $"campaigns/{Uri.EscapeDataString(code)}";
 
     static HttpRequestMessage Carrying<T>(HttpMethod method, string url, T body) =>

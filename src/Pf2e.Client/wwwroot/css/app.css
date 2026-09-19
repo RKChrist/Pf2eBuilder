@@ -203,3 +203,20 @@ a {
 h1:focus {
     outline: none;
 }
+
+/* The hit point field names the creature it belongs to, because a screen reader hears "Hit
+   points" once per card otherwise and cannot tell them apart. On screen the Damage and Heal
+   buttons beside it already say what it is, and the sentence wrapped over three lines and
+   pushed those buttons off the edge of a phone.
+   This lives here rather than in the campaign screen's own sheet because a scoped stylesheet
+   cannot reach inside a component it only passed a class to. */
+.amount__field .pf-field__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}

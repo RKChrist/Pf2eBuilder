@@ -1,14 +1,15 @@
+@page "/campaign"
 @page "/party"
 @inherits FluxorComponent
-@inject IState<PartyState> Store
+@inject IState<CampaignState> Store
 @inject IState<ConditionsState> ConditionsStore
 @inject IState<RulesBrowserState> Browser
 @inject IDispatcher Dispatcher
 
-<PageTitle>Party tracker</PageTitle>
+<PageTitle>Campaign</PageTitle>
 
 <header class="top">
-    <h1 class="heading">Party tracker</h1>
+    <h1 class="heading">Campaign</h1>
     @if (State.Code.Length > 0)
     {
         <p class="code">
@@ -36,13 +37,41 @@
         @Entrance
     </Failed>
     <Loaded Context="table">
-        <p class="shell" role="status">
-            <span class="shell__mode">@table.Mode</span>
+        @* The mode is the campaign's, not this screen's, so it reads the same on every phone at
+           the table. A player sees which mode they are in and cannot change it; the server
+           refuses them either way, and drawing a control that always fails is worse than
+           drawing none. *@
+        <div class="shell">
             @if (table.Role == "Dm")
             {
-                <span class="shell__dm">DM</span>
+                <SegmentedControl TValue="string"
+                                  Class="shell__modes"
+                                  Label="Campaign mode"
+                                  Options="Modes"
+                                  Value="@table.Mode"
+                                  ValueChanged="mode => Dispatcher.Dispatch(new ModeChangeRequested(mode))" />
             }
-        </p>
+            else
+            {
+                <p class="shell__mode" role="status">@ModeName(table.Mode)</p>
+            }
+
+            <p class="shell__where" role="status">
+                @if (table.Encounter is { Round: > 0 } fight)
+                {
+                    <span class="shell__round">Round @fight.Round</span>
+                }
+                @if (table.Role == "Dm")
+                {
+                    <span class="shell__dm">DM</span>
+                }
+            </p>
+        </div>
+
+        @if (table.Mode == "Encounter")
+        {
+            @Fight(table)
+        }
 
         @if (!State.Live)
         {
@@ -206,6 +235,13 @@
                                 <Button Variant="ButtonVariant.Secondary"
                                         OnClick="() => Dispatcher.Dispatch(new PickerOpened(character.Id))">
                                     Effects
+                                </Button>
+                                @* A level-up between sessions, a number Pathbuilder got wrong and a
+                                   homebrew ancestry all need this, and re-exporting is not always
+                                   possible at the table. *@
+                                <Button Variant="ButtonVariant.Secondary"
+                                        OnClick="() => Dispatcher.Dispatch(new EditorOpened(character.Id))">
+                                    Edit
                                 </Button>
                             </div>
                         </ChildContent>
@@ -466,7 +502,391 @@
     }
 </BottomSheet>
 
+@* Who is in the fight. A monster names a creature record and a player names somebody already
+   on the roster, and both are one command on the server. *@
+<BottomSheet Open="@(State.AddingCombatant is not null)"
+             Title="Add to the fight"
+             OnClose="() => Dispatcher.Dispatch(new CombatantPickerClosed())">
+    @if (State.AddingCombatant is { } picker && Table is { } open)
+    {
+        <div class="adding">
+            @if (Absent(open) is { Count: > 0 } roster)
+            {
+                <h3 class="adding__heading">From this campaign</h3>
+                <Card>
+                    <ListContent>
+                        @foreach (var character in roster)
+                        {
+                            <ListRow Title="@character.Name"
+                                     Meta="@Line($"Level {character.Level} {character.AncestryName} {character.ClassName}")"
+                                     OnClick="() => Dispatcher.Dispatch(new CombatantAdded(null, character.Id, null))" />
+                        }
+                    </ListContent>
+                </Card>
+            }
+
+            <h3 class="adding__heading">A monster</h3>
+            <SearchField Value="@picker.Query"
+                         ValueChanged="query => Dispatcher.Dispatch(new MonsterQueryChanged(query ?? string.Empty))"
+                         Placeholder="Search 3,786 creatures"
+                         Label="Search the bestiary" />
+
+            <RemoteView T="RuleSearchResult" Data="picker.Found">
+                <NotAsked>
+                    <p class="hint">Every creature in the ruleset, with the numbers a fight needs.</p>
+                </NotAsked>
+                <Loading>
+                    <div class="pending"><Spinner ShowLabel="true" Label="Searching" /></div>
+                </Loading>
+                <Failed Context="message">
+                    <ErrorState Title="Could not search the bestiary">
+                        <ChildContent>@message</ChildContent>
+                    </ErrorState>
+                </Failed>
+                <Loaded Context="found">
+                    @if (found.Items.Count == 0)
+                    {
+                        <p class="hint">Nothing by that name.</p>
+                    }
+                    else
+                    {
+                        <Card>
+                            <ListContent>
+                                @foreach (var creature in found.Items)
+                                {
+                                    <ListRow Title="@creature.Name"
+                                             Meta="@Line(Glance(creature))"
+                                             OnClick="() => Dispatcher.Dispatch(new CombatantAdded(creature.Id, null, null))" />
+                                }
+                            </ListContent>
+                        </Card>
+                    }
+                </Loaded>
+            </RemoteView>
+        </div>
+    }
+</BottomSheet>
+
+@* The build layer, in the form the calculator reads it. Nothing here touches hit points,
+   effects or the turn: an edit is a re-import from a different source. *@
+<BottomSheet Open="@(State.Editing is not null)"
+             Title="@(State.Editing is { } e ? $"Edit {e.Draft.Name}" : "Edit")"
+             OnClose="() => Dispatcher.Dispatch(new EditorClosed())">
+    @if (State.Editing is { } editor)
+    {
+        var draft = editor.Draft;
+
+        <div class="editor">
+            @if (editor.Trouble is { } wrong)
+            {
+                <p class="trouble" role="alert">@wrong</p>
+            }
+
+            <div class="editor__grid">
+                <TextInput Label="Name" Value="@draft.Name"
+                           ValueChanged="v => Edit(draft with { Name = v ?? string.Empty })" />
+                <div class="editor__field">
+                    <span class="editor__label" id="edit-Level">Level</span>
+                    <NumberStepper Label="Level" Min="1" Max="20" Value="draft.Level"
+                                   ValueChanged="v => Edit(draft with { Level = v })" />
+                </div>
+                <TextInput Label="Class" Value="@draft.ClassName"
+                           ValueChanged="v => Edit(draft with { ClassName = v ?? string.Empty })" />
+                <TextInput Label="Ancestry" Value="@draft.AncestryName"
+                           ValueChanged="v => Edit(draft with { AncestryName = v ?? string.Empty })" />
+            </div>
+
+            <h3 class="editor__heading">Attributes</h3>
+            @* Modifiers, not scores. The sheet says Dexterity +3, so this says +3 too rather
+               than making somebody convert 16 in their head to mean the same thing. *@
+            <div class="editor__grid">
+                <div class="editor__field">
+                    <span class="editor__label" id="edit-Strength">Str</span>
+                    <NumberStepper Label="Str" Min="-5" Max="10" Value="draft.Strength"
+                                   ValueChanged="v => Edit(draft with { Strength = v })" />
+                </div>
+                <div class="editor__field">
+                    <span class="editor__label" id="edit-Dexterity">Dex</span>
+                    <NumberStepper Label="Dex" Min="-5" Max="10" Value="draft.Dexterity"
+                                   ValueChanged="v => Edit(draft with { Dexterity = v })" />
+                </div>
+                <div class="editor__field">
+                    <span class="editor__label" id="edit-Constitution">Con</span>
+                    <NumberStepper Label="Con" Min="-5" Max="10" Value="draft.Constitution"
+                                   ValueChanged="v => Edit(draft with { Constitution = v })" />
+                </div>
+                <div class="editor__field">
+                    <span class="editor__label" id="edit-Intelligence">Int</span>
+                    <NumberStepper Label="Int" Min="-5" Max="10" Value="draft.Intelligence"
+                                   ValueChanged="v => Edit(draft with { Intelligence = v })" />
+                </div>
+                <div class="editor__field">
+                    <span class="editor__label" id="edit-Wisdom">Wis</span>
+                    <NumberStepper Label="Wis" Min="-5" Max="10" Value="draft.Wisdom"
+                                   ValueChanged="v => Edit(draft with { Wisdom = v })" />
+                </div>
+                <div class="editor__field">
+                    <span class="editor__label" id="edit-Charisma">Cha</span>
+                    <NumberStepper Label="Cha" Min="-5" Max="10" Value="draft.Charisma"
+                                   ValueChanged="v => Edit(draft with { Charisma = v })" />
+                </div>
+            </div>
+
+            <h3 class="editor__heading">Proficiencies</h3>
+            <div class="editor__grid">
+                <Select TValue="string" Label="Key attribute" Options="CharacterEdits.Attributes"
+                        Value="@draft.KeyAttribute"
+                        ValueChanged="v => Edit(draft with { KeyAttribute = v ?? draft.KeyAttribute })" />
+                <Select TValue="string" Label="Fortitude" Options="CharacterEdits.Ranks"
+                        Value="@draft.Fortitude"
+                        ValueChanged="v => Edit(draft with { Fortitude = v ?? draft.Fortitude })" />
+                <Select TValue="string" Label="Reflex" Options="CharacterEdits.Ranks"
+                        Value="@draft.Reflex"
+                        ValueChanged="v => Edit(draft with { Reflex = v ?? draft.Reflex })" />
+                <Select TValue="string" Label="Will" Options="CharacterEdits.Ranks"
+                        Value="@draft.Will"
+                        ValueChanged="v => Edit(draft with { Will = v ?? draft.Will })" />
+                <Select TValue="string" Label="Perception" Options="CharacterEdits.Ranks"
+                        Value="@draft.Perception"
+                        ValueChanged="v => Edit(draft with { Perception = v ?? draft.Perception })" />
+                <Select TValue="string" Label="Class DC" Options="CharacterEdits.Ranks"
+                        Value="@draft.ClassDc"
+                        ValueChanged="v => Edit(draft with { ClassDc = v ?? draft.ClassDc })" />
+            </div>
+
+            <h3 class="editor__heading">Armour and hit points</h3>
+            <div class="editor__grid">
+                <TextInput Label="Armour" Value="@draft.ArmorName"
+                           ValueChanged="v => Edit(draft with { ArmorName = v ?? string.Empty })" />
+                <Select TValue="string" Label="Armour proficiency" Options="CharacterEdits.Ranks"
+                        Value="@draft.ArmorRank"
+                        ValueChanged="v => Edit(draft with { ArmorRank = v ?? draft.ArmorRank })" />
+                <div class="editor__field">
+                    <span class="editor__label" id="edit-ArmorItemBonus">Armour bonus</span>
+                    <NumberStepper Label="Armour bonus" Min="0" Max="10" Value="draft.ArmorItemBonus"
+                                   ValueChanged="v => Edit(draft with { ArmorItemBonus = v })" />
+                </div>
+                <div class="editor__field">
+                    <span class="editor__label">Dex cap</span>
+                    <NumberStepper Label="Dex cap" Min="0" Max="10" Value="draft.ArmorDexCap ?? 10"
+                                   ValueChanged="v => Edit(draft with { ArmorDexCap = v })" />
+                </div>
+                <div class="editor__field">
+                    <span class="editor__label" id="edit-AncestryHitPoints">Ancestry HP</span>
+                    <NumberStepper Label="Ancestry HP" Min="0" Max="20" Value="draft.AncestryHitPoints"
+                                   ValueChanged="v => Edit(draft with { AncestryHitPoints = v })" />
+                </div>
+                <div class="editor__field">
+                    <span class="editor__label" id="edit-ClassHitPoints">Class HP</span>
+                    <NumberStepper Label="Class HP" Min="0" Max="20" Value="draft.ClassHitPoints"
+                                   ValueChanged="v => Edit(draft with { ClassHitPoints = v })" />
+                </div>
+            </div>
+
+            <div class="editor__acts">
+                <Button Variant="ButtonVariant.Secondary"
+                        OnClick="() => Dispatcher.Dispatch(new EditorClosed())">
+                    Cancel
+                </Button>
+                <Button Disabled="editor.Saving"
+                        OnClick="() => Dispatcher.Dispatch(new EditSubmitted())">
+                    @if (editor.Saving)
+                    {
+                        <text>Saving</text>
+                    }
+                    else
+                    {
+                        <text>Save</text>
+                    }
+                </Button>
+            </div>
+        </div>
+    }
+</BottomSheet>
+
 @code {
+    static readonly IReadOnlyList<ChoiceOption<string>> Modes =
+    [
+        new("Exploration", "Explore"),
+        new("Encounter", "Fight"),
+        new("Downtime", "Downtime"),
+    ];
+
+    /// <summary>The label a player reads when they cannot change it. The switcher's labels are
+    /// short because three of them share a phone's width; a sentence has room to be a word.</summary>
+    static string ModeName(string mode) => mode switch
+    {
+        "Encounter" => "In a fight",
+        "Downtime" => "Downtime",
+        _ => "Exploring",
+    };
+
+    CampaignView? Table =>
+        State.Campaign is RemoteData<CampaignView>.Loaded loaded ? loaded.Value : null;
+
+    /// <summary>Everyone on the roster who is not already in the fight. Offering somebody twice
+    /// is offering to give them two turns.</summary>
+    static IReadOnlyList<CharacterSheetView> Absent(CampaignView table) =>
+    [
+        .. table.Characters.Where(character =>
+            table.Encounter is null
+            || !table.Encounter.Combatants.Any(combatant => combatant.Id == character.Id)),
+    ];
+
+    /// <summary>A creature row says what a DM choosing one wants to know, which is how hard it
+    /// hits back rather than which book it is from.</summary>
+    static string Glance(RuleSummary creature)
+    {
+        var facts = creature.Highlights
+            .Where(fact => fact.Key is "ac" or "hp" or "size")
+            .Select(fact => $"{MechanicsDisplay.LabelOf(fact.Key)} {string.Join(", ", fact.Values)}");
+
+        var level = creature.Level is { } value ? $"Level {value}" : null;
+        return string.Join(" · ", new[] { level }.Concat(facts).Where(part => part is { Length: > 0 })!);
+    }
+
+    /// <summary>A row's meta slot takes a fragment, so a sentence has to become one.</summary>
+    static RenderFragment Line(string text) => @<span class="line">@text</span>;
+
+    void Edit(CharacterBuildEdit draft) => Dispatcher.Dispatch(new EditDraftChanged(draft));
+
+    /// <summary>
+    /// The fight. Initiative order, whose turn it is, and what the last turn change left the DM
+    /// to do. A player gets the same list with the monsters they have been shown and nothing at
+    /// all about the ones they have not; that is the projection's doing, not this screen's, so
+    /// there is no role check inside the loop.
+    /// </summary>
+    RenderFragment Fight(CampaignView table) => @<div class="fight">
+        <Card Class="fight__card">
+            <ChildContent>
+                <div class="fight__top">
+                    <h2 class="fight__heading">Initiative</h2>
+                    @if (table.Role == "Dm")
+                    {
+                        <div class="fight__acts">
+                            <Button Variant="ButtonVariant.Secondary"
+                                    OnClick="() => Dispatcher.Dispatch(new CombatantPickerOpened())">
+                                Add
+                            </Button>
+                            <Button Variant="ButtonVariant.Secondary"
+                                    OnClick="() => Dispatcher.Dispatch(new InitiativeRolled())">
+                                Roll
+                            </Button>
+                            <Button Variant="ButtonVariant.Secondary"
+                                    OnClick="() => Dispatcher.Dispatch(new ChangeUndone())">
+                                Undo
+                            </Button>
+                            <Button OnClick="() => Dispatcher.Dispatch(new TurnAdvanced())">Next turn</Button>
+                        </div>
+                    }
+                </div>
+
+                @if (table.Encounter is not { Combatants.Count: > 0 } fight)
+                {
+                    <EmptyState Title="Nobody is in this fight yet">
+                        <ChildContent>
+                            @if (table.Role == "Dm")
+                            {
+                                <text>Add the party and whatever they ran into, then roll initiative.</text>
+                            }
+                            else
+                            {
+                                <text>The GM has not started the fight yet.</text>
+                            }
+                        </ChildContent>
+                    </EmptyState>
+                }
+                else
+                {
+                    <ol class="order">
+                        @foreach (var combatant in fight.Combatants)
+                        {
+                            <li class="turn @(combatant.IsCurrentTurn ? "turn--now" : null)"
+                                data-combatant="@combatant.Id">
+                                <span class="turn__initiative">@combatant.Initiative</span>
+                                <span class="turn__who">
+                                    <span class="turn__name">@combatant.Name</span>
+                                    @if (combatant.Monster is { } monster)
+                                    {
+                                        <span class="turn__line">
+                                            @monster.CurrentHitPoints / @monster.MaxHitPoints HP · AC @monster.ArmorClass
+                                        </span>
+                                    }
+                                    @if (combatant.Effects.Count > 0)
+                                    {
+                                        <span class="turn__chips">
+                                            @foreach (var effect in combatant.Effects)
+                                            {
+                                                <TraitChip>@Named(effect)</TraitChip>
+                                            }
+                                        </span>
+                                    }
+                                </span>
+
+                                @if (combatant.Kind == "Adversary" && table.Role == "Dm")
+                                {
+                                    <span class="turn__dm">
+                                        @* The same typed field the cards use, because a monster
+                                           loses fifty hit points as easily as a player does and a
+                                           combatant id is the creature id either way. *@
+                                        <div class="amount">
+                                            <TextInput Class="amount__field"
+                                                       Label="@($"Hit points to apply to {combatant.Name}")"
+                                                       InputMode="numeric"
+                                                       Placeholder="0"
+                                                       Value="@State.HitPointDraft(combatant.Id)"
+                                                       ValueChanged="typed => Dispatcher.Dispatch(
+                                                           new HitPointDraftChanged(combatant.Id, typed ?? string.Empty))" />
+                                            <Button Variant="ButtonVariant.Secondary"
+                                                    Disabled="@(Typed(combatant.Id) is null)"
+                                                    OnClick='() => Apply(combatant.Id, "Damage")'>
+                                                Damage
+                                            </Button>
+                                            <Button Variant="ButtonVariant.Secondary"
+                                                    Disabled="@(Typed(combatant.Id) is null)"
+                                                    OnClick='() => Apply(combatant.Id, "Heal")'>
+                                                Heal
+                                            </Button>
+                                        </div>
+                                        @* A monster the players have not been shown is not on
+                                           their screen at all, so this is the only way it gets
+                                           there, and a bare toggle would not say so. *@
+                                        <label class="reveal">
+                                            <Switch Checked="combatant.Revealed"
+                                                    CheckedChanged="on => Dispatcher.Dispatch(new MonsterRevealed(combatant.Id, on))" />
+                                            <span class="reveal__label">Players can see it</span>
+                                        </label>
+                                    </span>
+                                }
+                            </li>
+                        }
+                    </ol>
+
+                    @if (fight.Reminders.Count > 0)
+                    {
+                        @* What the turn change left somebody to do. The app does not do these
+                           itself: persistent damage is followed by a flat check, and an app that
+                           takes the hit points without rolling it has decided half a rule. *@
+                        <ul class="reminders">
+                            @foreach (var reminder in fight.Reminders)
+                            {
+                                <li class="reminder">@reminder</li>
+                            }
+                        </ul>
+                    }
+
+                    @if (table.Role == "Dm")
+                    {
+                        <Button Variant="ButtonVariant.Secondary"
+                                Class="fight__end"
+                                OnClick="() => Dispatcher.Dispatch(new EncounterEnded())">
+                            End the fight
+                        </Button>
+                    }
+                }
+            </ChildContent>
+        </Card>
+    </div>;
     static readonly IReadOnlyList<ChoiceOption<PickerArm>> Arms =
     [
         new(PickerArm.Conditions, "Effects"),
@@ -507,7 +927,7 @@
     static readonly IReadOnlyList<ChoiceOption<string>> Targets =
         [.. EffectVocabulary.All.Select(choice => new ChoiceOption<string>(choice.Token, choice.Label))];
 
-    PartyState State => Store.Value;
+    CampaignState State => Store.Value;
 
     OpenBreakdown? Opened => State.Breakdown;
 

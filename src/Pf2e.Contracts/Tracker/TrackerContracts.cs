@@ -93,7 +93,11 @@ public sealed record CharacterSheetView(
     IReadOnlyList<NamedBreakdownView> Attacks,
     BreakdownSummary? SpellAttack,
     BreakdownSummary? SpellDc,
-    string? SpellTradition);
+    string? SpellTradition,
+    // The values the totals above are computed from, in exactly the shape an edit sends back.
+    // Without this the edit screen has nothing to open with: a sheet states Fortitude +11 and
+    // an edit states Trained, and one cannot be worked back from the other.
+    CharacterBuildEdit Build);
 
 /// <summary>A computed number with a name of its own rather than a slot on the sheet: one skill,
 /// one weapon. Rank is the skill's proficiency by name and null for a weapon.</summary>

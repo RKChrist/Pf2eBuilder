@@ -37,10 +37,39 @@ internal static class SheetViews
             [.. sheet.Attacks.Select(Of)],
             sheet.SpellAttack is { } attack ? Of(attack) : null,
             sheet.SpellDc is { } dc ? Of(dc) : null,
-            character.Spellcasting?.Tradition);
+            character.Spellcasting?.Tradition,
+            Edit(character.ToBuild()));
     }
 
     static NamedBreakdownView Of(NamedBreakdown named) => new(named.Name, Of(named.Value), named.Rank?.ToString());
+
+    /// <summary>The build as the edit screen holds it. Ranks and the key attribute travel by
+    /// name, because a number would make the wire depend on the order of an enum.</summary>
+    static CharacterBuildEdit Edit(Character build) => new(
+        build.Name,
+        build.Level,
+        build.ClassName,
+        build.AncestryName,
+        build.KeyAttribute.ToString(),
+        build.Attributes.Strength,
+        build.Attributes.Dexterity,
+        build.Attributes.Constitution,
+        build.Attributes.Intelligence,
+        build.Attributes.Wisdom,
+        build.Attributes.Charisma,
+        build.Fortitude.ToString(),
+        build.Reflex.ToString(),
+        build.Will.ToString(),
+        build.Perception.ToString(),
+        build.ClassDc.ToString(),
+        build.ArmorRank.ToString(),
+        build.ArmorName,
+        build.ArmorItemBonus,
+        build.ArmorDexCap,
+        build.AncestryHitPoints,
+        build.ClassHitPoints,
+        build.BonusHitPoints,
+        build.BonusHitPointsPerLevel);
 
     public static BreakdownSummary Of(Breakdown breakdown) => new(
         breakdown.Base,

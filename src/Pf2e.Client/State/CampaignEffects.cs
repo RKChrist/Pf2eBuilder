@@ -6,22 +6,22 @@ using Pf2e.Contracts.Tracker;
 
 namespace Pf2e.Client.State;
 
-public sealed class PartyEffects
+public sealed class CampaignEffects
 {
     readonly TrackerApi _tracker;
     readonly RulesApi _rules;
     readonly CampaignHub _hub;
-    readonly IState<PartyState> _state;
+    readonly IState<CampaignState> _state;
     readonly TimeSpan _debounce;
 
     /// <summary>Cancelling the previous search is what makes the last keystroke win.</summary>
     CancellationTokenSource? _pending;
 
-    public PartyEffects(
+    public CampaignEffects(
         TrackerApi tracker,
         RulesApi rules,
         CampaignHub hub,
-        IState<PartyState> state,
+        IState<CampaignState> state,
         IOptions<ApiOptions> options,
         IDispatcher dispatcher)
     {

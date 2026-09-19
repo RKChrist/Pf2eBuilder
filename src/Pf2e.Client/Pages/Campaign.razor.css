@@ -193,6 +193,7 @@
     min-width: 4rem;
 }
 
+
 .chips {
     display: flex;
     flex-wrap: wrap;
@@ -423,4 +424,228 @@
     font-size: var(--font-size-chip);
     color: var(--text-muted);
     cursor: pointer;
+}
+
+/* The shell: which mode the campaign is in, and the round when there is a fight. It sits above
+   everything because it is the thing a DM reaches for most and the thing a player reads first. */
+.shell {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--layout-gutter) 0;
+}
+
+.shell__modes {
+    flex: 0 1 auto;
+    min-width: max-content;
+}
+
+.shell__mode {
+    margin: 0;
+    font-size: var(--font-size-subhead);
+    font-weight: var(--font-weight-semibold);
+}
+
+.shell__where {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+}
+
+.shell__round {
+    font-size: var(--font-size-data);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+}
+
+.shell__dm {
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-chip);
+    background: var(--surface-raised);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+}
+
+.fight {
+    padding: var(--space-3) var(--layout-gutter) var(--space-6);
+}
+
+.fight__top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.fight__heading {
+    margin: 0;
+    font-size: var(--font-size-subhead);
+}
+
+.fight__acts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--tap-separation);
+}
+
+.fight__end {
+    margin-top: var(--space-4);
+}
+
+.order {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: var(--space-4) 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* One row per creature, and the row whose turn it is says so with a rule down its left edge
+   rather than with colour alone. */
+/* Two columns: the initiative, and everything about the creature. The DM controls take the
+   second column on a row of their own rather than sitting beside the name, because a typed
+   field, two buttons and a switch do not fit beside a name on a phone and overlapped it. */
+.turn {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-2) var(--space-3);
+    min-height: var(--tap-min);
+    padding: var(--space-2) var(--space-3);
+    border-left: var(--border-focus) solid transparent;
+    border-radius: var(--radius-chip);
+}
+
+.turn--now {
+    border-left-color: var(--accent-base);
+    background: var(--surface-raised);
+}
+
+.turn__initiative {
+    min-width: 2.5ch;
+    font-size: var(--font-size-stat);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.turn__who {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.turn__name {
+    font-size: var(--font-size-body);
+}
+
+.turn__line {
+    font-size: var(--font-size-chip);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+}
+
+.turn__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+}
+
+.turn__dm {
+    grid-column: 2;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.reveal {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--tap-min);
+    cursor: pointer;
+}
+
+.reveal__label {
+    font-size: var(--font-size-chip);
+    color: var(--text-secondary);
+}
+
+/* What the last turn change left somebody to do. Not a warning: these are normal and frequent,
+   and a red box round "Gnibbo is frightened 1" would cry wolf every round. */
+.reminders {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: var(--space-4) 0 0;
+    padding: var(--space-3);
+    border-radius: var(--radius-chip);
+    background: var(--surface-raised);
+    list-style: none;
+}
+
+.reminder {
+    font-size: var(--font-size-data);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}
+
+.adding,
+.editor {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+}
+
+.adding__heading,
+.editor__heading {
+    margin: var(--space-4) 0 0;
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+/* Two fields across a phone and as many as fit on anything wider. A build is twenty short
+   fields; one column of twenty is a scroll, and a fixed two columns wastes a laptop. */
+.editor__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+    gap: var(--space-3);
+}
+
+.editor__acts {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--tap-separation);
+    margin-top: var(--space-5);
+}
+
+.line {
+    font-size: var(--font-size-chip);
+    color: var(--text-secondary);
+}
+
+/* A stepper names itself only to a screen reader, which is enough beside a hit point readout
+   and not enough in a grid of twelve. */
+.editor__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.editor__label {
+    font-size: var(--font-size-chip);
+    color: var(--text-secondary);
 }

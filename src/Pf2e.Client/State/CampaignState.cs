@@ -30,7 +30,7 @@ public sealed record EffectDraft(string Name, bool Bonus, int Value, string Type
 }
 
 [FeatureState]
-public sealed record PartyState
+public sealed record CampaignState
 {
     public string Code { get; init; } = string.Empty;
 
@@ -67,7 +67,25 @@ public sealed record PartyState
 
     public string HitPointDraft(Guid characterId) =>
         HitPointDrafts.TryGetValue(characterId, out var typed) ? typed : string.Empty;
+
+    /// <summary>Open while the DM is choosing somebody to put in the fight. Null the rest of
+    /// the time, which is what keeps the sheet shut.</summary>
+    public CombatantPicker? AddingCombatant { get; init; }
+
+    /// <summary>The character being edited and the values as typed. A draft rather than the
+    /// loaded character, because a half-typed level must not be sent and must not be lost when
+    /// somebody else's change arrives.</summary>
+    public CharacterEditor? Editing { get; init; }
 }
+
+/// <summary>Adding to the fight is two searches over one screen: the roster, which is short and
+/// needs no search, and the 3,786 seeded creatures, which needs one.</summary>
+public sealed record CombatantPicker(
+    string Query,
+    RemoteData<RuleSearchResult> Found,
+    bool Busy = false);
+
+public sealed record CharacterEditor(Guid CharacterId, CharacterBuildEdit Draft, bool Saving, string? Trouble);
 
 public sealed record CodeDraftChanged(string Draft);
 
@@ -155,22 +173,22 @@ public sealed record RuleDeclined(string Name);
 
 public sealed record DraftChanged(EffectDraft Draft);
 
-public static class PartyReducers
+public static class CampaignReducers
 {
     [ReducerMethod]
-    public static PartyState On(PartyState state, CodeDraftChanged action) =>
+    public static CampaignState On(CampaignState state, CodeDraftChanged action) =>
         state with { CodeDraft = action.Draft };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, JoinRequested _) =>
+    public static CampaignState On(CampaignState state, JoinRequested _) =>
         state with { Campaign = new RemoteData<CampaignView>.Loading() };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, CampaignCreationRequested _) =>
+    public static CampaignState On(CampaignState state, CampaignCreationRequested _) =>
         state with { Campaign = new RemoteData<CampaignView>.Loading() };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, CampaignOpened action) => state with
+    public static CampaignState On(CampaignState state, CampaignOpened action) => state with
     {
         Code = action.Campaign.Code,
         CodeDraft = string.Empty,
@@ -180,35 +198,35 @@ public static class PartyReducers
     };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, CampaignFailed action) =>
+    public static CampaignState On(CampaignState state, CampaignFailed action) =>
         state with { Campaign = new RemoteData<CampaignView>.Failed(action.Message) };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, CampaignRefreshed action) =>
+    public static CampaignState On(CampaignState state, CampaignRefreshed action) =>
         state with { Campaign = new RemoteData<CampaignView>.Loaded(action.Campaign) };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, CampaignCreated action) =>
+    public static CampaignState On(CampaignState state, CampaignCreated action) =>
         state with { DmKey = action.Created.DmKey };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, PasteDraftChanged action) =>
+    public static CampaignState On(CampaignState state, PasteDraftChanged action) =>
         state with { PasteDraft = action.Draft };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, ImportRequested _) =>
+    public static CampaignState On(CampaignState state, ImportRequested _) =>
         state with { Importing = true, ImportError = null };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, ImportSucceeded _) =>
+    public static CampaignState On(CampaignState state, ImportSucceeded _) =>
         state with { Importing = false, ImportError = null, PasteDraft = string.Empty };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, ImportFailed action) =>
+    public static CampaignState On(CampaignState state, ImportFailed action) =>
         state with { Importing = false, ImportError = action.Message };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, CharacterUpdated action)
+    public static CampaignState On(CampaignState state, CharacterUpdated action)
     {
         if (state.Campaign is not RemoteData<CampaignView>.Loaded loaded)
         {
@@ -232,7 +250,7 @@ public static class PartyReducers
     /// <summary>The DM's own tap and somebody else's push land here as the same value, which is
     /// what makes "every screen follows" one code path rather than two.</summary>
     [ReducerMethod]
-    public static PartyState On(PartyState state, ModeChanged action) =>
+    public static CampaignState On(CampaignState state, ModeChanged action) =>
         state.Campaign is RemoteData<CampaignView>.Loaded loaded
             ? state with
             {
@@ -242,40 +260,40 @@ public static class PartyReducers
             : state;
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, HitPointDraftChanged action) =>
+    public static CampaignState On(CampaignState state, HitPointDraftChanged action) =>
         state with { HitPointDrafts = Drafts(state, action.CharacterId, action.Draft) };
 
     /// <summary>The field empties on the tap, so a DM who taps Damage twice by accident does not
     /// apply the number twice.</summary>
     [ReducerMethod]
-    public static PartyState On(PartyState state, HitPointsApplied action) =>
+    public static CampaignState On(CampaignState state, HitPointsApplied action) =>
         state with { HitPointDrafts = Drafts(state, action.CharacterId, string.Empty) };
 
-    static Dictionary<Guid, string> Drafts(PartyState state, Guid characterId, string draft) =>
+    static Dictionary<Guid, string> Drafts(CampaignState state, Guid characterId, string draft) =>
         new(state.HitPointDrafts) { [characterId] = draft };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, ActionFailed action) =>
+    public static CampaignState On(CampaignState state, ActionFailed action) =>
         state with { ActionError = action.Message };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, LiveJoined _) =>
+    public static CampaignState On(CampaignState state, LiveJoined _) =>
         state with { Live = true };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, LiveLost _) =>
+    public static CampaignState On(CampaignState state, LiveLost _) =>
         state with { Live = false };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, BreakdownOpened action) =>
+    public static CampaignState On(CampaignState state, BreakdownOpened action) =>
         state with { Breakdown = new OpenBreakdown(action.CharacterId, action.Stat), Picker = null };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, BreakdownClosed _) =>
+    public static CampaignState On(CampaignState state, BreakdownClosed _) =>
         state with { Breakdown = null };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, PickerOpened action) => state with
+    public static CampaignState On(CampaignState state, PickerOpened action) => state with
     {
         Picker = new EffectPicker(
             action.CharacterId,
@@ -287,43 +305,43 @@ public static class PartyReducers
     };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, PickerClosed _) =>
+    public static CampaignState On(CampaignState state, PickerClosed _) =>
         state with { Picker = null };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, ArmSelected action) =>
+    public static CampaignState On(CampaignState state, ArmSelected action) =>
         state.Picker is { } picker ? state with { Picker = picker with { Arm = action.Arm } } : state;
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, RuleQueryChanged action) =>
+    public static CampaignState On(CampaignState state, RuleQueryChanged action) =>
         state.Picker is { } picker ? state with { Picker = picker with { Query = action.Query } } : state;
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, RuleSearchStarted _) =>
+    public static CampaignState On(CampaignState state, RuleSearchStarted _) =>
         state.Picker is { } picker
             ? state with { Picker = picker with { Found = new RemoteData<RuleSearchResult>.Loading() } }
             : state;
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, RuleSearchSucceeded action) =>
+    public static CampaignState On(CampaignState state, RuleSearchSucceeded action) =>
         state.Picker is { } picker
             ? state with { Picker = picker with { Found = new RemoteData<RuleSearchResult>.Loaded(action.Result) } }
             : state;
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, RuleSearchFailed action) =>
+    public static CampaignState On(CampaignState state, RuleSearchFailed action) =>
         state.Picker is { } picker
             ? state with { Picker = picker with { Found = new RemoteData<RuleSearchResult>.Failed(action.Message) } }
             : state;
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, RuleSearchCleared _) =>
+    public static CampaignState On(CampaignState state, RuleSearchCleared _) =>
         state.Picker is { } picker
             ? state with { Picker = picker with { Found = new RemoteData<RuleSearchResult>.NotAsked() } }
             : state;
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, RuleDeclined action) =>
+    public static CampaignState On(CampaignState state, RuleDeclined action) =>
         state.Picker is { } picker
             ? state with
             {
@@ -333,10 +351,10 @@ public static class PartyReducers
             : state;
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, DraftChanged action) =>
+    public static CampaignState On(CampaignState state, DraftChanged action) =>
         state with { Draft = action.Draft };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, CustomEffectAdded _) =>
+    public static CampaignState On(CampaignState state, CustomEffectAdded _) =>
         state with { Draft = EffectDraft.Fresh };
 }
