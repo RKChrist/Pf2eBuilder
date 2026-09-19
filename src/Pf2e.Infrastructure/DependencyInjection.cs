@@ -31,6 +31,7 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IRulesDbContext>(provider => provider.GetRequiredService<RulesDbContext>());
+        services.AddScoped<ITrackerDbContext>(provider => provider.GetRequiredService<RulesDbContext>());
         services.AddScoped<RulesSeeder>();
         return services;
     }

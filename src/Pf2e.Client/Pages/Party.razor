@@ -1,0 +1,516 @@
+@page "/party"
+@inherits FluxorComponent
+@inject IState<PartyState> Store
+@inject IState<ConditionsState> ConditionsStore
+@inject IState<RulesBrowserState> Browser
+@inject IDispatcher Dispatcher
+
+<PageTitle>Party tracker</PageTitle>
+
+<header class="top">
+    <h1 class="heading">Party tracker</h1>
+    @if (State.Code.Length > 0)
+    {
+        <p class="code">
+            <span class="code__label">Table</span>
+            <span class="table-code">@State.Code</span>
+        </p>
+    }
+</header>
+
+<RemoteView T="TableView" Data="State.Table">
+    <NotAsked>@Entrance</NotAsked>
+    <Loading>
+        <div class="pending">
+            <Spinner ShowLabel="true" Label="Opening the table" />
+        </div>
+    </Loading>
+    <Failed Context="message">
+        <div class="panel">
+            <Card>
+                <ErrorState Title="Could not open that table">
+                    <ChildContent>@message</ChildContent>
+                </ErrorState>
+            </Card>
+        </div>
+        @Entrance
+    </Failed>
+    <Loaded Context="table">
+        @if (!State.Live)
+        {
+            <p class="offline" role="status">
+                Changes other people make will not arrive until this page can reach the table.
+            </p>
+        }
+
+        @if (State.ActionError is { } trouble)
+        {
+            <p class="trouble" role="alert">@trouble</p>
+        }
+
+        @if (table.Characters.Count == 0)
+        {
+            <div class="panel">
+                <Card>
+                    <EmptyState Title="@(table.Exists ? "Nobody is at this table yet" : "A table waiting for its first character")">
+                        <ChildContent>
+                            Read out the code @State.Code so everyone joins the same table, then paste a
+                            Pathbuilder export below to put a character on it.
+                        </ChildContent>
+                    </EmptyState>
+                </Card>
+            </div>
+        }
+        else
+        {
+            <div class="party">
+                @foreach (var character in table.Characters)
+                {
+                    <Card Class="character">
+                        <ChildContent>
+                            <div class="identity">
+                                <h2 class="character__name">@character.Name</h2>
+                                <p class="lineage">
+                                    Level @character.Level @character.AncestryName @character.ClassName
+                                </p>
+                            </div>
+
+                            <div class="stats">
+                                @foreach (var line in StatSlots.All)
+                                {
+                                    <button type="button"
+                                            class="stat"
+                                            aria-label="@line.Name"
+                                            @onclick="() => Open(character.Id, line.Slot)">
+                                        <span class="stat__label">@line.Short</span>
+                                        <span class="stat__value">@line.Of(character).Total</span>
+                                    </button>
+                                }
+                            </div>
+
+                            <div class="vitals">
+                                <p class="hp">
+                                    <span class="hp__label">Hit points</span>
+                                    <span class="hp__current">@character.CurrentHitPoints</span>
+                                    <span class="hp__of" aria-hidden="true">/</span>
+                                    <span class="hp__max">@character.MaxHitPoints</span>
+                                </p>
+                                @* Zero is the resting value, so the minus button is live without a tap to
+                                   arm it and the card never shows a total the server has not sent back. *@
+                                <NumberStepper Class="delta"
+                                               Label="@($"Change {character.Name}'s hit points")"
+                                               DecrementLabel="@($"{character.Name} takes a point of damage")"
+                                               IncrementLabel="@($"{character.Name} recovers a hit point")"
+                                               Min="-99"
+                                               Max="99"
+                                               Value="0"
+                                               ValueChanged="delta => Nudge(character.Id, delta)" />
+                            </div>
+
+                            @if (character.Effects.Count > 0)
+                            {
+                                <div class="chips">
+                                    @foreach (var effect in character.Effects)
+                                    {
+                                        <TraitChip>@Named(effect)</TraitChip>
+                                    }
+                                </div>
+                            }
+
+                            <div class="acts">
+                                <Button Variant="ButtonVariant.Secondary"
+                                        OnClick="() => Dispatcher.Dispatch(new PickerOpened(character.Id))">
+                                    Effects
+                                </Button>
+                            </div>
+                        </ChildContent>
+                    </Card>
+                }
+            </div>
+        }
+
+        <div class="panel import">
+            <Card Title="Put a character on the table">
+                <ChildContent>
+                    <TextArea Label="Pathbuilder export"
+                              Rows="5"
+                              Placeholder="Paste the export here"
+                              Hint="In Pathbuilder, choose Export JSON. Paste the JSON itself, or open pathbuilder2e.com/json.php?id=NNNNNN with the number it gives you and copy the page."
+                              Error="@State.ImportError"
+                              Value="@State.PasteDraft"
+                              ValueChanged="paste => Dispatcher.Dispatch(new PasteDraftChanged(paste ?? string.Empty))" />
+                    <Button Variant="ButtonVariant.Primary"
+                            Busy="State.Importing"
+                            Disabled="@(State.PasteDraft.Trim().Length == 0)"
+                            OnClick="() => Dispatcher.Dispatch(new ImportRequested())">
+                        Import
+                    </Button>
+                </ChildContent>
+            </Card>
+        </div>
+    </Loaded>
+</RemoteView>
+
+<BottomSheet Open="@(Opened is not null)"
+             Title="@BreakdownTitle"
+             OnClose="() => Dispatcher.Dispatch(new BreakdownClosed())">
+    @if (Opened is { } open && Character(open.CharacterId) is { } character)
+    {
+        var line = StatSlots.Of(open.Stat);
+        var breakdown = line.Of(character);
+
+        <div class="breakdown">
+            <p class="breakdown__base">
+                <span class="breakdown__what">Before any effect</span>
+                <span class="breakdown__number">@breakdown.Base</span>
+            </p>
+
+            <h3 class="breakdown__heading">Applied</h3>
+            <ul class="breakdown__applied">
+                @foreach (var modifier in breakdown.Applied)
+                {
+                    <li class="row">
+                        <ModifierValue Value="modifier.Value" Kind="RuleDisplay.KindOf(modifier.Type)" />
+                        <span class="row__source">@modifier.Source</span>
+                        <span class="row__applies">to @string.Join(" and ", modifier.Applies)</span>
+                    </li>
+                }
+                @if (breakdown.Applied.Count == 0)
+                {
+                    <li class="row row--none">Nothing is changing this number.</li>
+                }
+            </ul>
+
+            <h3 class="breakdown__heading">Suppressed</h3>
+            <ul class="breakdown__suppressed">
+                @foreach (var suppressed in breakdown.Suppressed)
+                {
+                    <li class="row row--off">
+                        <ModifierValue Value="suppressed.Modifier.Value"
+                                       Kind="RuleDisplay.KindOf(suppressed.Modifier.Type)" />
+                        <span class="row__source">@suppressed.Modifier.Source</span>
+                        <span class="row__reason">@suppressed.Reason</span>
+                    </li>
+                }
+                @if (breakdown.Suppressed.Count == 0)
+                {
+                    <li class="row row--none">The stacking rule is holding nothing back.</li>
+                }
+            </ul>
+        </div>
+    }
+</BottomSheet>
+
+<BottomSheet Open="@(Picking is not null)"
+             Title="Effects"
+             OnClose="() => Dispatcher.Dispatch(new PickerClosed())">
+    @if (Picking is { } picker && Character(picker.CharacterId) is { } character)
+    {
+        <SegmentedControl Class="picker__arms"
+                          TValue="PickerArm"
+                          Label="Where the effect comes from"
+                          Options="Arms"
+                          Value="picker.Arm"
+                          ValueChanged="arm => Dispatcher.Dispatch(new ArmSelected(arm))" />
+
+        <div class="applied">
+            @foreach (var effect in character.Effects)
+            {
+                <div class="applied__row" data-effect="@effect.Id">
+                    <span class="applied__name">@Named(effect)</span>
+                    <Button Variant="ButtonVariant.Quiet"
+                            OnClick="() => Dispatcher.Dispatch(new EffectSet(character.Id, effect.Id, null))">
+                        Remove
+                    </Button>
+                </div>
+            }
+            @if (character.Effects.Count == 0)
+            {
+                <p class="applied__none">Nothing is on @character.Name yet.</p>
+            }
+        </div>
+
+        @switch (picker.Arm)
+        {
+            case PickerArm.Conditions:
+                <RemoteView T="IReadOnlyList<ConditionSummary>" Data="ConditionsStore.Value.Conditions">
+                    <Loading>
+                        <div class="pending">
+                            <Spinner ShowLabel="true" Label="Loading conditions" />
+                        </div>
+                    </Loading>
+                    <Failed Context="message">
+                        <ErrorState Title="Could not load the conditions">
+                            <ChildContent>@message</ChildContent>
+                            <Action>
+                                <Button Variant="ButtonVariant.Secondary"
+                                        OnClick="() => Dispatcher.Dispatch(new ConditionsRequested())">
+                                    Try again
+                                </Button>
+                            </Action>
+                        </ErrorState>
+                    </Failed>
+                    <Loaded Context="conditions">
+                        <div class="conditions">
+                            @foreach (var condition in conditions)
+                            {
+                                <div class="condition" data-condition="@condition.Key">
+                                    <span class="condition__name">@condition.Name</span>
+                                    @if (condition.HasValue)
+                                    {
+                                        <NumberStepper Label="@condition.Name"
+                                                       Min="0"
+                                                       Max="10"
+                                                       Value="Held(character, condition.Key)?.Value ?? 0"
+                                                       ValueChanged="value => Seed(character, condition, value)" />
+                                    }
+                                    else
+                                    {
+                                        <Switch Checked="@(Held(character, condition.Key) is not null)"
+                                                CheckedChanged="on => Seed(character, condition, on ? 1 : 0)">
+                                            <span class="visually-hidden">@condition.Name</span>
+                                        </Switch>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </Loaded>
+                </RemoteView>
+                break;
+
+            case PickerArm.Rules:
+                <div class="rules">
+                    <SearchField Value="@picker.Query"
+                                 ValueChanged="query => Dispatcher.Dispatch(new RuleQueryChanged(query ?? string.Empty))"
+                                 Placeholder="Search every rule"
+                                 Label="Search the rules for an effect" />
+
+                    <RemoteView T="RuleSearchResult" Data="picker.Found">
+                        <NotAsked>
+                            <p class="hint">
+                                The same records the browser shows. Tap one to apply what it states.
+                            </p>
+                        </NotAsked>
+                        <Loading>
+                            <div class="pending">
+                                <Spinner ShowLabel="true" Label="Searching" />
+                            </div>
+                        </Loading>
+                        <Failed Context="message">
+                            <ErrorState Title="Could not search the rules">
+                                <ChildContent>@message</ChildContent>
+                            </ErrorState>
+                        </Failed>
+                        <Loaded Context="found">
+                            @if (found.Items.Count == 0)
+                            {
+                                <p class="hint">Nothing matches that.</p>
+                            }
+                            else
+                            {
+                                <Card>
+                                    <ListContent>
+                                        @foreach (var rule in found.Items)
+                                        {
+                                            <ListRow Title="@rule.Name"
+                                                     Meta="@Says(rule)"
+                                                     OnClick="() => Take(character, rule)" />
+                                        }
+                                    </ListContent>
+                                </Card>
+                            }
+                        </Loaded>
+                    </RemoteView>
+                </div>
+                break;
+
+            case PickerArm.Custom:
+                <div class="custom">
+                    <TextInput Label="Name"
+                               Placeholder="Courageous Anthem"
+                               Value="@State.Draft.Name"
+                               ValueChanged="name => Redraft(State.Draft with { Name = name ?? string.Empty })" />
+
+                    <SegmentedControl Class="custom__sign"
+                                      TValue="bool"
+                                      Label="Bonus or penalty"
+                                      Options="Signs"
+                                      Value="State.Draft.Bonus"
+                                      ValueChanged="bonus => Redraft(State.Draft with { Bonus = bonus })" />
+
+                    <NumberStepper Class="custom__value"
+                                   Label="How much"
+                                   Min="1"
+                                   Max="10"
+                                   Value="State.Draft.Value"
+                                   ValueChanged="value => Redraft(State.Draft with { Value = value })" />
+
+                    <Select Class="custom__type"
+                            TValue="string"
+                            Label="Type"
+                            Options="Types"
+                            Value="@State.Draft.Type"
+                            ValueChanged="type => Redraft(State.Draft with { Type = type ?? Types[0].Value })" />
+
+                    <Select Class="custom__applies"
+                            TValue="string"
+                            Label="Applies to"
+                            Options="Targets"
+                            Value="@State.Draft.Applies"
+                            ValueChanged="applies => Redraft(State.Draft with { Applies = applies ?? Targets[0].Value })" />
+
+                    <Button Variant="ButtonVariant.Primary"
+                            Disabled="@(State.Draft.Name.Trim().Length == 0)"
+                            OnClick="() => Dispatcher.Dispatch(new CustomEffectAdded(character.Id, State.Draft))">
+                        Add
+                    </Button>
+                </div>
+                break;
+        }
+    }
+</BottomSheet>
+
+@code {
+    static readonly IReadOnlyList<ChoiceOption<PickerArm>> Arms =
+    [
+        new(PickerArm.Conditions, "Conditions"),
+        new(PickerArm.Rules, "Rules"),
+        new(PickerArm.Custom, "Custom"),
+    ];
+
+    static readonly IReadOnlyList<ChoiceOption<bool>> Signs =
+    [
+        new(true, "Bonus"),
+        new(false, "Penalty"),
+    ];
+
+    static readonly IReadOnlyList<ChoiceOption<string>> Types =
+    [
+        new("Status", "Status"),
+        new("Circumstance", "Circumstance"),
+        new("Item", "Item"),
+        new("Untyped", "Untyped"),
+    ];
+
+    static readonly IReadOnlyList<ChoiceOption<string>> Targets =
+        [.. EffectVocabulary.All.Select(choice => new ChoiceOption<string>(choice.Token, choice.Label))];
+
+    PartyState State => Store.Value;
+
+    OpenBreakdown? Opened => State.Breakdown;
+
+    EffectPicker? Picking => State.Picker;
+
+    string BreakdownTitle =>
+        Opened is { } open && Character(open.CharacterId) is { } character
+            ? $"{StatSlots.Of(open.Stat).Name} {StatSlots.Of(open.Stat).Of(character).Total}"
+            : "Breakdown";
+
+    RenderFragment Entrance => @<div class="join">
+        <div class="panel">
+            <Card>
+                <EmptyState Title="Join a table">
+                    <ChildContent>
+                        A table is a short code everyone playing types in. Whoever starts one reads it
+                        out; after that every change anybody makes shows up on everybody's screen.
+                    </ChildContent>
+                    <Action>
+                        <div class="entry">
+                            <TextInput Label="Table code"
+                                       Placeholder="ABC234"
+                                       InputMode="text"
+                                       Value="@State.CodeDraft"
+                                       ValueChanged="code => Dispatcher.Dispatch(new CodeDraftChanged(code ?? string.Empty))" />
+                            <div class="pf-cluster">
+                                <Button Variant="ButtonVariant.Primary"
+                                        Disabled="@(State.CodeDraft.Trim().Length == 0)"
+                                        OnClick="() => Dispatcher.Dispatch(new JoinRequested(State.CodeDraft))">
+                                    Join
+                                </Button>
+                                <Button Variant="ButtonVariant.Secondary"
+                                        OnClick="() => Dispatcher.Dispatch(new TableCreationRequested())">
+                                    Start a new table
+                                </Button>
+                            </div>
+                        </div>
+                    </Action>
+                </EmptyState>
+            </Card>
+        </div>
+    </div>;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        if (Browser.Value.ActiveGroup != GroupKey.Play)
+        {
+            Dispatcher.Dispatch(new GroupSelected(GroupKey.Play));
+        }
+
+        if (ConditionsStore.Value.Conditions is RemoteData<IReadOnlyList<ConditionSummary>>.NotAsked)
+        {
+            Dispatcher.Dispatch(new ConditionsRequested());
+        }
+    }
+
+    CharacterSheetView? Character(Guid id) =>
+        State.Table is RemoteData<TableView>.Loaded loaded
+            ? loaded.Value.Characters.FirstOrDefault(character => character.Id == id)
+            : null;
+
+    static ActiveEffectView? Held(CharacterSheetView character, string key) =>
+        character.Effects.FirstOrDefault(effect =>
+            effect.Kind == "Seeded" && string.Equals(effect.Key, key, StringComparison.OrdinalIgnoreCase));
+
+    static string Named(ActiveEffectView effect) =>
+        effect.HasValue && effect.Value > 0 ? $"{effect.Name} {effect.Value}" : effect.Name;
+
+    static RenderFragment Says(RuleSummary rule) => @<text>
+        @if (rule.HasModifiers)
+        {
+            <span class="states">States a modifier this app can apply</span>
+        }
+        else
+        {
+            <span class="states states--none">States no modifier this app can apply yet. Tap to write it yourself.</span>
+        }
+    </text>;
+
+    void Open(Guid characterId, StatSlot slot) =>
+        Dispatcher.Dispatch(new BreakdownOpened(characterId, slot));
+
+    void Nudge(Guid characterId, int delta) =>
+        Dispatcher.Dispatch(new HitPointsNudged(characterId, delta));
+
+    void Redraft(EffectDraft draft) => Dispatcher.Dispatch(new DraftChanged(draft));
+
+    void Take(CharacterSheetView character, RuleSummary rule)
+    {
+        if (rule.HasModifiers)
+        {
+            Dispatcher.Dispatch(new RuleEffectRequested(character.Id, rule.Id, rule.Name));
+            return;
+        }
+
+        Dispatcher.Dispatch(new RuleDeclined(rule.Name));
+    }
+
+    /// <summary>A seeded effect reuses whatever slot it already holds, so raising clumsy from 1 to
+    /// 2 is the same effect rather than a second one.</summary>
+    void Seed(CharacterSheetView character, ConditionSummary condition, int value)
+    {
+        var slot = Held(character, condition.Key)?.Id ?? Guid.NewGuid();
+        var effect = value <= 0
+            ? null
+            : new EffectSpec(
+                condition.Name,
+                "Seeded",
+                condition.Key,
+                condition.HasValue ? value : 0,
+                null,
+                []);
+
+        Dispatcher.Dispatch(new EffectSet(character.Id, slot, effect));
+    }
+}

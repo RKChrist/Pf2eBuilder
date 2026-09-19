@@ -4,10 +4,10 @@ namespace Pf2e.Behaviour.Tests;
 
 public class ConditionRules
 {
-    static int Total(int baseValue, StatTarget target, ConditionDefinition condition, int value = 0) =>
+    static int Total(int baseValue, StatTarget target, EffectDefinition condition, int value = 0) =>
         Stacking.Resolve(baseValue, target, condition.ModifiersAt(value)).Total;
 
-    static bool Hits(ConditionDefinition condition, StatTarget target, int value = 0) =>
+    static bool Hits(EffectDefinition condition, StatTarget target, int value = 0) =>
         condition.ModifiersAt(value).Any(m => m.AppliesTo(target));
 
     [Fact]

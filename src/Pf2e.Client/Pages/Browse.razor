@@ -23,6 +23,15 @@
 @if (State.ActiveCategory is null)
 {
     <div class="board">
+        @if (State.ActiveGroup == GroupKey.Play)
+        {
+            <Card>
+                <ListContent>
+                    <ListRow Title="Party tracker" Href="/party" />
+                </ListContent>
+            </Card>
+        }
+
         <Card>
             <ListContent>
                 <div class="categories">

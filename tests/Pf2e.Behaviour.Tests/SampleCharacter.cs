@@ -41,4 +41,15 @@ public class SampleCharacter
         Assert.Equal(25, ac.Total);
         Assert.Equal(["+1 studded leather"], ac.ContributingSources);
     }
+
+    // The same two numbers through the whole calculator rather than through one function each,
+    // so the importer has a fixed target to be measured against.
+    [Fact]
+    public void TheWholeSheetReachesTheSameSeventySixAndTwentyFive()
+    {
+        var sheet = CharacterSheet.Compute(Gnibbo.Build, SessionState.Fresh(Gnibbo.MaxHitPoints));
+
+        Assert.Equal(76, sheet.MaxHitPoints);
+        Assert.Equal(25, sheet.ArmorClass.Total);
+    }
 }

@@ -1,6 +1,12 @@
+using Pf2e.Contracts.Tracker;
+
 namespace Pf2e.Contracts.Rules;
 
-/// <summary>What a list or picker shows. Deliberately not the whole record.</summary>
+/// <summary>
+/// What a list or picker shows. Deliberately not the whole record.
+/// <see cref="HasModifiers"/> lets the effect picker say honestly that a record states nothing
+/// this app can apply yet, rather than offering a row that does nothing when tapped.
+/// </summary>
 public sealed record RuleSummary(
     string Id,
     string Category,
@@ -9,7 +15,8 @@ public sealed record RuleSummary(
     string? Rarity,
     string? PrimarySource,
     IReadOnlyList<string> Traits,
-    string SourceUrl);
+    string SourceUrl,
+    bool HasModifiers);
 
 public sealed record RuleSearchResult(
     IReadOnlyList<RuleSummary> Items,
@@ -41,8 +48,12 @@ public sealed record BreakdownSummary(
 
 public sealed record SuppressedSummary(ModifierSummary Modifier, string Reason);
 
-/// <summary>Mechanics arrive flattened, so a client never reimplements the seed's JSON schema.</summary>
-public sealed record RuleDetail(RuleSummary Summary, IReadOnlyList<MechanicField> Mechanics);
+/// <summary>Mechanics arrive flattened, so a client never reimplements the seed's JSON schema.
+/// Modifiers are the subset a tracker can apply, extracted at ingest.</summary>
+public sealed record RuleDetail(
+    RuleSummary Summary,
+    IReadOnlyList<MechanicField> Mechanics,
+    IReadOnlyList<EffectModifierView> Modifiers);
 
 /// <summary>A scalar becomes one value; a JSON array becomes one value per element.</summary>
 public sealed record MechanicField(string Key, IReadOnlyList<string> Values);

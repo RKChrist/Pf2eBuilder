@@ -23,7 +23,7 @@ public sealed class GetRuleHandler(IRulesDbContext db) : IRequestHandler<GetRule
     {
         var record = await db.RuleRecords.AsNoTracking().SingleOrDefaultAsync(r => r.Id == query.Id, ct);
 
-        return record is null ? null : new RuleDetail(RuleSummaries.Of(record), Mechanics(record.Mechanics));
+        return record is null ? null : new RuleDetail(RuleSummaries.Of(record), Mechanics(record.Mechanics), RuleModifiers.Of(record.Mechanics));
     }
 
     /// <summary>Key order is the seed's own, which is the only ordering a field this server has

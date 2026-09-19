@@ -65,11 +65,40 @@ that cannot be read off the source:
 
     node tools/ui-check/verify-sliders.mjs <absolute path to src/Pf2e.Components/gallery/index.html>
 
-46 assertions covering pointer-media sizing under genuine touch emulation, keyboard operation
+63 assertions covering pointer-media sizing under genuine touch emulation, keyboard operation
 including Home, End and the page keys, the invariant that range thumbs cannot cross, that a touch
 drag moves the thumb without scrolling the page, hold-to-confirm on destructive actions, and that
 reduced motion zeroes transitions while deliberately leaving the hold delay alone. `cdp.mjs` is
 the shared driver; both scripts use only Node builtins.
+
+## Tracker checks
+
+The tracker is two halves and each has its own check, because a browser check that fails cannot
+tell you whether the screen or the server was wrong.
+
+`verify-tracker-api.mjs` drives the API and listens on the hub, with no browser at all:
+
+    dotnet run --project src/Pf2e.Api --urls http://localhost:5092
+    node tools/ui-check/verify-tracker-api.mjs http://localhost:5092
+
+33 assertions covering the import producing 76 maximum hit points and armour class 25 from the
+real seeded ruleset, clumsy 2 taking armour class to 23 and Reflex down while leaving Will
+alone, the same effect sent twice leaving one, a custom effect landing, the larger of two status
+bonuses winning with the smaller visibly suppressed, two hit-point deltas summing, the refusals
+that should be 400s, and every change arriving on the hub as a whole recomputed sheet rather
+than an identifier.
+
+`verify-party.mjs` drives the screen:
+
+    node tools/ui-check/verify-party.mjs http://localhost:5173 http://localhost:5092
+
+It opens two pages on one table, so a live push is distinguishable from a local re-render, and
+it asserts the API origin rather than assuming it. Several worktrees of this app run on one
+machine and the client reads its API address from a static file, so a client pointed at another
+worktree's API passes every visible assertion while proving nothing about the build in front of
+you. Because a websocket never appears in resource timings, the hub's destination is checked
+through the HTTP negotiate that precedes it, and a missing negotiate fails rather than passes:
+not seeing the hub is not the same as seeing it go to the right place.
 
 ## Recording a walkthrough
 

@@ -75,6 +75,171 @@ namespace Pf2e.Infrastructure.Persistence.Migrations
                     b.ToTable("RuleRecords", (string)null);
                 });
 
+            modelBuilder.Entity("Pf2e.Domain.Tracking.TrackedCharacter", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("AncestryHitPoints")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AncestryName")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("ArmorDexCap")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ArmorItemBonus")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ArmorName")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ArmorRank")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("BonusHitPoints")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("BonusHitPointsPerLevel")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Charisma")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ClassDc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ClassHitPoints")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ClassName")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Constitution")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CurrentHitPoints")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Dexterity")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Fortitude")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("HeroPoints")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Intelligence")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("KeyAttribute")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Perception")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Reflex")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Strength")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("TableId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("TemporaryHitPoints")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Will")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Wisdom")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TableId");
+
+                    b.ToTable("TrackedCharacters", (string)null);
+                });
+
+            modelBuilder.Entity("Pf2e.Domain.Tracking.TrackedEffect", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CharacterId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Duration")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Modifiers")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SourceKey")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SourceKind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Value")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CharacterId");
+
+                    b.ToTable("TrackedEffects", (string)null);
+                });
+
+            modelBuilder.Entity("Pf2e.Domain.Tracking.TrackedTable", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("TrackedTables", (string)null);
+                });
+
             modelBuilder.Entity("Pf2e.Infrastructure.Persistence.SeedState", b =>
                 {
                     b.Property<int>("Id")
@@ -95,6 +260,34 @@ namespace Pf2e.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("SeedState", (string)null);
+                });
+
+            modelBuilder.Entity("Pf2e.Domain.Tracking.TrackedCharacter", b =>
+                {
+                    b.HasOne("Pf2e.Domain.Tracking.TrackedTable", null)
+                        .WithMany("Characters")
+                        .HasForeignKey("TableId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Pf2e.Domain.Tracking.TrackedEffect", b =>
+                {
+                    b.HasOne("Pf2e.Domain.Tracking.TrackedCharacter", null)
+                        .WithMany("Effects")
+                        .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Pf2e.Domain.Tracking.TrackedCharacter", b =>
+                {
+                    b.Navigation("Effects");
+                });
+
+            modelBuilder.Entity("Pf2e.Domain.Tracking.TrackedTable", b =>
+                {
+                    b.Navigation("Characters");
                 });
 #pragma warning restore 612, 618
         }

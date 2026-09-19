@@ -17,6 +17,14 @@
     margin-inline-start: calc(var(--space-3) * -1);
 }
 
+/* The Play board carries the tracker above the category list, so its cards need a gap the
+   single-card boards never did. */
+.board {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
 .filters {
     display: flex;
     flex-wrap: wrap;

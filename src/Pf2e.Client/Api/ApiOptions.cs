@@ -6,5 +6,7 @@ public sealed class ApiOptions
 
     public string BaseUrl { get; set; } = string.Empty;
 
+    public string HubPath { get; set; } = string.Empty;
+
     public int SearchDebounceMilliseconds { get; set; }
 }
