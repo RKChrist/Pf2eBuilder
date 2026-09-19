@@ -131,8 +131,10 @@ public sealed class PartyEffects
 
     [EffectMethod]
     public Task Handle(EffectSet action, IDispatcher dispatcher) =>
-        ApplyAsync(dispatcher, code =>
-            _tracker.SetEffectAsync(code, action.CharacterId, action.Slot, action.Effect, CancellationToken.None));
+        ApplyToCampaignAsync(dispatcher, code => _tracker.ApplyEffectAsync(
+            code, action.Slot, action.Effect,
+            [new EffectTargetSpec("Character", action.CharacterId)],
+            CancellationToken.None));
 
     [EffectMethod]
     public Task Handle(CustomEffectAdded action, IDispatcher dispatcher)
@@ -142,8 +144,10 @@ public sealed class PartyEffects
             draft.Type, draft.Signed, [EffectVocabulary.Of(draft.Applies).Spec]);
         var effect = new EffectSpec(draft.Name.Trim(), "Custom", null, 0, null, [modifier]);
 
-        return ApplyAsync(dispatcher, code =>
-            _tracker.SetEffectAsync(code, action.CharacterId, Guid.NewGuid(), effect, CancellationToken.None));
+        return ApplyToCampaignAsync(dispatcher, code => _tracker.ApplyEffectAsync(
+            code, Guid.NewGuid(), effect,
+            [new EffectTargetSpec("Character", action.CharacterId)],
+            CancellationToken.None));
     }
 
     [EffectMethod]
@@ -169,8 +173,10 @@ public sealed class PartyEffects
         }
 
         var effect = new EffectSpec(action.Name, "Rule", action.RuleId, 0, null, rule.Modifiers);
-        await ApplyAsync(dispatcher, code =>
-            _tracker.SetEffectAsync(code, action.CharacterId, Guid.NewGuid(), effect, CancellationToken.None));
+        await ApplyToCampaignAsync(dispatcher, code => _tracker.ApplyEffectAsync(
+            code, Guid.NewGuid(), effect,
+            [new EffectTargetSpec("Character", action.CharacterId)],
+            CancellationToken.None));
     }
 
     [EffectMethod]
@@ -222,6 +228,21 @@ public sealed class PartyEffects
         try
         {
             dispatcher.Dispatch(new CharacterUpdated(await call(_state.Value.Code)));
+        }
+        catch (CampaignApiException failure)
+        {
+            dispatcher.Dispatch(new ActionFailed(failure.Message));
+        }
+    }
+
+    /// <summary>One effect can reach the whole party, so the answer is the whole campaign rather
+    /// than one sheet. It refreshes rather than reopening, because reopening would rejoin the
+    /// hub and this connection is already in the right groups.</summary>
+    async Task ApplyToCampaignAsync(IDispatcher dispatcher, Func<string, Task<CampaignView>> call)
+    {
+        try
+        {
+            dispatcher.Dispatch(new CampaignRefreshed(await call(_state.Value.Code)));
         }
         catch (CampaignApiException failure)
         {

@@ -216,15 +216,15 @@ public class TrackerRules
     {
         var stored = Gnibbo.Stored();
         stored.CurrentHitPoints = 40;
-        stored.Effects.Add(TrackedEffect.From(stored.Id, Gnibbo.Condition("clumsy", 2)));
+        var clumsy = Applied(stored.CampaignId, stored.Id, Gnibbo.Condition("clumsy", 2), value: 2);
 
         var levelled = Gnibbo.Build with { Level = 8 };
         stored.Apply(levelled);
 
         Assert.Equal(levelled, stored.ToBuild());
-        Assert.Equal(40, stored.ToSession().CurrentHitPoints);
+        Assert.Equal(40, stored.ToSession([clumsy]).CurrentHitPoints);
 
-        var kept = Assert.Single(stored.ToSession().Effects);
+        var kept = Assert.Single(stored.ToSession([clumsy]).Effects);
         Assert.Equal(new EffectSource.Seeded("clumsy"), kept.Source);
         Assert.Equal(2, kept.Value);
     }
@@ -237,7 +237,8 @@ public class TrackerRules
             Duration = "1 minute",
         };
 
-        var restored = TrackedEffect.From(Guid.NewGuid(), custom).ToActive();
+        var application = Applied(Guid.NewGuid(), Guid.NewGuid(), custom, custom.Value);
+        var restored = application.AsActiveOn(application.Targets.Single());
 
         Assert.Equal(custom.Id, restored.Id);
         Assert.Equal(custom.Name, restored.Name);
@@ -247,5 +248,45 @@ public class TrackerRules
         Assert.Equal(
             custom.Modifiers().Select(m => (m.Source, m.Type, m.Value)),
             restored.Modifiers().Select(m => (m.Source, m.Type, m.Value)));
+    }
+
+    // One application reaching several creatures is the whole point of the row, so the two
+    // creatures here also prove that a sheet reads only what reached it.
+    [Fact]
+    public void OneApplicationReachingTwoCreaturesIsOneRowAndTwoSheets()
+    {
+        var bard = Guid.NewGuid();
+        var fighter = Guid.NewGuid();
+        var campaign = Guid.NewGuid();
+
+        var anthem = new EffectApplication { Id = Guid.NewGuid(), CampaignId = campaign, Name = "Rallying Anthem" };
+        anthem.Modifiers.Add(new EffectModifier(ModifierType.Status, 1, [On(StatKind.ArmorClass)]));
+        anthem.SourceKind = "Custom";
+        anthem.Targets.Add(new EffectTarget
+        {
+            ApplicationId = anthem.Id, Kind = EffectTargetKind.Character, TargetId = bard,
+        });
+        anthem.Targets.Add(new EffectTarget
+        {
+            ApplicationId = anthem.Id, Kind = EffectTargetKind.Character, TargetId = fighter,
+        });
+
+        Assert.Equal(anthem.Id, Assert.Single(Effects.On(bard, [anthem])).Id);
+        Assert.Equal(anthem.Id, Assert.Single(Effects.On(fighter, [anthem])).Id);
+        Assert.Empty(Effects.On(Guid.NewGuid(), [anthem]));
+    }
+
+    static EffectApplication Applied(Guid campaignId, Guid targetId, ActiveEffect effect, int value)
+    {
+        var application = new EffectApplication { Id = effect.Id, CampaignId = campaignId };
+        application.Overwrite(effect, DurationTiming.None, null);
+        application.Targets.Add(new EffectTarget
+        {
+            ApplicationId = effect.Id,
+            Kind = EffectTargetKind.Character,
+            TargetId = targetId,
+            Value = value,
+        });
+        return application;
     }
 }

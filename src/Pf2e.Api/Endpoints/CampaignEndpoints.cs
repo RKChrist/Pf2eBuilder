@@ -34,13 +34,15 @@ public static class CampaignEndpoints
                     ? Results.Ok(sheet)
                     : Results.NotFound());
 
-        // PUT rather than POST, because the client names the slot and applying the same effect
-        // twice must leave one effect.
-        app.MapPut("/campaigns/{code}/characters/{id:guid}/effects/{effectId:guid}",
-            async (ISender sender, string code, Guid id, Guid effectId, SetEffectRequest request, CancellationToken ct) =>
-                await sender.Send(new SetEffect(code, id, effectId, request.Effect), ct) is { } sheet
-                    ? Results.Ok(sheet)
-                    : Results.NotFound());
+        // PUT rather than POST, because the client names the application and applying the same
+        // effect twice must leave one effect. It hangs off the campaign rather than off one
+        // character, because one application can reach the whole party.
+        app.MapPut("/campaigns/{code}/effects/{applicationId:guid}",
+            (ISender sender, HttpRequest request, string code, Guid applicationId,
+             ApplyEffectRequest body, CancellationToken ct) =>
+                sender.Send(
+                    new ApplyEffect(code, DmKeyOf(request), applicationId, body.Effect, body.Targets ?? []),
+                    ct));
 
         return app;
     }

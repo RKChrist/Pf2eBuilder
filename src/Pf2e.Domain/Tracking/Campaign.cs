@@ -22,6 +22,10 @@ public sealed class Campaign
 
     public List<TrackedCharacter> Characters { get; init; } = [];
 
+    /// <summary>Every effect in play, on characters and on monsters alike. They hang off the
+    /// campaign rather than off a creature because one application can reach several.</summary>
+    public List<EffectApplication> EffectApplications { get; init; } = [];
+
     public static Campaign Create(string code) => new()
     {
         Id = Guid.NewGuid(),

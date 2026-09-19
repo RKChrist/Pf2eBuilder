@@ -29,14 +29,17 @@ public sealed class ChangeHitPointsHandler(ITrackerDbContext db, ICampaignBroadc
 {
     public async Task<CharacterSheetView?> Handle(ChangeHitPoints command, CancellationToken ct)
     {
-        var code = CampaignCode.Normalize(command.Code);
+        var (campaign, _) = await CampaignAccess.LoadAsync(db, command.Code, null, ct, tracking: false);
+        var code = campaign.Code;
 
-        if (await Load(code, command.CharacterId, ct) is not { } character)
+        if (campaign.Characters.FirstOrDefault(c => c.Id == command.CharacterId) is not { } character)
         {
             return null;
         }
 
-        var max = CharacterSheet.Compute(character.ToBuild(), character.ToSession()).MaxHitPoints;
+        var max = CharacterSheet
+            .Compute(character.ToBuild(), character.ToSession(campaign.EffectApplications))
+            .MaxHitPoints;
         var delta = command.Delta;
 
         // The arithmetic happens in the database, in one statement, so two people applying damage
@@ -55,23 +58,15 @@ public sealed class ChangeHitPointsHandler(ITrackerDbContext db, ICampaignBroadc
         // Read back rather than adjusting the instance above, which the statement left stale.
         // Both reads are untracked, so this cannot be handed the same stale object by identity
         // resolution, which is what makes it a real re-read rather than one that looks like one.
-        if (await Load(code, command.CharacterId, ct) is not { } updated)
+        var (after, _) = await CampaignAccess.LoadAsync(db, code, null, ct, tracking: false);
+
+        if (after.Characters.FirstOrDefault(c => c.Id == command.CharacterId) is not { } updated)
         {
             return null;
         }
 
-        var sheet = SheetViews.Of(updated);
+        var sheet = SheetViews.Of(updated, after.EffectApplications);
         await broadcaster.CharacterChangedAsync(code, sheet, ct);
         return sheet;
-    }
-
-    async Task<TrackedCharacter?> Load(string code, Guid characterId, CancellationToken ct)
-    {
-        var campaign = await db.Campaigns
-            .AsNoTracking()
-            .Include(t => t.Characters).ThenInclude(c => c.Effects)
-            .SingleOrDefaultAsync(t => t.Code == code, ct);
-
-        return campaign?.Characters.FirstOrDefault(c => c.Id == characterId);
     }
 }

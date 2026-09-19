@@ -73,6 +73,11 @@ public sealed record CampaignCreated(CreatedCampaignView Created);
 
 public sealed record CampaignFailed(string Message);
 
+/// <summary>A command whose answer is the whole campaign. It replaces the loaded value without
+/// reopening, because reopening would rejoin a hub connection that is already in the right
+/// groups.</summary>
+public sealed record CampaignRefreshed(CampaignView Campaign);
+
 public sealed record ModeChangeRequested(string Mode);
 
 public sealed record ModeChanged(CampaignModeView Mode);
@@ -158,6 +163,10 @@ public static class PartyReducers
     [ReducerMethod]
     public static PartyState On(PartyState state, CampaignFailed action) =>
         state with { Campaign = new RemoteData<CampaignView>.Failed(action.Message) };
+
+    [ReducerMethod]
+    public static PartyState On(PartyState state, CampaignRefreshed action) =>
+        state with { Campaign = new RemoteData<CampaignView>.Loaded(action.Campaign) };
 
     [ReducerMethod]
     public static PartyState On(PartyState state, CampaignCreated action) =>

@@ -23,12 +23,6 @@ public sealed class GetCampaignHandler(ITrackerDbContext db) : IRequestHandler<G
     {
         var (campaign, role) = await CampaignAccess.LoadAsync(db, query.Code, query.DmKey, ct, tracking: false);
 
-        return new CampaignView(
-            campaign.Code,
-            campaign.Mode.ToString(),
-            role.ToString(),
-            [.. campaign.Characters
-                .OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
-                .Select(SheetViews.Of)]);
+        return CampaignProjection.For(role, campaign);
     }
 }

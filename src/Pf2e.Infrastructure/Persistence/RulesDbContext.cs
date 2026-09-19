@@ -12,6 +12,8 @@ public sealed class RulesDbContext(DbContextOptions<RulesDbContext> options)
     public DbSet<SeedState> SeedState => Set<SeedState>();
     public DbSet<Campaign> Campaigns => Set<Campaign>();
     public DbSet<TrackedCharacter> Characters => Set<TrackedCharacter>();
+    public DbSet<EffectApplication> EffectApplications => Set<EffectApplication>();
+    public DbSet<EffectTarget> EffectTargets => Set<EffectTarget>();
 
     protected override void OnModelCreating(ModelBuilder model)
     {

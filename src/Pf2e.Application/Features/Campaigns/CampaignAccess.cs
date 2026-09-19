@@ -31,7 +31,8 @@ internal static class CampaignAccess
         var normalized = CampaignCode.Normalize(code);
 
         var query = db.Campaigns
-            .Include(c => c.Characters).ThenInclude(character => character.Effects)
+            .Include(c => c.Characters)
+            .Include(c => c.EffectApplications).ThenInclude(application => application.Targets)
             .AsQueryable();
 
         if (!tracking)

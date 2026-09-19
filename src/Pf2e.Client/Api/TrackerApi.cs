@@ -42,13 +42,14 @@ public sealed class TrackerApi(HttpClient http)
                 new ChangeHitPointsRequest(delta)),
             ct);
 
-    public Task<CharacterSheetView> SetEffectAsync(
-        string code, Guid character, Guid slot, EffectSpec? effect, CancellationToken ct) =>
-        SendAsync<CharacterSheetView>(
+    public Task<CampaignView> ApplyEffectAsync(
+        string code, Guid application, EffectSpec? effect, IReadOnlyList<EffectTargetSpec> targets,
+        CancellationToken ct) =>
+        SendAsync<CampaignView>(
             Carrying(
                 HttpMethod.Put,
-                $"{Campaign(code)}/characters/{character}/effects/{slot}",
-                new SetEffectRequest(effect)),
+                $"{Campaign(code)}/effects/{application}",
+                new ApplyEffectRequest(effect, targets)),
             ct);
 
     static string Campaign(string code) => $"campaigns/{Uri.EscapeDataString(code)}";

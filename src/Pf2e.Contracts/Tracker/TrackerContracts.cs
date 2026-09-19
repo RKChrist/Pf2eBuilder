@@ -8,15 +8,54 @@ public sealed record SelectorSpecView(string Kind, string? Stat, string? Attribu
 
 public sealed record EffectModifierView(string Type, int Value, IReadOnlyList<SelectorSpecView> Applies);
 
-/// <summary>Kind is "Seeded", "Rule" or "Custom". Key is a registry key or a rule id, and is
-/// null for a custom effect.</summary>
+/// <summary>
+/// Kind is "Seeded", "Rule" or "Custom". Key is a registry key or a rule id, and is null for a
+/// custom effect. Duration is the label a human reads; Timing and Rounds are the clock, and an
+/// effect with no Timing has none. PersistentDamage is surfaced as a reminder at the end of the
+/// affected creature's turn rather than applied, because the flat check that ends it is a roll.
+/// </summary>
 public sealed record EffectSpec(
     string Name,
     string Kind,
     string? Key,
     int Value,
     string? Duration,
-    IReadOnlyList<EffectModifierView> Modifiers);
+    IReadOnlyList<EffectModifierView> Modifiers,
+    string? Timing = null,
+    int? Rounds = null,
+    Guid? SourceCombatantId = null,
+    int? PersistentDamage = null,
+    string? PersistentDamageType = null);
+
+/// <summary>Kind is "Character" for a named character. Id names the creature.</summary>
+public sealed record EffectTargetSpec(string Kind, Guid? Id);
+
+/// <summary>A null Effect removes the application this id names.</summary>
+public sealed record ApplyEffectRequest(EffectSpec? Effect, IReadOnlyList<EffectTargetSpec> Targets);
+
+/// <summary>Kind is "Character" or "Monster". Value and RemainingRounds are per creature,
+/// because the duration clock and a scaling condition both move per creature: one party-wide
+/// frightened 2 is one application and five countdowns.</summary>
+public sealed record EffectTargetView(string Kind, Guid Id, int Value, int? RemainingRounds);
+
+/// <summary>
+/// One application of one effect and everything it reached. Rallying Anthem on the whole party
+/// is this value with five targets, which is what lets a screen show it once above the party
+/// instead of as five identical chips.
+/// </summary>
+public sealed record EffectApplicationView(
+    Guid Id,
+    string Name,
+    string Kind,
+    string? Key,
+    bool HasValue,
+    string? Duration,
+    string Timing,
+    Guid? SourceCombatantId,
+    int? PersistentDamage,
+    string? PersistentDamageType,
+    IReadOnlyList<EffectModifierView> Modifiers,
+    IReadOnlyList<EffectTargetView> Targets);
 
 public sealed record ActiveEffectView(
     Guid Id,
@@ -70,5 +109,3 @@ public sealed record ImportCharacterRequest(string Pathbuilder);
 
 public sealed record ChangeHitPointsRequest(int Delta);
 
-/// <summary>A null Effect removes whatever is in that slot.</summary>
-public sealed record SetEffectRequest(EffectSpec? Effect);

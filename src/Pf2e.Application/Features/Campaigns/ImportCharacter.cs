@@ -63,7 +63,7 @@ public sealed class ImportCharacterHandler(
 
         await tracker.SaveChangesAsync(ct);
 
-        var sheet = SheetViews.Of(character);
+        var sheet = SheetViews.Of(character, campaign.EffectApplications);
         await broadcaster.CharacterChangedAsync(code, sheet, ct);
         return sheet;
     }

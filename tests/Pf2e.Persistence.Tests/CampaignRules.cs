@@ -59,11 +59,16 @@ public class CampaignRules(SeededDatabase database) : IClassFixture<SeededDataba
             .Handle(new ChangeHitPoints(code, characterId, delta), default);
     }
 
-    async Task<CharacterSheetView?> Set(string code, Guid characterId, Guid slot, EffectSpec? effect)
+    /// <summary>Applies to one character, which is what every caller below wants. The target
+    /// list is what makes the same row reach the whole party.</summary>
+    async Task<CharacterSheetView?> Set(string code, Guid characterId, Guid application, EffectSpec? effect)
     {
         await using var db = database.NewContext();
-        return await new SetEffectHandler(db, Broadcaster)
-            .Handle(new SetEffect(code, characterId, slot, effect), default);
+        var campaign = await new ApplyEffectHandler(db, Broadcaster).Handle(
+            new ApplyEffect(code, null, application, effect, [new EffectTargetSpec("Character", characterId)]),
+            default);
+
+        return campaign.Characters.FirstOrDefault(c => c.Id == characterId);
     }
 
     async Task<CampaignView> Read(string code, string? dmKey = null)
@@ -294,6 +299,80 @@ public class CampaignRules(SeededDatabase database) : IClassFixture<SeededDataba
         Assert.Equal("Downtime", changed.Mode);
         Assert.Equal("Downtime", (await Read(campaign.Code)).Mode);
         Assert.Equal((campaign.Code, changed), Assert.Single(Broadcaster.Modes));
+    }
+
+    // design/005 warns by name that two models for one effect would be two paths through the
+    // stacking rule. One application reaching two characters is therefore one row, and this
+    // asserts the row count as well as the two sheets, because two sheets alone would pass for
+    // an implementation that wrote a row each.
+    [Fact]
+    public async Task OneApplicationReachesTwoCharactersAndIsStoredOnce()
+    {
+        var campaign = await NewCampaign();
+        var bard = await Import(campaign.Code, Fixture("gnibbo.json"));
+
+        var second = JsonNode.Parse(Fixture("gnibbo.json"))!;
+        second["build"]!["name"] = "Tarrow";
+        var fighter = await Import(campaign.Code, second.ToJsonString());
+
+        var application = Guid.NewGuid();
+        await using (var db = database.NewContext())
+        {
+            await new ApplyEffectHandler(db, Broadcaster).Handle(
+                new ApplyEffect(campaign.Code, campaign.DmKey, application,
+                    Custom("Rallying Anthem", "Status", 1, "Will"),
+                    [
+                        new EffectTargetSpec("Character", bard.Id),
+                        new EffectTargetSpec("Character", fighter.Id),
+                    ]),
+                default);
+        }
+
+        var read = await Read(campaign.Code);
+        Assert.All(read.Characters, character =>
+            Assert.Equal(application, Assert.Single(character.Effects).Id));
+
+        await using var check = database.NewContext();
+        var row = Assert.Single(check.EffectApplications.Where(e => e.Id == application));
+        var reached = check.EffectTargets.Where(t => t.ApplicationId == row.Id)
+                                         .Select(t => t.TargetId)
+                                         .ToList();
+
+        Assert.Equal(2, reached.Count);
+        Assert.Contains(bard.Id, reached);
+        Assert.Contains(fighter.Id, reached);
+    }
+
+    // Re-sending an apply with fewer targets means fewer targets, not the union of both
+    // attempts, and an application whose last target leaves goes with it.
+    [Fact]
+    public async Task NarrowingAnApplicationDropsTheTargetsItNoLongerNames()
+    {
+        var campaign = await NewCampaign();
+        var bard = await Import(campaign.Code, Fixture("gnibbo.json"));
+
+        var second = JsonNode.Parse(Fixture("gnibbo.json"))!;
+        second["build"]!["name"] = "Tarrow";
+        var fighter = await Import(campaign.Code, second.ToJsonString());
+
+        var application = Guid.NewGuid();
+        await Apply(campaign, application, [bard.Id, fighter.Id]);
+        await Apply(campaign, application, [bard.Id]);
+
+        var read = await Read(campaign.Code);
+
+        Assert.Single(read.Characters.Single(c => c.Id == bard.Id).Effects);
+        Assert.Empty(read.Characters.Single(c => c.Id == fighter.Id).Effects);
+    }
+
+    async Task Apply(CreatedCampaignView campaign, Guid application, IEnumerable<Guid> targets)
+    {
+        await using var db = database.NewContext();
+        await new ApplyEffectHandler(db, Broadcaster).Handle(
+            new ApplyEffect(campaign.Code, campaign.DmKey, application,
+                Custom("Rallying Anthem", "Status", 1, "Will"),
+                [.. targets.Select(id => new EffectTargetSpec("Character", id))]),
+            default);
     }
 
     [Fact]
