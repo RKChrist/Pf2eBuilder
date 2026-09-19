@@ -108,8 +108,10 @@ public sealed class EffectTarget
     public int? RemainingRounds { get; set; }
 }
 
-/// <summary>The one way from stored applications to the effects on one creature.</summary>
-public static class Effects
+/// <summary>The one way from stored applications to the effects on one creature. Named apart
+/// from the Domain.Effects registry because that one holds definitions and this one reads what
+/// has actually been applied.</summary>
+public static class AppliedEffects
 {
     public static ImmutableArray<ActiveEffect> On(
         Guid targetId, IEnumerable<EffectApplication> applications) =>

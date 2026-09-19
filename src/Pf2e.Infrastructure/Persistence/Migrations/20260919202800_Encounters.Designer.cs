@@ -11,7 +11,7 @@ using Pf2e.Infrastructure.Persistence;
 namespace Pf2e.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(RulesDbContext))]
-    [Migration("20260919200245_Encounters")]
+    [Migration("20260919202800_Encounters")]
     partial class Encounters
     {
         /// <inheritdoc />
@@ -325,11 +325,22 @@ namespace Pf2e.Infrastructure.Persistence.Migrations
                     b.Property<int>("Reflex")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Skills")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Spellcasting")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("Strength")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("TemporaryHitPoints")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("Weapons")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("Will")
                         .HasColumnType("INTEGER");

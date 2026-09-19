@@ -168,10 +168,17 @@ public partial class PrivacyRules(SeededDatabase database) : IClassFixture<Seede
 
         var answered = Broadcaster.Campaigns[^1];
 
-        Assert.Contains("13", WithoutIds(answered.ForDm));
-        Assert.DoesNotContain("13", WithoutIds(answered.ForPlayers));
+        // The DM's copy carries the new number and the maximum it came off.
+        var seen = Assert.Single(answered.ForDm.Encounter!.Combatants, c => c.Kind == "Adversary").Monster;
+        Assert.Equal(13, seen!.CurrentHitPoints);
+        Assert.Equal(50, seen.MaxHitPoints);
+
+        // The players' copy carries neither. The remaining 13 is not asserted as a string: a
+        // character sheet legitimately holds small numbers and 13 is one of them, so the claim
+        // is made against the one field a monster's health could travel in.
         Assert.Null(Assert.Single(answered.ForPlayers.Encounter!.Combatants,
                                   c => c.Kind == "Adversary").Monster);
+        Assert.DoesNotContain("50", WithoutIds(answered.ForPlayers));
     }
 
     [Fact]

@@ -84,17 +84,70 @@
                             </div>
 
                             <div class="stats">
-                                @foreach (var line in StatSlots.All)
+                                @foreach (var line in StatSlots.For(character))
                                 {
                                     <button type="button"
                                             class="stat"
                                             aria-label="@line.Name"
-                                            @onclick="() => Open(character.Id, line.Slot)">
+                                            @onclick="() => Open(character.Id, StatAddress.Fixed(line.Slot))">
                                         <span class="stat__label">@line.Short</span>
-                                        <span class="stat__value">@line.Of(character).Total</span>
+                                        <span class="stat__value">@(line.IsRoll ? Signed(line.Of(character)!.Total) : line.Of(character)!.Total.ToString())</span>
                                     </button>
                                 }
                             </div>
+
+                            @if (character.Attacks.Count > 0)
+                            {
+                                <h3 class="rolls__heading">Attacks</h3>
+                                <div class="rolls" aria-label="Attacks">
+                                    @foreach (var roll in character.Attacks)
+                                    {
+                                        <button type="button"
+                                                class="roll"
+                                                @onclick="() => Open(character.Id, StatAddress.Weapon(roll.Name))">
+                                            <span class="roll__name">@roll.Name</span>
+                                            <span class="roll__value">@Signed(roll.Value.Total)</span>
+                                        </button>
+                                    }
+                                </div>
+                            }
+
+                            @if (character.Skills.Count > 0)
+                            {
+                                @* Trained and better in the open, the rest behind a summary. A
+                                   player reads the four they are good at; a DM occasionally asks
+                                   for an untrained Nature, and that has to stay reachable. *@
+                                <h3 class="rolls__heading">Skills</h3>
+                                <div class="rolls" aria-label="Trained skills">
+                                    @foreach (var roll in Trained(character))
+                                    {
+                                        <button type="button"
+                                                class="roll"
+                                                @onclick="() => Open(character.Id, StatAddress.Skilled(roll.Name))">
+                                            <span class="roll__name">@roll.Name</span>
+                                            <span class="roll__value">@Signed(roll.Value.Total)</span>
+                                        </button>
+                                    }
+                                </div>
+
+                                @if (Untrained(character).Count > 0)
+                                {
+                                    <details class="rest">
+                                        <summary class="rest__summary">Untrained skills</summary>
+                                <div class="rolls" aria-label="Untrained skills">
+                                    @foreach (var roll in Untrained(character))
+                                    {
+                                        <button type="button"
+                                                class="roll"
+                                                @onclick="() => Open(character.Id, StatAddress.Skilled(roll.Name))">
+                                            <span class="roll__name">@roll.Name</span>
+                                            <span class="roll__value">@Signed(roll.Value.Total)</span>
+                                        </button>
+                                    }
+                                </div>
+                                    </details>
+                                }
+                            }
 
                             <div class="vitals">
                                 <p class="hp">
@@ -162,10 +215,9 @@
 <BottomSheet Open="@(Opened is not null)"
              Title="@BreakdownTitle"
              OnClose="() => Dispatcher.Dispatch(new BreakdownClosed())">
-    @if (Opened is { } open && Character(open.CharacterId) is { } character)
+    @if (Opened is { } open && Character(open.CharacterId) is { } character
+        && open.Stat.In(character) is { } breakdown)
     {
-        var line = StatSlots.Of(open.Stat);
-        var breakdown = line.Of(character);
 
         <div class="breakdown">
             <p class="breakdown__base">
@@ -258,30 +310,42 @@
                             </Action>
                         </ErrorState>
                     </Failed>
-                    <Loaded Context="conditions">
-                        <div class="conditions">
-                            @foreach (var condition in conditions)
-                            {
-                                <div class="condition" data-condition="@condition.Key">
-                                    <span class="condition__name">@condition.Name</span>
-                                    @if (condition.HasValue)
-                                    {
-                                        <NumberStepper Label="@condition.Name"
-                                                       Min="0"
-                                                       Max="10"
-                                                       Value="Held(character, condition.Key)?.Value ?? 0"
-                                                       ValueChanged="value => Seed(character, condition, value)" />
-                                    }
-                                    else
-                                    {
-                                        <Switch Checked="@(Held(character, condition.Key) is not null)"
-                                                CheckedChanged="on => Seed(character, condition, on ? 1 : 0)">
-                                            <span class="visually-hidden">@condition.Name</span>
-                                        </Switch>
-                                    }
-                                </div>
-                            }
-                        </div>
+                    <Loaded Context="effects">
+                        @* Buffs first. A player reaches for this sheet because something good just
+                           happened to them far more often than because something bad did. *@
+                        @foreach (var group in Grouped(effects))
+                        {
+                            <h3 class="effects__kind">@group.Heading</h3>
+                            <div class="conditions">
+                                @foreach (var condition in group.Effects)
+                                {
+                                    <div class="condition" data-condition="@condition.Key">
+                                        <span class="condition__name">
+                                            @condition.Name
+                                            @if (Reads(condition) is { Length: > 0 } reads)
+                                            {
+                                                <span class="condition__reads">@reads</span>
+                                            }
+                                        </span>
+                                        @if (condition.HasValue)
+                                        {
+                                            <NumberStepper Label="@condition.Name"
+                                                           Min="0"
+                                                           Max="10"
+                                                           Value="Held(character, condition.Key)?.Value ?? 0"
+                                                           ValueChanged="value => Seed(character, condition, value)" />
+                                        }
+                                        else
+                                        {
+                                            <Switch Checked="@(Held(character, condition.Key) is not null)"
+                                                    CheckedChanged="on => Seed(character, condition, on ? 1 : 0)">
+                                                <span class="visually-hidden">@condition.Name</span>
+                                            </Switch>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
                     </Loaded>
                 </RemoteView>
                 break;
@@ -381,10 +445,26 @@
 @code {
     static readonly IReadOnlyList<ChoiceOption<PickerArm>> Arms =
     [
-        new(PickerArm.Conditions, "Conditions"),
+        new(PickerArm.Conditions, "Effects"),
         new(PickerArm.Rules, "Rules"),
         new(PickerArm.Custom, "Custom"),
     ];
+
+    sealed record EffectGroup(string Heading, IReadOnlyList<ConditionSummary> Effects);
+
+    static IReadOnlyList<EffectGroup> Grouped(IReadOnlyList<ConditionSummary> effects) =>
+    [
+        .. new[] { ("Buff", "Buffs"), ("Condition", "Conditions") }
+            .Select(kind => new EffectGroup(kind.Item2,
+                [.. effects.Where(e => e.Kind == kind.Item1).OrderBy(e => e.Name, StringComparer.Ordinal)]))
+            .Where(group => group.Effects.Count > 0),
+    ];
+
+    /// <summary>What the effect does, in the words of the breakdown it will appear in, so nobody
+    /// has to open the rule to find out whether an anthem helps their armour class.</summary>
+    static string Reads(ConditionSummary effect) =>
+        string.Join("; ", effect.Modifiers.Select(m =>
+            $"{(m.Value > 0 ? "+" : string.Empty)}{m.Value} {m.Type.ToLowerInvariant()} to {string.Join(", ", m.Applies)}"));
 
     static readonly IReadOnlyList<ChoiceOption<bool>> Signs =
     [
@@ -411,7 +491,8 @@
 
     string BreakdownTitle =>
         Opened is { } open && Character(open.CharacterId) is { } character
-            ? $"{StatSlots.Of(open.Stat).Name} {StatSlots.Of(open.Stat).Of(character).Total}"
+        && open.Stat.In(character) is { } breakdown
+            ? $"{open.Stat.Label} {breakdown.Total}"
             : "Breakdown";
 
     RenderFragment Entrance => @<div class="join">
@@ -485,8 +566,17 @@
         }
     </text>;
 
-    void Open(Guid characterId, StatSlot slot) =>
-        Dispatcher.Dispatch(new BreakdownOpened(characterId, slot));
+    void Open(Guid characterId, StatAddress address) =>
+        Dispatcher.Dispatch(new BreakdownOpened(characterId, address));
+
+    /// <summary>A roll reads +14 or -1, never 14, because the number is added to a die.</summary>
+    static string Signed(int total) => total >= 0 ? $"+{total}" : total.ToString();
+
+    static IReadOnlyList<NamedBreakdownView> Trained(CharacterSheetView character) =>
+        [.. character.Skills.Where(skill => skill.Rank != nameof(ProficiencyRank.Untrained))];
+
+    static IReadOnlyList<NamedBreakdownView> Untrained(CharacterSheetView character) =>
+        [.. character.Skills.Where(skill => skill.Rank == nameof(ProficiencyRank.Untrained))];
 
     void Nudge(Guid characterId, int delta) =>
         Dispatcher.Dispatch(new HitPointsNudged(characterId, delta));

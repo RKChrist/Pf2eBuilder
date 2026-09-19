@@ -11,6 +11,11 @@ namespace Pf2e.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // The scaffolder also emitted the three character columns, and they are taken back
+            // out by hand. The migration this one follows came from a branch that had not seen
+            // the effect tables, so its snapshot does not describe the database this actually
+            // runs against; those columns are already added there, and adding them twice fails.
+            // Only the encounter is this migration's work.
             migrationBuilder.RenameColumn(
                 name: "SourceCombatantId",
                 table: "EffectApplications",

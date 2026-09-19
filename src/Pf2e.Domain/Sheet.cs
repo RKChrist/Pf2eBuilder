@@ -16,7 +16,22 @@ public sealed record Sheet(
     int CurrentHitPoints,
     int TemporaryHitPoints,
     int HeroPoints,
-    ImmutableArray<ActiveEffect> Effects);
+    ImmutableArray<ActiveEffect> Effects,
+    ImmutableArray<NamedBreakdown> Skills = default,
+    ImmutableArray<NamedBreakdown> Attacks = default,
+    Breakdown? SpellAttack = null,
+    Breakdown? SpellDc = null)
+{
+    public ImmutableArray<NamedBreakdown> Skills { get; init; } = Skills.IsDefault ? [] : Skills;
+
+    public ImmutableArray<NamedBreakdown> Attacks { get; init; } = Attacks.IsDefault ? [] : Attacks;
+}
+
+/// <summary>A computed number that has a name of its own rather than a slot on the sheet: one
+/// skill, one weapon. The name is the player's, so "Warfare Lore" reads as it is written.
+/// <see cref="Rank"/> is the skill's proficiency and null for a weapon, whose rank is folded
+/// into the export's own total and not separable from it.</summary>
+public sealed record NamedBreakdown(string Name, Breakdown Value, ProficiencyRank? Rank = null);
 
 public static class CharacterSheet
 {
@@ -73,7 +88,27 @@ public static class CharacterSheet
             Math.Clamp(session.CurrentHitPoints, 0, maxHitPoints),
             session.TemporaryHitPoints,
             session.HeroPoints,
-            session.Effects);
+            session.Effects,
+            [.. build.Skills
+                .OrderBy(skill => skill.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(skill => new NamedBreakdown(
+                    skill.Name,
+                    Roll(skill.Rank, Skills.For(skill.Name) ?? AttributeKind.Intelligence, StatTarget.Skill(skill.Name)),
+                    skill.Rank))],
+            // A weapon's bonus is the export's own total, so the base is taken whole and only
+            // the session's modifiers are stacked onto it.
+            [.. build.Weapons.Select(weapon => new NamedBreakdown(
+                weapon.Display,
+                Stacking.Resolve(weapon.Bonus, StatTarget.Attack(weapon.GovernedBy), modifiers)))],
+            build.Spellcasting is { } casting
+                ? Roll(casting.Rank, casting.Attribute, StatTarget.SpellAttack(casting.Attribute))
+                : null,
+            build.Spellcasting is { } dc
+                ? Stacking.Resolve(
+                    10 + Proficiency.Bonus(dc.Rank, level, options) + build.Attributes.Of(dc.Attribute),
+                    StatTarget.SpellDc(dc.Attribute),
+                    modifiers)
+                : null);
     }
 
     static int DrainedValue(SessionState session) => session.Effects

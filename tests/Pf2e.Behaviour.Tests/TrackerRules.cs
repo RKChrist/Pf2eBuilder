@@ -34,7 +34,25 @@ static class Gnibbo
         AncestryHitPoints: 6,
         ClassHitPoints: 8,
         BonusHitPoints: 0,
-        BonusHitPointsPerLevel: 0);
+        BonusHitPointsPerLevel: 0,
+        // Straight off the export the rest of the suite is pinned to. The rapier is finesse and
+        // this goblin has more Dexterity than Strength, so its attack is Dex-governed; the bow is
+        // ranged and always is. Both bonuses are the export's own totals: the bard is untrained
+        // in martial weapons on paper and expert with a rapier in fact.
+        Weapons:
+        [
+            new WeaponAttack("Rapier", "+1 Striking Rapier", 15, AttributeKind.Dexterity),
+            new WeaponAttack("Shortbow", "Shortbow", 14, AttributeKind.Dexterity),
+        ],
+        Skills:
+        [
+            new SkillProficiency("Performance", ProficiencyRank.Master),
+            new SkillProficiency("Stealth", ProficiencyRank.Expert),
+            new SkillProficiency("Occultism", ProficiencyRank.Expert),
+            new SkillProficiency("Athletics", ProficiencyRank.Untrained),
+            new SkillProficiency("Warfare Lore", ProficiencyRank.Trained),
+        ],
+        Spellcasting: new Spellcasting("Occult", ProficiencyRank.Expert, AttributeKind.Charisma));
 
     public static Sheet SheetWith(params ActiveEffect[] effects) =>
         CharacterSheet.Compute(Build, SessionState.Fresh(MaxHitPoints) with { Effects = [.. effects] });
@@ -271,9 +289,9 @@ public class TrackerRules
             ApplicationId = anthem.Id, Kind = EffectTargetKind.Character, TargetId = fighter,
         });
 
-        Assert.Equal(anthem.Id, Assert.Single(Effects.On(bard, [anthem])).Id);
-        Assert.Equal(anthem.Id, Assert.Single(Effects.On(fighter, [anthem])).Id);
-        Assert.Empty(Effects.On(Guid.NewGuid(), [anthem]));
+        Assert.Equal(anthem.Id, Assert.Single(AppliedEffects.On(bard, [anthem])).Id);
+        Assert.Equal(anthem.Id, Assert.Single(AppliedEffects.On(fighter, [anthem])).Id);
+        Assert.Empty(AppliedEffects.On(Guid.NewGuid(), [anthem]));
     }
 
     static EffectApplication Applied(Guid campaignId, Guid targetId, ActiveEffect effect, int value)

@@ -75,17 +75,20 @@
 }
 
 /* A character is a name and a row of numbers rather than prose, so it takes the width as
-   columns. 600px and 1024px are layout.viewport-wide and layout.viewport-desk; a media query
-   cannot read a custom property. */
+   columns. auto-fit rather than a fixed count, because a table of one character on a laptop got
+   a third of the screen and two thirds of nothing: the empty tracks collapse and the one card
+   spreads, which its own grids of statistics and skills then spend on more columns.
+   600px and 1024px are layout.viewport-wide and layout.viewport-desk; a media query cannot read
+   a custom property. */
 @media (min-width: 600px) {
     .party {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
     }
 }
 
 @media (min-width: 1024px) {
     .party {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
     }
 }
 
@@ -106,9 +109,12 @@
     font-size: var(--font-size-chip);
 }
 
+/* Three across a phone, and more across a laptop rather than three tiles a foot wide each. A
+   tile holds four letters and a number, so it has a size it wants to be and a card that grew
+   should give it siblings, not room. */
 .stats {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 6rem), 1fr));
     gap: var(--space-2);
 }
 
@@ -304,10 +310,103 @@
     min-height: var(--tap-min);
 }
 
+/* The name and what it does, stacked, because "+1 status to attack rolls, Damage" does not fit
+   beside a stepper on a phone and is the half that answers the question. */
 .condition__name {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
     font-size: var(--font-size-data);
+    min-width: 0;
+}
+
+.condition__reads {
+    font-size: var(--font-size-chip);
+    color: var(--text-muted);
+    text-wrap: pretty;
+}
+
+.effects__kind {
+    margin: var(--space-5) 0 0;
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-muted);
+}
+
+.effects__kind:first-of-type {
+    margin-top: var(--space-4);
 }
 
 .states--none {
     color: var(--text-muted);
+}
+
+/* A roll is a name and a number, read down a column rather than across a grid, because a skill
+   name is a word or two and a stat label is four letters. */
+.rolls__heading {
+    margin: var(--space-4) 0 var(--space-2);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.rolls {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr));
+    gap: var(--space-1);
+}
+
+.roll {
+    display: flex;
+    align-items: center;
+    text-align: left;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-height: var(--tap-min);
+    padding: 0 var(--space-3);
+    border: var(--border-hair) solid transparent;
+    border-radius: var(--radius-chip);
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.roll:hover {
+    border-color: var(--line-subtle);
+}
+
+/* The name is prose, not a link. It inherits an accent from the button reset otherwise, and a
+   card of eighteen teal skill names reads as eighteen things to tap somewhere else. */
+.roll__name {
+    font-size: var(--font-size-data);
+    color: var(--text-primary);
+    min-width: 0;
+    text-wrap: pretty;
+}
+
+.roll__value {
+    font-size: var(--font-size-data);
+    color: var(--text-primary);
+    flex: none;
+    font-weight: var(--font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+}
+
+/* The untrained skills are a long list a player rarely wants and a DM occasionally does, so they
+   are one tap away rather than either always there or nowhere. */
+.rest {
+    margin-top: var(--space-2);
+}
+
+.rest__summary {
+    display: flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    font-size: var(--font-size-chip);
+    color: var(--text-muted);
+    cursor: pointer;
 }

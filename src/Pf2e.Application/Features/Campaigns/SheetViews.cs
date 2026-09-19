@@ -32,8 +32,15 @@ internal static class SheetViews
             sheet.MaxHitPoints,
             sheet.TemporaryHitPoints,
             sheet.HeroPoints,
-            [.. sheet.Effects.Select(Of)]);
+            [.. sheet.Effects.Select(Of)],
+            [.. sheet.Skills.Select(Of)],
+            [.. sheet.Attacks.Select(Of)],
+            sheet.SpellAttack is { } attack ? Of(attack) : null,
+            sheet.SpellDc is { } dc ? Of(dc) : null,
+            character.Spellcasting?.Tradition);
     }
+
+    static NamedBreakdownView Of(NamedBreakdown named) => new(named.Name, Of(named.Value), named.Rank?.ToString());
 
     public static BreakdownSummary Of(Breakdown breakdown) => new(
         breakdown.Base,
@@ -65,7 +72,7 @@ internal static class SheetViews
         application.Name,
         application.SourceKind,
         application.SourceKey,
-        Domain.Conditions.Find(application.SourceKey ?? string.Empty) is { HasValue: true }
+        Domain.Effects.Find(application.SourceKey ?? string.Empty) is { HasValue: true }
             && application.SourceKind == "Seeded",
         application.Duration,
         application.Timing.ToString(),

@@ -322,11 +322,22 @@ namespace Pf2e.Infrastructure.Persistence.Migrations
                     b.Property<int>("Reflex")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Skills")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Spellcasting")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("Strength")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("TemporaryHitPoints")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("Weapons")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("Will")
                         .HasColumnType("INTEGER");

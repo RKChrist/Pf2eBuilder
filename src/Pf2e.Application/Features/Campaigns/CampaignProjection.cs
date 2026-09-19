@@ -71,7 +71,7 @@ internal static class CampaignProjection
 
     static CombatantView Of(ViewerRole role, Combatant combatant, Encounter encounter, Campaign campaign)
     {
-        var effects = Effects.On(combatant.Id, campaign.EffectApplications);
+        var effects = AppliedEffects.On(combatant.Id, campaign.EffectApplications);
 
         return new CombatantView(
             combatant.Id,
