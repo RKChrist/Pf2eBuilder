@@ -1,6 +1,7 @@
 namespace Pf2e.Contracts.Rules;
 
-/// <summary>What a list or picker shows. Deliberately not the whole record.</summary>
+/// <summary>What a list or picker shows. Deliberately not the whole record: <see cref="Highlights"/>
+/// is the few facts a row can say at a glance, chosen per category by the server.</summary>
 public sealed record RuleSummary(
     string Id,
     string Category,
@@ -9,13 +10,20 @@ public sealed record RuleSummary(
     string? Rarity,
     string? PrimarySource,
     IReadOnlyList<string> Traits,
-    string SourceUrl);
+    string SourceUrl,
+    IReadOnlyList<MechanicField> Highlights);
 
 public sealed record RuleSearchResult(
     IReadOnlyList<RuleSummary> Items,
     int TotalMatching,
     int Page,
     int PageSize);
+
+/// <summary>How many records match in each category that has any, so a screen can say how much
+/// is behind a door before anyone opens it.</summary>
+public sealed record RuleCounts(int Total, IReadOnlyList<CategoryCount> Categories);
+
+public sealed record CategoryCount(string Category, int Count);
 
 /// <summary>
 /// A condition the engine can compute, paired with where its rule is printed. The modifiers
