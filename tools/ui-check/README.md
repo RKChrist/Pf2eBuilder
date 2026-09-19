@@ -23,3 +23,15 @@ fix can be shown to matter instead of assumed:
       node tools/ui-check/measure.mjs http://localhost:5173/ 320 740
 
 If the numbers do not move, the change was not a fix. That is exactly what happened here.
+
+## Screenshots
+
+Set `SHOT` to a path and the run also captures the page through the same emulation override the
+measurements use:
+
+    SHOT=/tmp/browse.png node tools/ui-check/measure.mjs http://localhost:5173/ 390 844
+
+Do not use Chrome's `--screenshot` flag with `--window-size` for this. It renders at its own
+viewport and crops to the window, which made this app look like it clipped content and dropped
+two navigation items at 390px when it did neither. Two separate false bugs came from reading
+those images. The image and the numbers have to come from the same viewport or one of them lies.
