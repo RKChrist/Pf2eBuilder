@@ -1,0 +1,19 @@
+<span @attributes="Attributes" class="pf-mod @(Value >= 0 ? "pf-mod--bonus" : "pf-mod--penalty") @Class">
+    <span class="pf-mod__value">@Sign@Magnitude</span>
+    <span class="pf-mod__type">@Kind.DisplayText()</span>
+</span>
+
+@code {
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter] public int Value { get; set; }
+
+    [Parameter] public ModifierKind Kind { get; set; } = ModifierKind.Untyped;
+
+    private string Sign => Value >= 0 ? "+" : "−";
+
+    private long Magnitude => Math.Abs((long)Value);
+}

@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pf2e.Components gallery</title>
+<link rel="stylesheet" href="../../../tools/tokens/dist/tokens.css">
+<link rel="stylesheet" href="../wwwroot/css/components.css">
+<link rel="stylesheet" href="gallery.css">
+</head>
+<body class="g-body">
+<div class="g-page">
+
+<header class="g-top">
+  <h1 class="g-top__title">Pf2e.Components</h1>
+  <p class="g-top__note">Every component, every state. Designed at phone width. Same stylesheet the Razor components use.</p>
+  <div class="pf-segmented" role="group" aria-label="Theme">
+    <button class="pf-segmented__option" type="button" data-theme-option="light" aria-pressed="false">Light</button>
+    <button class="pf-segmented__option" type="button" data-theme-option="dark" aria-pressed="false">Dark</button>
+    <button class="pf-segmented__option" type="button" data-theme-option="system" aria-pressed="true">System</button>
+  </div>
+</header>
+
+<!-- ============================================================ controls -->
+<section class="g-group">
+<h2 class="g-group__head">Controls</h2>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">Button</h3>
+  <div class="g-case">
+    <span class="g-case__label">Primary, at --tap-primary. The action taken over and over mid-session.</span>
+    <div class="g-stack">
+      <button class="pf-btn pf-btn--primary" type="button">Add to character</button>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Secondary and quiet, at --tap-default</span>
+    <div class="pf-cluster">
+      <button class="pf-btn pf-btn--secondary" type="button">Compare</button>
+      <button class="pf-btn pf-btn--quiet" type="button">Cancel</button>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Destructive</span>
+    <div class="g-stack">
+      <button class="pf-btn pf-btn--destructive" type="button">Delete character</button>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Disabled</span>
+    <div class="pf-cluster">
+      <button class="pf-btn pf-btn--primary" type="button" disabled>Add to character</button>
+      <button class="pf-btn pf-btn--secondary" type="button" disabled>Compare</button>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Loading</span>
+    <div class="g-stack">
+      <button class="pf-btn pf-btn--primary pf-btn--busy" type="button" disabled aria-busy="true">
+        <span class="pf-spinner" aria-hidden="true"></span>Saving
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">TextInput</h3>
+  <div class="g-case">
+    <span class="g-case__label">Label and hint</span>
+    <div class="pf-field">
+      <label class="pf-field__label" for="ti-name">Character name</label>
+      <input class="pf-input" id="ti-name" type="text" value="Seelah" aria-describedby="ti-name-hint">
+      <p class="pf-field__hint" id="ti-name-hint">Shown on the sheet header.</p>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Placeholder</span>
+    <div class="pf-field">
+      <label class="pf-field__label" for="ti-deity">Deity</label>
+      <input class="pf-input" id="ti-deity" type="text" placeholder="Iomedae">
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Error</span>
+    <div class="pf-field pf-field--invalid">
+      <label class="pf-field__label" for="ti-level">Level</label>
+      <input class="pf-input" id="ti-level" type="text" value="21" aria-invalid="true" aria-describedby="ti-level-err">
+      <p class="pf-field__error" id="ti-level-err">Level must be between 1 and 20.</p>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Disabled</span>
+    <div class="pf-field">
+      <label class="pf-field__label" for="ti-class">Class</label>
+      <input class="pf-input" id="ti-class" type="text" value="Champion" disabled>
+    </div>
+  </div>
+</div>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">SearchField</h3>
+  <div class="g-case">
+    <span class="g-case__label">Empty</span>
+    <div class="pf-search">
+      <span class="pf-search__icon" aria-hidden="true"></span>
+      <input class="pf-search__input" type="search" placeholder="Search 6,390 feats" aria-label="Search feats">
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">With a value, clear affordance shown</span>
+    <div class="pf-search">
+      <span class="pf-search__icon" aria-hidden="true"></span>
+      <input class="pf-search__input" type="search" value="power attack" aria-label="Search feats">
+      <button class="pf-search__clear" type="button" aria-label="Clear search"></button>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Disabled</span>
+    <div class="pf-search">
+      <span class="pf-search__icon" aria-hidden="true"></span>
+      <input class="pf-search__input" type="search" placeholder="Search feats" aria-label="Search feats" disabled>
+    </div>
+  </div>
+</div>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">NumberStepper</h3>
+  <div class="g-case">
+    <span class="g-case__label">Hit points. Both keys at --tap-primary, thumb-sized, value fixed between them.</span>
+    <div class="g-stack">
+      <div class="pf-stepper" role="group" aria-label="Hit points">
+        <button class="pf-stepper__btn pf-stepper__btn--minus" type="button" aria-label="Decrease hit points"></button>
+        <output class="pf-stepper__value">38</output>
+        <button class="pf-stepper__btn pf-stepper__btn--plus" type="button" aria-label="Increase hit points"></button>
+      </div>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">At the floor, decrease disabled</span>
+    <div class="g-stack">
+      <div class="pf-stepper" role="group" aria-label="Damage">
+        <button class="pf-stepper__btn pf-stepper__btn--minus" type="button" aria-label="Decrease damage" disabled></button>
+        <output class="pf-stepper__value">0</output>
+        <button class="pf-stepper__btn pf-stepper__btn--plus" type="button" aria-label="Increase damage"></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">Select</h3>
+  <div class="g-case">
+    <span class="g-case__label">Default</span>
+    <div class="pf-field">
+      <label class="pf-field__label" for="sel-ancestry">Ancestry</label>
+      <div class="pf-select">
+        <select class="pf-select__native" id="sel-ancestry">
+          <option>Human</option><option selected>Dwarf</option><option>Elf</option><option>Goblin</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Error</span>
+    <div class="pf-field pf-field--invalid">
+      <label class="pf-field__label" for="sel-heritage">Heritage</label>
+      <div class="pf-select">
+        <select class="pf-select__native" id="sel-heritage" aria-invalid="true" aria-describedby="sel-heritage-err">
+          <option>Choose a heritage</option>
+        </select>
+      </div>
+      <p class="pf-field__error" id="sel-heritage-err">Pick a heritage before continuing.</p>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Disabled</span>
+    <div class="pf-field">
+      <label class="pf-field__label" for="sel-sub">Subclass</label>
+      <div class="pf-select">
+        <select class="pf-select__native" id="sel-sub" disabled><option>Pick a class first</option></select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">SegmentedControl</h3>
+  <div class="g-case">
+    <span class="g-case__label">Selection is weight plus fill, so it survives greyscale</span>
+    <div class="pf-segmented" role="group" aria-label="Rarity filter">
+      <button class="pf-segmented__option" type="button" aria-pressed="true">All</button>
+      <button class="pf-segmented__option" type="button" aria-pressed="false">Common</button>
+      <button class="pf-segmented__option" type="button" aria-pressed="false">Rare</button>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">With a disabled option</span>
+    <div class="pf-segmented" role="group" aria-label="Spell tradition">
+      <button class="pf-segmented__option" type="button" aria-pressed="true">Arcane</button>
+      <button class="pf-segmented__option" type="button" aria-pressed="false">Divine</button>
+      <button class="pf-segmented__option" type="button" aria-pressed="false" disabled>Occult</button>
+    </div>
+  </div>
+</div>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">Checkbox</h3>
+  <div class="g-stack">
+    <label class="pf-check">
+      <input class="pf-check__input" type="checkbox">
+      <span class="pf-check__box" aria-hidden="true"></span>
+      <span class="pf-check__label">Show only feats I qualify for</span>
+    </label>
+    <label class="pf-check">
+      <input class="pf-check__input" type="checkbox" checked>
+      <span class="pf-check__box" aria-hidden="true"></span>
+      <span class="pf-check__label">Include archetype feats</span>
+    </label>
+    <label class="pf-check">
+      <input class="pf-check__input" type="checkbox" disabled>
+      <span class="pf-check__box" aria-hidden="true"></span>
+      <span class="pf-check__label">Homebrew (none loaded)</span>
+    </label>
+    <label class="pf-check">
+      <input class="pf-check__input" type="checkbox" checked disabled>
+      <span class="pf-check__box" aria-hidden="true"></span>
+      <span class="pf-check__label">Core rulebook (always on)</span>
+    </label>
+  </div>
+</div>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">Switch</h3>
+  <div class="g-stack">
+    <label class="pf-switch">
+      <input class="pf-switch__input" type="checkbox" role="switch">
+      <span class="pf-switch__track" aria-hidden="true"><span class="pf-switch__thumb"></span></span>
+      <span class="pf-switch__label">Encumbrance tracking</span>
+    </label>
+    <label class="pf-switch">
+      <input class="pf-switch__input" type="checkbox" role="switch" checked>
+      <span class="pf-switch__track" aria-hidden="true"><span class="pf-switch__thumb"></span></span>
+      <span class="pf-switch__label">Keep screen awake</span>
+    </label>
+    <label class="pf-switch">
+      <input class="pf-switch__input" type="checkbox" role="switch" disabled>
+      <span class="pf-switch__track" aria-hidden="true"><span class="pf-switch__thumb"></span></span>
+      <span class="pf-switch__label">Sync (sign in first)</span>
+    </label>
+    <label class="pf-switch">
+      <input class="pf-switch__input" type="checkbox" role="switch" checked disabled>
+      <span class="pf-switch__track" aria-hidden="true"><span class="pf-switch__thumb"></span></span>
+      <span class="pf-switch__label">Offline rules (required)</span>
+    </label>
+  </div>
+</div>
+</section>
+
+<!-- ============================================================ pathfinder -->
+<section class="g-group">
+<h2 class="g-group__head">Pathfinder</h2>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">ActionCost</h3>
+  <div class="g-case">
+    <span class="g-case__label">Cost is a count, so it is drawn as a count</span>
+    <dl class="g-legend">
+      <dt><span class="pf-cost" role="img" aria-label="1 action"><i class="pf-cost__glyph"></i></span></dt>
+      <dd>One action</dd>
+      <dt><span class="pf-cost" role="img" aria-label="2 actions"><i class="pf-cost__glyph"></i><i class="pf-cost__glyph"></i></span></dt>
+      <dd>Two actions</dd>
+      <dt><span class="pf-cost" role="img" aria-label="3 actions"><i class="pf-cost__glyph"></i><i class="pf-cost__glyph"></i><i class="pf-cost__glyph"></i></span></dt>
+      <dd>Three actions</dd>
+      <dt><span class="pf-cost pf-cost--reaction" role="img" aria-label="Reaction"><i class="pf-cost__glyph"></i></span></dt>
+      <dd>Reaction</dd>
+      <dt><span class="pf-cost pf-cost--free" role="img" aria-label="Free action"><i class="pf-cost__glyph"></i></span></dt>
+      <dd>Free action</dd>
+    </dl>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">At the chip size a feat list renders at</span>
+    <div class="g-costs g-scale--chip">
+      <span class="pf-cost" role="img" aria-label="1 action"><i class="pf-cost__glyph"></i></span>
+      <span class="pf-cost" role="img" aria-label="2 actions"><i class="pf-cost__glyph"></i><i class="pf-cost__glyph"></i></span>
+      <span class="pf-cost" role="img" aria-label="3 actions"><i class="pf-cost__glyph"></i><i class="pf-cost__glyph"></i><i class="pf-cost__glyph"></i></span>
+      <span class="pf-cost pf-cost--reaction" role="img" aria-label="Reaction"><i class="pf-cost__glyph"></i></span>
+      <span class="pf-cost pf-cost--free" role="img" aria-label="Free action"><i class="pf-cost__glyph"></i></span>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">At the stat size, and tinted to the accent</span>
+    <div class="g-costs g-scale--stat">
+      <span class="pf-cost" role="img" aria-label="3 actions"><i class="pf-cost__glyph"></i><i class="pf-cost__glyph"></i><i class="pf-cost__glyph"></i></span>
+      <span class="pf-cost pf-cost--reaction pf-cost--accent" role="img" aria-label="Reaction"><i class="pf-cost__glyph"></i></span>
+      <span class="pf-cost pf-cost--free" role="img" aria-label="Free action"><i class="pf-cost__glyph"></i></span>
+    </div>
+  </div>
+</div>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">TraitChip</h3>
+  <div class="pf-cluster">
+    <span class="pf-trait">Fire</span>
+    <span class="pf-trait">Concentrate</span>
+    <span class="pf-trait">Manipulate</span>
+    <span class="pf-trait">Flourish</span>
+    <span class="pf-trait">Open</span>
+  </div>
+</div>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">RarityBadge</h3>
+  <div class="g-case">
+    <span class="g-case__label">The word is always present, so the four are still four in greyscale</span>
+    <div class="pf-cluster">
+      <span class="pf-rarity pf-rarity--common">Common</span>
+      <span class="pf-rarity pf-rarity--uncommon">Uncommon</span>
+      <span class="pf-rarity pf-rarity--rare">Rare</span>
+      <span class="pf-rarity pf-rarity--unique">Unique</span>
+    </div>
+  </div>
+</div>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">ProficiencyPips</h3>
+  <div class="g-case">
+    <span class="g-case__label">Rank is a quantity: five steps, not five colours</span>
+    <div class="g-stack">
+      <span class="pf-pips">
+        <span class="pf-pips__track" aria-hidden="true"><i class="pf-pips__pip pf-pips__pip--filled"></i><i class="pf-pips__pip"></i><i class="pf-pips__pip"></i><i class="pf-pips__pip"></i><i class="pf-pips__pip"></i></span>
+        <span class="pf-pips__label">Untrained</span>
+      </span>
+      <span class="pf-pips">
+        <span class="pf-pips__track" aria-hidden="true"><i class="pf-pips__pip pf-pips__pip--filled"></i><i class="pf-pips__pip pf-pips__pip--filled"></i><i class="pf-pips__pip"></i><i class="pf-pips__pip"></i><i class="pf-pips__pip"></i></span>
+        <span class="pf-pips__label">Trained</span>
+      </span>
+      <span class="pf-pips">
+        <span class="pf-pips__track" aria-hidden="true"><i class="pf-pips__pip pf-pips__pip--filled"></i><i class="pf-pips__pip pf-pips__pip--filled"></i><i class="pf-pips__pip pf-pips__pip--filled"></i><i class="pf-pips__pip"></i><i class="pf-pips__pip"></i></span>
+        <span class="pf-pips__label">Expert</span>
+      </span>
+      <span class="pf-pips">
+        <span class="pf-pips__track" aria-hidden="true"><i class="pf-pips__pip pf-pips__pip--filled"></i><i class="pf-pips__pip pf-pips__pip--filled"></i><i class="pf-pips__pip pf-pips__pip--filled"></i><i class="pf-pips__pip pf-pips__pip--filled"></i><i class="pf-pips__pip"></i></span>
+        <span class="pf-pips__label">Master</span>
+      </span>
+      <span class="pf-pips">
+        <span class="pf-pips__track" aria-hidden="true"><i class="pf-pips__pip pf-pips__pip--filled"></i><i class="pf-pips__pip pf-pips__pip--filled"></i><i class="pf-pips__pip pf-pips__pip--filled"></i><i class="pf-pips__pip pf-pips__pip--filled"></i><i class="pf-pips__pip pf-pips__pip--filled"></i></span>
+        <span class="pf-pips__label">Legendary</span>
+      </span>
+    </div>
+  </div>
+</div>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">ModifierValue</h3>
+  <div class="g-case">
+    <span class="g-case__label">A true minus sign, never a hyphen</span>
+    <div class="pf-cluster">
+      <span class="pf-mod pf-mod--bonus"><span class="pf-mod__value">+1</span><span class="pf-mod__type">Status</span></span>
+      <span class="pf-mod pf-mod--penalty"><span class="pf-mod__value">&minus;2</span><span class="pf-mod__type">Circumstance</span></span>
+      <span class="pf-mod pf-mod--bonus"><span class="pf-mod__value">+3</span><span class="pf-mod__type">Item</span></span>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Inline, for a list row</span>
+    <div class="pf-cluster">
+      <span class="pf-mod pf-mod--bonus pf-mod--inline"><span class="pf-mod__value">+0</span><span class="pf-mod__type">Untyped</span></span>
+      <span class="pf-mod pf-mod--penalty pf-mod--inline"><span class="pf-mod__value">&minus;4</span><span class="pf-mod__type">Circumstance</span></span>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ============================================================ layout and state -->
+<section class="g-group">
+<h2 class="g-group__head">Layout and state</h2>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">Card</h3>
+  <section class="pf-card">
+    <header class="pf-card__head">
+      <h3 class="pf-card__title">Armor Class</h3>
+      <span class="pf-rarity pf-rarity--common">Common</span>
+    </header>
+    <div class="pf-card__body">
+      <div class="pf-cluster">
+        <span class="pf-mod pf-mod--bonus"><span class="pf-mod__value">+2</span><span class="pf-mod__type">Item</span></span>
+        <span class="pf-mod pf-mod--penalty"><span class="pf-mod__value">&minus;1</span><span class="pf-mod__type">Circumstance</span></span>
+      </div>
+      <div class="pf-cluster">
+        <span class="pf-trait">Bulwark</span><span class="pf-trait">Comfort</span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">ListRow</h3>
+  <div class="g-case">
+    <span class="g-case__label">Tappable, chevron, --tap-default floor</span>
+    <section class="pf-card">
+      <div class="pf-card__list">
+        <a class="pf-row" href="#listrow">
+          <span class="pf-row__lead"><span class="pf-cost" role="img" aria-label="1 action"><i class="pf-cost__glyph"></i></span></span>
+          <span class="pf-row__main">
+            <span class="pf-row__title">Strike</span>
+            <span class="pf-row__meta"><span class="pf-trait">Attack</span><span>Melee or ranged</span></span>
+          </span>
+          <span class="pf-row__chevron" aria-hidden="true"></span>
+        </a>
+        <a class="pf-row" href="#listrow">
+          <span class="pf-row__lead"><span class="pf-cost" role="img" aria-label="2 actions"><i class="pf-cost__glyph"></i><i class="pf-cost__glyph"></i></span></span>
+          <span class="pf-row__main">
+            <span class="pf-row__title">Sudden Charge</span>
+            <span class="pf-row__meta"><span class="pf-trait">Flourish</span><span>Barbarian 1</span></span>
+          </span>
+          <span class="pf-row__chevron" aria-hidden="true"></span>
+        </a>
+        <button class="pf-row" type="button">
+          <span class="pf-row__lead"><span class="pf-cost pf-cost--reaction" role="img" aria-label="Reaction"><i class="pf-cost__glyph"></i></span></span>
+          <span class="pf-row__main">
+            <span class="pf-row__title">Attack of Opportunity</span>
+            <span class="pf-row__meta"><span class="pf-rarity pf-rarity--uncommon">Uncommon</span><span>Fighter 1</span></span>
+          </span>
+          <span class="pf-row__chevron" aria-hidden="true"></span>
+        </button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">BottomSheet</h3>
+  <div class="g-case">
+    <span class="g-case__label">Open. Capped inside the thumb arc; closed renders nothing.</span>
+    <div class="g-frame">
+      <div class="g-frame__filler">
+        <span>Page behind the sheet</span>
+        <span>Page behind the sheet</span>
+        <span>Page behind the sheet</span>
+      </div>
+      <div class="pf-sheet">
+        <div class="pf-sheet__scrim"></div>
+        <div class="pf-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+          <div class="pf-sheet__grab" aria-hidden="true"></div>
+          <header class="pf-sheet__head">
+            <h2 class="pf-sheet__title" id="sheet-title">Power Attack</h2>
+            <button class="pf-sheet__close" type="button" aria-label="Close"></button>
+          </header>
+          <div class="pf-sheet__body">
+            <div class="pf-cluster">
+              <span class="pf-cost" role="img" aria-label="2 actions"><i class="pf-cost__glyph"></i><i class="pf-cost__glyph"></i></span>
+              <span class="pf-rarity pf-rarity--common">Common</span>
+              <span class="pf-trait">Flourish</span>
+            </div>
+            <p>Make a melee Strike. This counts as two attacks for your multiple attack penalty. On a hit, add one extra damage die.</p>
+            <button class="pf-btn pf-btn--primary pf-btn--full" type="button">Add to character</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">BottomNav</h3>
+  <div class="g-case">
+    <span class="g-case__label">Current is weight plus colour plus a rule, so it survives greyscale</span>
+    <nav class="pf-bottomnav" aria-label="Main">
+      <a class="pf-bottomnav__item" href="#bottomnav" aria-current="page">
+        <span class="pf-bottomnav__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9 8 11 4.6-2 8-6 8-11V5z"/></svg></span>
+        <span>Build</span>
+      </a>
+      <a class="pf-bottomnav__item" href="#bottomnav">
+        <span class="pf-bottomnav__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 2.6 5.8 6.4.7-4.8 4.3 1.3 6.2L12 16.9 6.5 20l1.3-6.2L3 9.5l6.4-.7z"/></svg></span>
+        <span>Feats</span>
+      </a>
+      <a class="pf-bottomnav__item" href="#bottomnav">
+        <span class="pf-bottomnav__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2 13.8 9 21 12l-7.2 3L12 22l-1.8-7L3 12l7.2-3z"/></svg></span>
+        <span>Spells</span>
+      </a>
+      <a class="pf-bottomnav__item" href="#bottomnav">
+        <span class="pf-bottomnav__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 2 8.7 5v10L12 22 3.3 17V7z"/></svg></span>
+        <span>Gear</span>
+      </a>
+      <a class="pf-bottomnav__item" href="#bottomnav">
+        <span class="pf-bottomnav__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 4v16l13-8z"/></svg></span>
+        <span>Play</span>
+      </a>
+    </nav>
+  </div>
+</div>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">Pager</h3>
+  <div class="g-case">
+    <span class="g-case__label">First page, previous disabled</span>
+    <nav class="pf-pager" aria-label="Feat pages">
+      <button class="pf-pager__btn pf-pager__btn--prev" type="button" aria-label="Previous page" disabled></button>
+      <span class="pf-pager__status">Page 1 of 128</span>
+      <button class="pf-pager__btn pf-pager__btn--next" type="button" aria-label="Next page"></button>
+    </nav>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Middle</span>
+    <nav class="pf-pager" aria-label="Feat pages">
+      <button class="pf-pager__btn pf-pager__btn--prev" type="button" aria-label="Previous page"></button>
+      <span class="pf-pager__status">Page 64 of 128</span>
+      <button class="pf-pager__btn pf-pager__btn--next" type="button" aria-label="Next page"></button>
+    </nav>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Last page, next disabled</span>
+    <nav class="pf-pager" aria-label="Feat pages">
+      <button class="pf-pager__btn pf-pager__btn--prev" type="button" aria-label="Previous page"></button>
+      <span class="pf-pager__status">Page 128 of 128</span>
+      <button class="pf-pager__btn pf-pager__btn--next" type="button" aria-label="Next page" disabled></button>
+    </nav>
+  </div>
+</div>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">Spinner</h3>
+  <div class="g-case">
+    <span class="g-case__label">Inline and page scale. Reduced motion stops the ring; the text carries the state.</span>
+    <div class="pf-cluster">
+      <span class="pf-spinner" role="status" aria-label="Loading"></span>
+      <span class="pf-spinner pf-spinner--page" role="status" aria-label="Loading"></span>
+    </div>
+  </div>
+  <div class="g-case">
+    <span class="g-case__label">Loading a page of results</span>
+    <section class="pf-card">
+      <div class="pf-loading">
+        <span class="pf-spinner" role="status" aria-label="Loading"></span>
+        <span>Loading feats</span>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">EmptyState</h3>
+  <section class="pf-card">
+    <div class="pf-state">
+      <div class="pf-state__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8h16v12H4z" opacity=".35"/><path d="M4 8l3-4h10l3 4z"/></svg></div>
+      <h3 class="pf-state__title">No feats match</h3>
+      <p class="pf-state__body">Nothing in 6,390 feats matches &ldquo;power attak&rdquo; at level 3 or below.</p>
+      <div class="pf-state__action"><button class="pf-btn pf-btn--secondary" type="button">Clear filters</button></div>
+    </div>
+  </section>
+</div>
+
+<div class="g-spec">
+  <h3 class="g-spec__name">ErrorState</h3>
+  <section class="pf-card">
+    <div class="pf-state pf-state--error" role="alert">
+      <div class="pf-state__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 22.5 21h-21z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M11 9h2v6h-2zm0 7h2v2h-2z"/></svg></div>
+      <h3 class="pf-state__title">Could not load feats</h3>
+      <p class="pf-state__body">The rules service did not answer. Your character is saved on this device.</p>
+      <div class="pf-state__action"><button class="pf-btn pf-btn--secondary" type="button">Try again</button></div>
+    </div>
+  </section>
+</div>
+</section>
+
+</div>
+
+<script>
+const root = document.documentElement;
+const KEY = 'pf2e-gallery-theme';
+
+function applyTheme(choice) {
+  if (choice === 'system') root.removeAttribute('data-theme');
+  else root.setAttribute('data-theme', choice);
+  for (const button of document.querySelectorAll('[data-theme-option]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.themeOption === choice));
+  }
+  try { localStorage.setItem(KEY, choice); } catch { /* private window */ }
+}
+
+let saved = 'system';
+try { saved = localStorage.getItem(KEY) || 'system'; } catch { /* private window */ }
+applyTheme(saved);
+
+document.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-theme-option]');
+  if (button) applyTheme(button.dataset.themeOption);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+<nav @attributes="Attributes" class="pf-bottomnav @Class" aria-label="@Label">@ChildContent</nav>
+
+@code {
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter] public string Label { get; set; } = "Main";
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

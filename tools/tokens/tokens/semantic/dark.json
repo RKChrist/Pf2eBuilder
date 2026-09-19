@@ -11,7 +11,8 @@
       "$value": "{color.ink.950}"
     },
     "overlay": {
-      "$value": "{color.ink.700}"
+      "$description": "Matches raised, as it already does in light. A bottom sheet carries the same rarity chips and stat colours as a card, and at ink.700 five of those roles fell under 4.5:1. The sheet reads as floating from the scrim behind it and its own radius, not from being a lighter grey.",
+      "$value": "{color.ink.800}"
     }
   },
   "text": {
@@ -26,6 +27,9 @@
       "$value": "{color.ink.400}"
     },
     "on-accent": {
+      "$value": "{color.ink.950}"
+    },
+    "on-danger": {
       "$value": "{color.ink.950}"
     }
   },
@@ -52,6 +56,19 @@
     "wash": {
       "$value": "{color.teal.700}"
     }
+  },
+  "danger": {
+    "$type": "color",
+    "base": {
+      "$value": "{color.crimson.300}"
+    },
+    "press": {
+      "$value": "{color.crimson.400}"
+    }
+  },
+  "scrim": {
+    "$type": "color",
+    "$value": "{color.ink.950}"
   },
   "rarity": {
     "$type": "color",

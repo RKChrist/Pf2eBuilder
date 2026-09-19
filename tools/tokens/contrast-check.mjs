@@ -25,7 +25,7 @@ const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
 
 // 4.5 is WCAG AA for body text. 3.0 covers borders and large type, which carry meaning here
 // because the sheet's grid lines separate one character's numbers from another's.
-const TEXT_ON_PAGE = ['text-primary', 'text-secondary', 'text-muted', 'accent-base',
+const TEXT_ON_PAGE = ['text-primary', 'text-secondary', 'text-muted', 'accent-base', 'danger-base',
   'rarity-common', 'rarity-uncommon', 'rarity-rare', 'rarity-unique',
   'outcome-critical-failure', 'outcome-failure', 'outcome-success', 'outcome-critical-success',
   'rank-filled'];
@@ -38,10 +38,17 @@ const check = (label, fg, bg, min) => {
 };
 
 for (const [theme, t] of [['light', light], ['dark', dark]]) {
-  for (const surface of ['page', 'raised']) {
+  // overlay is the bottom sheet, which carries the same rarity chips and stat colours as a
+  // card, so it has to clear the same bar.
+  for (const surface of ['page', 'raised', 'overlay']) {
     for (const name of TEXT_ON_PAGE) check(`${theme} ${name} on surface-${surface}`, t[name], t[`surface-${surface}`], 4.5);
   }
+  // Sunken is the ground under a pressed row, a stepper key and an unselected segment.
+  for (const name of ['text-primary', 'text-secondary']) {
+    check(`${theme} ${name} on surface-sunken`, t[name], t['surface-sunken'], 4.5);
+  }
   check(`${theme} text-on-accent on accent-base`, t['text-on-accent'], t['accent-base'], 4.5);
+  check(`${theme} text-on-danger on danger-base`, t['text-on-danger'], t['danger-base'], 4.5);
   check(`${theme} line-strong on surface-page`, t['line-strong'], t['surface-page'], 3.0);
   check(`${theme} line-focus on surface-page`, t['line-focus'], t['surface-page'], 3.0);
   console.log('');

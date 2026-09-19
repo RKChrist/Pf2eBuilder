@@ -41,7 +41,8 @@
       "$type": "duration",
       "instant": { "$value": "0ms" },
       "quick":   { "$value": "120ms", "$description": "A control answering a tap." },
-      "sheet":   { "$value": "220ms", "$description": "A drawer or breakdown opening." }
+      "sheet":   { "$value": "220ms", "$description": "A drawer or breakdown opening." },
+      "spin":    { "$value": "900ms", "$description": "One revolution of an indeterminate progress indicator. A loop, not a transition, so it is not derived from the transition durations. Reduced motion stops the rotation outright rather than shortening it." }
     },
     "easing": {
       "$type": "cubicBezier",

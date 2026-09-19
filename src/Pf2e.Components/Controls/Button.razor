@@ -1,0 +1,31 @@
+<button @attributes="Attributes"
+        class="pf-btn pf-btn--@(Variant.CssSuffix()) @(Busy ? "pf-btn--busy" : null) @Class"
+        type="@(Type.HtmlValue())"
+        disabled="@(Disabled || Busy)"
+        aria-busy="@(Busy ? "true" : null)"
+        @onclick="OnClick">
+    @if (Busy)
+    {
+        <span class="pf-spinner" aria-hidden="true"></span>
+    }
+    @ChildContent
+</button>
+
+@code {
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter] public ButtonVariant Variant { get; set; } = ButtonVariant.Secondary;
+
+    [Parameter] public ButtonType Type { get; set; } = ButtonType.Button;
+
+    [Parameter] public bool Disabled { get; set; }
+
+    [Parameter] public bool Busy { get; set; }
+
+    [Parameter] public EventCallback<MouseEventArgs> OnClick { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

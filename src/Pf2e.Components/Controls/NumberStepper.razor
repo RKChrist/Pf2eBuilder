@@ -1,0 +1,44 @@
+<div @attributes="Attributes" class="pf-stepper @Class" role="group" aria-label="@Label">
+    <button type="button"
+            class="pf-stepper__btn pf-stepper__btn--minus"
+            aria-label="@DecrementLabel"
+            disabled="@(Disabled || Value <= Min)"
+            @onclick="Decrement"></button>
+    <output class="pf-stepper__value">@Value</output>
+    <button type="button"
+            class="pf-stepper__btn pf-stepper__btn--plus"
+            aria-label="@IncrementLabel"
+            disabled="@(Disabled || Value >= Max)"
+            @onclick="Increment"></button>
+</div>
+
+@code {
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter] public int Value { get; set; }
+
+    [Parameter] public EventCallback<int> ValueChanged { get; set; }
+
+    [Parameter] public int Min { get; set; } = int.MinValue;
+
+    [Parameter] public int Max { get; set; } = int.MaxValue;
+
+    [Parameter] public int Step { get; set; } = 1;
+
+    [Parameter] public bool Disabled { get; set; }
+
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    [Parameter] public string DecrementLabel { get; set; } = "Decrease";
+
+    [Parameter] public string IncrementLabel { get; set; } = "Increase";
+
+    private Task Decrement() => MoveBy(-Step);
+
+    private Task Increment() => MoveBy(Step);
+
+    private Task MoveBy(long delta) => ValueChanged.InvokeAsync((int)Math.Clamp(Value + delta, Min, Max));
+}
