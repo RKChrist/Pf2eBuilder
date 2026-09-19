@@ -10,8 +10,6 @@ public sealed class RulesDbContext(DbContextOptions<RulesDbContext> options)
     public DbSet<RuleRecord> RuleRecords => Set<RuleRecord>();
     public DbSet<SeedState> SeedState => Set<SeedState>();
 
-    public Task<int> SaveChangesAsync(CancellationToken ct = default) => base.SaveChangesAsync(ct);
-
     protected override void OnModelCreating(ModelBuilder model)
     {
         model.ApplyConfigurationsFromAssembly(typeof(RulesDbContext).Assembly);
