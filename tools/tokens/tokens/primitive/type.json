@@ -42,7 +42,8 @@
       "instant": { "$value": "0ms" },
       "quick":   { "$value": "120ms", "$description": "A control answering a tap." },
       "sheet":   { "$value": "220ms", "$description": "A drawer or breakdown opening." },
-      "spin":    { "$value": "900ms", "$description": "One revolution of an indeterminate progress indicator. A loop, not a transition, so it is not derived from the transition durations. Reduced motion stops the rotation outright rather than shortening it." }
+      "spin":    { "$value": "900ms", "$description": "One revolution of an indeterminate progress indicator. A loop, not a transition, so it is not derived from the transition durations. Reduced motion stops the rotation outright rather than shortening it." },
+      "hold":    { "$value": "600ms", "$description": "How long a destructive action must be held before it fires. A delay, not an animation: reduced motion must not shorten it, or the guard against a mid-session mis-tap disappears for the people who set that preference." }
     },
     "easing": {
       "$type": "cubicBezier",

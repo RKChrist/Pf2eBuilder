@@ -25,6 +25,14 @@
     "primary":    { "$value": "56px", "$description": "Actions taken repeatedly mid-session, one-handed." },
     "separation": { "$value": "8px",  "$description": "Minimum gap between two adjacent tap targets so a mis-tap needs real travel." }
   },
+  "control": {
+    "$type": "dimension",
+    "$description": "Sizes that change with the pointer in use. The hit box is always tap.min; only the drawn mark and the track shrink, so a fine pointer gets a precise mark without the target ever going under the floor.",
+    "thumb-coarse": { "$value": "{tap.min}", "$description": "Slider thumb mark under a finger. Equal to the tap floor, because here the mark is the target." },
+    "thumb-fine":   { "$value": "20px",      "$description": "Slider thumb mark under a mouse. Small enough to point at a single value on a twenty-step scale." },
+    "track-coarse": { "$value": "14px",      "$description": "Slider track under a finger. Thick enough to aim at when the thumb is under the fingertip." },
+    "track-fine":   { "$value": "6px" }
+  },
   "layout": {
     "$type": "dimension",
     "viewport-min":   { "$value": "320px", "$description": "Smallest phone we lay out for." },
@@ -32,7 +40,8 @@
     "content-max":    { "$value": "560px", "$description": "Caps line length when a large phone or tablet is used." },
     "gutter":         { "$value": "16px" },
     "bottom-bar":     { "$value": "64px", "$description": "Primary navigation sits in the thumb arc, not the top of the screen." },
-    "thumb-reach":    { "$value": "62%",  "$description": "Fraction of viewport height from the bottom that a thumb covers one-handed. Primary actions live inside it." }
+    "thumb-reach":    { "$value": "62%",  "$description": "Fraction of viewport height from the bottom that a thumb covers one-handed. Primary actions live inside it." },
+    "safe-bottom":    { "$value": "env(safe-area-inset-bottom)", "$description": "Height of the home indicator strip. A token rather than the raw function so every bottom-edge surface reserves the same room and one grep finds them all." }
   },
   "border": {
     "$type": "dimension",

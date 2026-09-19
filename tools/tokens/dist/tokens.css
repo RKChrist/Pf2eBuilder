@@ -51,6 +51,10 @@
   --color-violet-400: #B48ED2;
   --color-violet-500: #9668B8;
   --color-violet-600: #7A4B9E;
+  --control-thumb-coarse: 44px; /** Slider thumb mark under a finger. Equal to the tap floor, because here the mark is the target. */
+  --control-thumb-fine: 20px; /** Slider thumb mark under a mouse. Small enough to point at a single value on a twenty-step scale. */
+  --control-track-coarse: 14px; /** Slider track under a finger. Thick enough to aim at when the thumb is under the fingertip. */
+  --control-track-fine: 6px;
   --danger-base: #8E2323;
   --danger-press: #6E1A1A;
   --font-family-data: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, sans-serif; /** Everything numeric and structural. Engineered to disambiguate 0/O, 1/l/I and 6/8, which is the exact failure a character sheet must not have. */
@@ -76,12 +80,14 @@
   --layout-bottom-bar: 64px; /** Primary navigation sits in the thumb arc, not the top of the screen. */
   --layout-content-max: 560px; /** Caps line length when a large phone or tablet is used. */
   --layout-gutter: 16px;
+  --layout-safe-bottom: env(safe-area-inset-bottom); /** Height of the home indicator strip. A token rather than the raw function so every bottom-edge surface reserves the same room and one grep finds them all. */
   --layout-thumb-reach: 62%; /** Fraction of viewport height from the bottom that a thumb covers one-handed. Primary actions live inside it. */
   --layout-viewport-min: 320px; /** Smallest phone we lay out for. */
   --layout-viewport-target: 390px; /** Design width. Players are on phones; there is no desktop target. */
   --line-focus: #166E7C;
   --line-strong: #5A7186;
   --line-subtle: #D2DCE4;
+  --motion-duration-hold: 600ms; /** How long a destructive action must be held before it fires. A delay, not an animation: reduced motion must not shorten it, or the guard against a mid-session mis-tap disappears for the people who set that preference. */
   --motion-duration-instant: 0ms;
   --motion-duration-quick: 120ms; /** A control answering a tap. */
   --motion-duration-sheet: 220ms; /** A drawer or breakdown opening. */
