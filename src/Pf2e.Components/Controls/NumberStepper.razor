@@ -4,7 +4,7 @@
             aria-label="@DecrementLabel"
             disabled="@(Disabled || Value <= Min)"
             @onclick="Decrement"></button>
-    <span class="pf-stepper__value" aria-live="polite">@Value</span>
+    <output class="pf-stepper__value">@Value</output>
     <button type="button"
             class="pf-stepper__btn pf-stepper__btn--plus"
             aria-label="@IncrementLabel"

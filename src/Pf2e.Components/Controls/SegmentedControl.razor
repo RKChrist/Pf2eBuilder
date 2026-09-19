@@ -6,7 +6,7 @@
         <button type="button"
                 class="pf-segmented__option"
                 aria-pressed="@(IsSelected(option) ? "true" : "false")"
-                disabled="@Disabled"
+                disabled="@(Disabled || option.Disabled)"
                 @onclick="() => ValueChanged.InvokeAsync(option.Value)">@option.Text</button>
     }
 </div>

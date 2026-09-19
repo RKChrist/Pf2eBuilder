@@ -1,10 +1,10 @@
 <section @attributes="Attributes" class="pf-card @Class">
     @if (!string.IsNullOrEmpty(Title) || HeadContent is not null)
     {
-        <div class="pf-card__head">
+        <header class="pf-card__head">
             <h2 class="pf-card__title">@Title</h2>
             @HeadContent
-        </div>
+        </header>
     }
     @if (ListContent is not null)
     {

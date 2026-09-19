@@ -1,18 +1,13 @@
-<div @attributes="Attributes"
-     class="pf-sheet @Class"
-     hidden="@(!Open)"
-     role="dialog"
-     aria-modal="true"
-     aria-labelledby="@_titleId">
+<div @attributes="Attributes" class="pf-sheet @Class" hidden="@(!Open)">
     @if (Open)
     {
         <div class="pf-sheet__scrim" @onclick="Close"></div>
-        <div class="pf-sheet__panel">
+        <div class="pf-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="@_titleId">
             <div class="pf-sheet__grab" aria-hidden="true"></div>
-            <div class="pf-sheet__head">
+            <header class="pf-sheet__head">
                 <h2 class="pf-sheet__title" id="@_titleId">@Title</h2>
                 <button type="button" class="pf-sheet__close" aria-label="@CloseLabel" @onclick="Close"></button>
-            </div>
+            </header>
             <div class="pf-sheet__body">@ChildContent</div>
         </div>
     }

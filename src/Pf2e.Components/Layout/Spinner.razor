@@ -1,4 +1,14 @@
-<span @attributes="Attributes" class="pf-spinner @Class" role="status" aria-label="@Label"></span>
+@if (ShowLabel)
+{
+    <div @attributes="Attributes" class="pf-loading @Class">
+        <span class="pf-spinner" role="status" aria-label="@Label"></span>
+        <span>@Label</span>
+    </div>
+}
+else
+{
+    <span @attributes="Attributes" class="pf-spinner @Class" role="status" aria-label="@Label"></span>
+}
 
 @code {
     [Parameter(CaptureUnmatchedValues = true)]
@@ -7,4 +17,6 @@
     [Parameter] public string? Class { get; set; }
 
     [Parameter] public string Label { get; set; } = "Loading";
+
+    [Parameter] public bool ShowLabel { get; set; }
 }

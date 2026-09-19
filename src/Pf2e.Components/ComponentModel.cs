@@ -12,7 +12,7 @@ public enum ProficiencyRank { Untrained, Trained, Expert, Master, Legendary }
 
 public enum ModifierKind { Status, Circumstance, Item, Proficiency, Untyped }
 
-public sealed record ChoiceOption<TValue>(TValue Value, string Text);
+public sealed record ChoiceOption<TValue>(TValue Value, string Text, bool Disabled = false);
 
 public static class ComponentModel
 {
