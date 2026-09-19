@@ -9,7 +9,20 @@ Node 24 ships a WebSocket client, so it needs no Puppeteer, no Playwright and no
 
 It reports the viewport, every navigation item's box, whether any sits offscreen, whether the
 page scrolls sideways, and the smallest tap target on the page. The exit code is the number of
-problems, so it works as a check.
+problems, so it works as a check. A strip that scrolls sideways on purpose, such as the trait
+filter, may hold content past the edge; anything else past it is a problem.
+
+It opens a tab of its own and closes it afterwards, so two runs against one Chrome never drive
+each other's page. It waits a second after the client renders, `SETTLE_MS` to change, because
+counts and lists land after the navigation does and move the layout being measured.
+
+A state no URL reaches, such as a category's records or the search dropdown open, is reached with
+`ACT`, page script run before measuring. It may await, and `wait(ms)` is in scope:
+
+    ACT="document.querySelector('.pf-bottomnav__item:nth-child(2)').click(); await wait(500);
+         document.querySelector('.categories .category').click(); await wait(1500);"       node tools/ui-check/measure.mjs http://localhost:5173/ 320 740
+
+`SCHEME=dark` emulates the dark colour scheme for the run.
 
 ## Why it exists
 
@@ -48,10 +61,21 @@ promise, which is the half `measure.mjs` cannot see:
 
     dotnet run --project src/Pf2e.Api
     dotnet run --project src/Pf2e.Client --launch-profile http
-    node tools/ui-check/verify-client.mjs
+    node tools/ui-check/verify-client.mjs [client url] [api url]
 
-31 assertions covering the search debounce (six keystrokes, one request, carrying the last one),
-paging, the dual-thumb level range and that every row it returns is inside it, the detail sheet
+It launches its own headless Chrome on port 9333, or `CDP_LAUNCH_PORT` when another checkout is
+running the same check at once.
+
+98 assertions. The header search: six keystrokes make one search and one count carrying the
+last one, results open under the field with the exact name first and per-category counts, arrows
+and Enter pick a match, Escape closes the list and keeps the words, Enter reaches `/search`, and
+`/` focuses the field. The browse screens: the board's blurb, counts and section headings, a
+category's total, glance lines on its rows, no COMMON badge, and filters folded behind their
+toggle on a phone. Traits: a chip opens the trait sheet without opening its row, the sheet counts
+where the trait is found, a place opens that category filtered by it, back closes it, and no
+control sits inside another. The record sheet: its kind and level, its gates, its source, a named
+record that opens from it with back returning. And the older ones: the category filter's
+debounce, paging, the dual-thumb level range and that every row it returns is inside it, the detail sheet
 and its title, the deep link that restores a record, back and Escape both closing the sheet
 rather than leaving the app, the conditions screen, and a failure whose retry recovers. The
 failing service is simulated by blocking the API through the protocol, so nothing has to be

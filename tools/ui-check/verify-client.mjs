@@ -1,6 +1,7 @@
 // Drives the running client in a real Chrome and asserts the behaviour the screens promise:
-// the search debounce, the deep link, back and Escape closing the sheet, paging, the level
-// range, and a failure with a retry that recovers. Requests are blocked through the protocol
+// the header search and its results page, the explained browse screens, trait sheets, the
+// record sheet and the records it names, the search debounce, the deep link, back and Escape
+// closing a sheet, paging, the level range, and a failure with a retry that recovers. Requests are blocked through the protocol
 // rather than by stopping the API, so the failure arm is exercised without a second terminal.
 //
 //   dotnet run --project src/Pf2e.Api

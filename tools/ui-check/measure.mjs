@@ -6,13 +6,17 @@
 // Set INJECT_CSS to a stylesheet string to reinstate a rule before measuring. That is how a
 // layout fix is shown to matter: measure once as shipped, once with the old rule put back, and
 // compare. Exit code is the number of problems found, so this works as a check.
+//
+// Set ACT to page script to reach a state first, such as a category's records:
+//   ACT="document.querySelector('.pf-bottomnav__item:nth-child(2)').click(); await wait(500);
+//        document.querySelector('.categories .category').click(); await wait(1500);"
 
 const [url = 'http://localhost:5173/', width = '390', height = '844'] = process.argv.slice(2);
 const port = process.env.CDP_PORT ?? '9222';
 
-const targets = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
-const target = targets.find(t => t.type === 'page');
-if (!target) throw new Error('no page target; start chrome with --remote-debugging-port');
+// A tab of its own, closed afterwards, so two runs against one Chrome never drive each other's page.
+const target = await (await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, { method: 'PUT' })).json();
+if (!target.webSocketDebuggerUrl) throw new Error('could not open a tab; start chrome with --remote-debugging-port');
 
 const socket = new WebSocket(target.webSocketDebuggerUrl);
 await new Promise(resolve => socket.addEventListener('open', resolve, { once: true }));
@@ -51,7 +55,18 @@ await send('Page.enable');
 await send('Emulation.setDeviceMetricsOverride', {
   width: Number(width), height: Number(height), deviceScaleFactor: 1, mobile: true,
 });
+if (process.env.SCHEME) {
+  await send('Emulation.setEmulatedMedia', {
+    features: [{ name: 'prefers-color-scheme', value: process.env.SCHEME }],
+  });
+}
 await send('Page.navigate', { url });
+for (let tries = 0; tries < 100; tries++) {
+  const now = await send('Runtime.evaluate', { expression: 'location.href + " " + document.readyState', returnByValue: true });
+  const [href, state] = (now.result?.result?.value ?? '').split(' ');
+  if (href !== 'about:blank' && state !== 'loading') break;
+  await new Promise(resolve => setTimeout(resolve, 100));
+}
 
 // Blazor boots its runtime before anything renders, so wait for real nodes rather than for load.
 const booted = await evaluate(`new Promise(done => {
@@ -71,6 +86,20 @@ if (process.env.INJECT_CSS) {
     return true;
   })()`);
 }
+
+// ACT is page script run before measuring, for a state no URL reaches: a category's records,
+// or the search dropdown open. It may await; `wait(ms)` is in scope.
+if (process.env.ACT) {
+  await evaluate(`(async () => {
+    const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+    ${process.env.ACT}
+    return true;
+  })()`);
+}
+
+// Data arrives after the navigation renders, and a count or a list that lands later can change
+// the layout being measured.
+await new Promise(resolve => setTimeout(resolve, Number(process.env.SETTLE_MS ?? 1000)));
 
 const report = await evaluate(`(() => {
   const bar = document.querySelector('nav, [role=navigation]');
@@ -95,7 +124,13 @@ const report = await evaluate(`(() => {
     .filter(el => {
       const box = el.getBoundingClientRect();
       if (box.width === 0 || box.height === 0) return false;
-      return box.right > viewport + 1 || box.left < -1;
+      if (box.right <= viewport + 1 && box.left >= -1) return false;
+      // A strip that scrolls sideways on purpose, such as the trait filter or the search scopes,
+      // holds its content past the edge by design; verify-client.mjs draws the same line.
+      for (let parent = el.parentElement; parent; parent = parent.parentElement) {
+        if (['auto', 'scroll'].includes(getComputedStyle(parent).overflowX)) return false;
+      }
+      return true;
     })
     .slice(0, 12)
     .map(el => ({
@@ -140,4 +175,6 @@ if (process.env.SHOT) {
 }
 
 socket.close();
-process.exit(offscreen.length + report.clipped.length + (scrollsSideways ? 1 : 0) + (tooSmall ? 1 : 0));
+await fetch(`http://127.0.0.1:${port}/json/close/${target.id}`);
+// Not process.exit: exiting while the socket is still closing trips a libuv assertion on Windows.
+process.exitCode = offscreen.length + report.clipped.length + (scrollsSideways ? 1 : 0) + (tooSmall ? 1 : 0);
