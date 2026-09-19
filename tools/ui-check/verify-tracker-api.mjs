@@ -120,6 +120,14 @@ const junk = await send('POST', `/tables/${code}/characters`, { pathbuilder: 'pa
 check('a bad paste is a 400', junk.status, 400);
 check('and reads as a sentence', junk.body.title.includes('Pathbuilder'), true);
 
+const badCode = await send('POST', '/tables/no/characters', { pathbuilder: readFileSync(fixture, 'utf8') });
+check('a code that is not a code is refused before the parser', badCode.status, 400);
+const noSelector = await send('PUT', `/tables/${code}/characters/${id}/effects/${crypto.randomUUID()}`,
+  { effect: { name: 'Nothing', kind: 'Custom', key: null, value: 0, duration: null,
+              modifiers: [{ type: 'Status', value: 1, applies: [] }] } });
+check('a modifier that applies to nothing is refused', noSelector.status, 400);
+check('and the refusal names the field', noSelector.body.errors.map((e) => e.field), ['Effect.Modifiers[0].Applies']);
+
 const unknown = await send('GET', '/tables/NOBODY');
 check('an unknown code is a table waiting to start', [unknown.status, unknown.body.exists], [200, false]);
 
