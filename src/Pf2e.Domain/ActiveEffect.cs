@@ -51,7 +51,7 @@ public abstract record EffectSource
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Not an effect source kind."),
     };
 
-    /// <summary>One of the seeded effects in <see cref="Conditions.All"/>, resolved by key so a
+    /// <summary>One of the effects in <see cref="Effects.All"/>, resolved by key so a
     /// scaling condition always reflects its current value.</summary>
     public sealed record Seeded(string Key) : EffectSource;
 
@@ -97,5 +97,5 @@ public sealed record ActiveEffect(
     /// since dropped, which is skipped rather than thrown on so one stale row cannot break a
     /// whole table.</summary>
     public EffectDefinition? Definition =>
-        Source is EffectSource.Seeded seeded ? Conditions.Find(seeded.Key) : null;
+        Source is EffectSource.Seeded seeded ? Effects.Find(seeded.Key) : null;
 }

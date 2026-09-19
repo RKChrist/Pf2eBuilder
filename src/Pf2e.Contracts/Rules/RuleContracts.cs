@@ -51,6 +51,9 @@ public sealed record TraitCount(string Trait, int Count, string? Group);
 public sealed record ConditionSummary(
     string Key,
     string Name,
+    /// <summary>"Condition" or "Buff". A picker that offers a raised shield beside frightened
+    /// without saying which is which makes the table read every row to find one.</summary>
+    string Kind,
     bool HasValue,
     bool Verified,
     IReadOnlyList<ModifierSummary> Modifiers,

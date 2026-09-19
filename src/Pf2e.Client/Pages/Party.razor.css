@@ -304,8 +304,31 @@
     min-height: var(--tap-min);
 }
 
+/* The name and what it does, stacked, because "+1 status to attack rolls, Damage" does not fit
+   beside a stepper on a phone and is the half that answers the question. */
 .condition__name {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
     font-size: var(--font-size-data);
+    min-width: 0;
+}
+
+.condition__reads {
+    font-size: var(--font-size-chip);
+    color: var(--text-muted);
+    text-wrap: pretty;
+}
+
+.effects__kind {
+    margin: var(--space-5) 0 0;
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-muted);
+}
+
+.effects__kind:first-of-type {
+    margin-top: var(--space-4);
 }
 
 .states--none {

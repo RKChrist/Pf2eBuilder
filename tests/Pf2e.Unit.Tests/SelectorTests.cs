@@ -29,6 +29,14 @@ public class SelectorTests
         Assert.Equal("Stealth", Selector.Exactly(StatKind.Skill, "Stealth").Describe());
     }
 
+    [Fact]
+    public void AnUnnamedSkillSelectorSaysItIsEveryOfThem()
+    {
+        // It sits in a list beside "attack rolls" and "saving throws" on the effect picker, and
+        // the singular "Skill" there reads as one particular skill nobody named.
+        Assert.Equal("skills", Selector.Exactly(StatKind.Skill).Describe());
+    }
+
     [Theory]
     [InlineData("Acrobatics", AttributeKind.Dexterity)]
     [InlineData("Athletics", AttributeKind.Strength)]

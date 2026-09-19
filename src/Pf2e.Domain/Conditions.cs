@@ -21,6 +21,31 @@ public abstract record ModifierTemplate(ModifierType Type, ImmutableArray<Select
     {
         public override Modifier For(string name, int value) => new(name, Type, -Penalty, Applies);
     }
+
+    /// <summary>A bonus that does not vary, such as the shield spell's +1 to armour class.</summary>
+    public sealed record Bonus(ModifierType Type, int Value, ImmutableArray<Selector> Applies)
+        : ModifierTemplate(Type, Applies)
+    {
+        public override Modifier For(string name, int value) => new(name, Type, Value, Applies);
+    }
+
+    /// <summary>A bonus equal to the effect's value, such as a raised buckler giving 1 where a
+    /// raised tower shield gives 4. The value is signed into the name because a breakdown that
+    /// reads "Cover" leaves the reader asking which cover.</summary>
+    public sealed record ScalingBonus(ModifierType Type, ImmutableArray<Selector> Applies)
+        : ModifierTemplate(Type, Applies)
+    {
+        public override Modifier For(string name, int value) =>
+            new($"{name} +{value}", Type, value, Applies);
+    }
+}
+
+/// <summary>Whether an effect reads as something done to you or something done for you. The
+/// stacking rule does not care; a picker that offers both in one undifferentiated list does.</summary>
+public enum EffectKind
+{
+    Condition,
+    Buff,
 }
 
 /// <summary>
@@ -35,7 +60,14 @@ public sealed record EffectDefinition(
     bool HasValue,
     ImmutableArray<ModifierTemplate> Templates,
     string SourceRef,
-    bool Verified = false)
+    bool Verified = false,
+    EffectKind Kind = EffectKind.Condition,
+    // The seeded category this effect's printed rule lives in, so a link to it can be found.
+    // Conditions are their own category; Raise a Shield is an action and bless is a spell.
+    string RuleCategory = "condition",
+    // The seeded record's name, when the effect is not called what the record is called. Cover
+    // is the effect; Take Cover is the action the book prints it under.
+    string? RuleName = null)
 {
     public ImmutableArray<Modifier> ModifiersAt(int value = 0)
     {

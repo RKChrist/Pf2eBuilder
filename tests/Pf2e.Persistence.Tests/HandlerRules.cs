@@ -13,16 +13,41 @@ namespace Pf2e.Persistence.Tests;
 public class HandlerRules(SeededDatabase database) : IClassFixture<SeededDatabase>
 {
     [Fact]
-    public async Task EveryCodedConditionResolvesToItsSeededRule()
+    public async Task EveryCodedEffectResolvesToItsSeededRule()
     {
         await using var db = database.NewContext();
 
-        var conditions = await new GetConditionsHandler(db).Handle(new GetConditions(), default);
+        var effects = await new GetConditionsHandler(db).Handle(new GetConditions(), default);
 
-        Assert.Equal(Conditions.All.Length, conditions.Count);
-        var unlinked = conditions.Where(c => c.SourceUrl is null).Select(c => c.Key).ToArray();
-        Assert.True(unlinked.Length == 0, $"conditions with no rule link: {string.Join(", ", unlinked)}");
-        Assert.All(conditions, c => Assert.StartsWith("https://2e.aonprd.com/", c.SourceUrl!));
+        Assert.Equal(Effects.All.Length, effects.Count);
+        var unlinked = effects.Where(c => c.SourceUrl is null).Select(c => c.Key).ToArray();
+        Assert.True(unlinked.Length == 0, $"effects with no rule link: {string.Join(", ", unlinked)}");
+        Assert.All(effects, c => Assert.StartsWith("https://2e.aonprd.com/", c.SourceUrl!));
+    }
+
+    [Fact]
+    public async Task ABuffLinksToTheRuleItIsPrintedInRatherThanToAnItemOfTheSameName()
+    {
+        await using var db = database.NewContext();
+
+        var effects = await new GetConditionsHandler(db).Handle(new GetConditions(), default);
+
+        var shield = effects.Single(e => e.Key == "raise-a-shield");
+        Assert.Equal("Buff", shield.Kind);
+        Assert.True(shield.HasValue, "a buckler is 1 and a tower shield is 4");
+        Assert.Contains("Actions.aspx", shield.SourceUrl);
+
+        // "Shield" is a spell and also a piece of equipment. The spell grants the circumstance
+        // bonus, so the link has to reach the spell and not a steel shield's shopping entry.
+        var spell = effects.Single(e => e.Key == "shield-spell");
+        Assert.Contains("Spells.aspx", spell.SourceUrl);
+
+        // Cover is the effect and Take Cover is the action it is printed under.
+        Assert.Contains("Actions.aspx", effects.Single(e => e.Key == "cover").SourceUrl);
+
+        Assert.All(effects.Where(e => e.Kind == "Buff"),
+            e => Assert.All(e.Modifiers, m => Assert.True(m.Value > 0, $"{e.Name} gave {m.Value}")));
+        Assert.Equal("Condition", effects.Single(e => e.Key == "frightened").Kind);
     }
 
     [Fact]

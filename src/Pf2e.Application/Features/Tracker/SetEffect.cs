@@ -47,7 +47,7 @@ public sealed class EffectSpecValidator : AbstractValidator<EffectSpec>
         When(e => e.Kind == "Seeded", () =>
         {
             RuleFor(e => e.Key).NotEmpty()
-                               .Must(key => Domain.Conditions.Find(key!) is not null)
+                               .Must(key => Domain.Effects.Find(key!) is not null)
                                .WithMessage("No seeded effect has that key.");
             RuleFor(e => e.Value).Must(SuitsItsDefinition)
                                  .WithMessage($"An effect that carries a value needs one from 1 to {MaxValue}, " +
@@ -76,7 +76,7 @@ public sealed class EffectSpecValidator : AbstractValidator<EffectSpec>
     }
 
     static bool SuitsItsDefinition(EffectSpec spec, int value) =>
-        Domain.Conditions.Find(spec.Key ?? string.Empty) is not { } definition
+        Domain.Effects.Find(spec.Key ?? string.Empty) is not { } definition
         || (definition.HasValue ? value is >= 1 and <= MaxValue : value == 0);
 }
 

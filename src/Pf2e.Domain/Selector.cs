@@ -23,6 +23,10 @@ public abstract record Selector
 
     public static Selector SavingThrows { get; } = new SavingThrowSelector();
 
+    /// <summary>The wording "attack rolls", which covers a spell attack as much as a weapon
+    /// one. A bless that missed the wizard would be the wrong bless.</summary>
+    public static Selector AttackRolls { get; } = new AttackRollSelector();
+
     public static Selector Speeds { get; } = new SpeedSelector();
 
     static readonly Dictionary<StatKind, string> KindNames = new()
@@ -32,8 +36,8 @@ public abstract record Selector
         [StatKind.Reflex] = "Reflex",
         [StatKind.Will] = "Will",
         [StatKind.Perception] = "Perception",
-        [StatKind.Attack] = "Attack",
-        [StatKind.Damage] = "Damage",
+        [StatKind.Attack] = "weapon attacks",
+        [StatKind.Damage] = "damage",
         [StatKind.Skill] = "Skill",
         [StatKind.ClassDc] = "Class DC",
         [StatKind.SpellAttack] = "Spell Attack",
@@ -46,7 +50,10 @@ public abstract record Selector
         public override bool Matches(StatTarget target) =>
             Kind == target.Kind && (SkillName is null || SkillName.Equals(target.SkillName, StringComparison.OrdinalIgnoreCase));
 
-        public override string Describe() => SkillName ?? KindNames[Kind];
+        // A skill selector with no name is every skill, and "Skill" in a list that already reads
+        // "attack rolls, Perception, saving throws" is the one word that does not say so.
+        public override string Describe() =>
+            SkillName ?? (Kind is StatKind.Skill ? "skills" : KindNames[Kind]);
     }
 
     sealed record AttributeSelector(AttributeKind Attribute) : Selector
@@ -61,6 +68,14 @@ public abstract record Selector
         public override bool Matches(StatTarget target) => target.IsCheck || target.IsDc;
 
         public override string Describe() => "all checks and DCs";
+    }
+
+    sealed record AttackRollSelector : Selector
+    {
+        public override bool Matches(StatTarget target) =>
+            target.Kind is StatKind.Attack or StatKind.SpellAttack;
+
+        public override string Describe() => "attack rolls";
     }
 
     sealed record SavingThrowSelector : Selector
