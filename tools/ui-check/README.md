@@ -7,8 +7,9 @@ Node 24 ships a WebSocket client, so it needs no Puppeteer, no Playwright and no
     dotnet run --project src/Pf2e.Client --launch-profile http
     node tools/ui-check/measure.mjs http://localhost:5173/ 320 740
 
-It reports the viewport, every navigation item's box, whether any sits offscreen, whether the
-page scrolls sideways, and the smallest tap target on the page. The exit code is the number of
+It reports the viewport, every item of the app's own bar and whether any sits offscreen, whether
+the page scrolls sideways, and the smallest tap target on the page, naming the element when it is
+under the floor. The exit code is the number of
 problems, so it works as a check. A strip that scrolls sideways on purpose, such as the trait
 filter, may hold content past the edge; anything else past it is a problem.
 
@@ -66,7 +67,7 @@ promise, which is the half `measure.mjs` cannot see:
 It launches its own headless Chrome on port 9333, or `CDP_LAUNCH_PORT` when another checkout is
 running the same check at once.
 
-98 assertions. The header search: six keystrokes make one search and one count carrying the
+154 assertions. The header search: six keystrokes make one search and one count carrying the
 last one, results open under the field with the exact name first and per-category counts, arrows
 and Enter pick a match, Escape closes the list and keeps the words, Enter reaches `/search`, and
 `/` focuses the field. The browse screens: the board's blurb, counts and section headings, a
@@ -79,7 +80,15 @@ debounce, paging, the dual-thumb level range and that every row it returns is in
 and its title, the deep link that restores a record, back and Escape both closing the sheet
 rather than leaving the app, the conditions screen, and a failure whose retry recovers. The
 failing service is simulated by blocking the API through the protocol, so nothing has to be
-stopped and restarted. It also measures the records screen at 320px under touch emulation, which
+stopped and restarted. The rest were added with the full-width layout of design/004: a list's
+own address, which refresh restores and back leaves for the board; a level filter bounded by the
+category, called Rank for spells, absent where nothing has a level, with no tick marks; the trait
+facet, counted across the whole category and most common first, with any other trait found by
+typing; badges for yes-or-no fields and nothing for no; links only for values that name a
+record, decided without a request of the sheet's own; speed in feet; heightening in words; an
+unknown record that offers Close and a failed one that offers Try again; conditions under the
+same heading as every list; and on a laptop, the filter column held in view beside a list that
+reads each record on one line, and board columns at 1024, 1440 and 1920. It also measures the records screen at 320px under touch emulation, which
 `measure.mjs` cannot reach because that screen is three taps in rather than a URL.
 
 ## Slider and gesture checks

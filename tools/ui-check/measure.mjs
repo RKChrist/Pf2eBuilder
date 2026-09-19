@@ -102,7 +102,8 @@ if (process.env.ACT) {
 await new Promise(resolve => setTimeout(resolve, Number(process.env.SETTLE_MS ?? 1000)));
 
 const report = await evaluate(`(() => {
-  const bar = document.querySelector('nav, [role=navigation]');
+  // The app's own bar first: a page can hold other navs, such as a pager or a strip of scopes.
+  const bar = document.querySelector('.pf-bottomnav') ?? document.querySelector('nav, [role=navigation]');
   const viewport = document.documentElement.clientWidth;
   const items = [...bar.querySelectorAll('button, a')].map(item => {
     const box = item.getBoundingClientRect();
@@ -115,8 +116,10 @@ const report = await evaluate(`(() => {
     };
   });
   const targets = [...document.querySelectorAll('button, a, input, select')]
-    .map(el => el.getBoundingClientRect())
-    .filter(box => box.width > 0 && box.height > 0);
+    .map(el => ({ el, box: el.getBoundingClientRect() }))
+    .filter(({ box }) => box.width > 0 && box.height > 0);
+  const smallest = targets.reduce((worst, target) =>
+    Math.min(target.box.width, target.box.height) < Math.min(worst.box.width, worst.box.height) ? target : worst);
 
   // Content clipped by an ancestor's overflow never widens scrollWidth, so it has to be found
   // element by element. Fixed bars legitimately span the viewport, hence the tolerance.
@@ -146,7 +149,9 @@ const report = await evaluate(`(() => {
     scrollWidth: document.documentElement.scrollWidth,
     items,
     clipped,
-    smallestTarget: Math.round(Math.min(...targets.map(b => Math.min(b.width, b.height)))),
+    smallestTarget: Math.round(Math.min(smallest.box.width, smallest.box.height)),
+    smallestCulprit: [smallest.el.tagName.toLowerCase(), ...smallest.el.classList].join('.')
+      + ' "' + (smallest.el.textContent ?? '').trim().slice(0, 30) + '"',
   };
 })()`);
 
@@ -158,7 +163,7 @@ console.log(`viewport ${report.viewport}  bar ${report.barWidth}  nav items ${re
 console.log(report.items.map(i => `${i.label} ${i.left}..${i.right}`).join('  |  '));
 console.log(`offscreen nav items: ${offscreen.length ? offscreen.join(', ') : 'none'}`);
 console.log(`horizontal scroll: ${scrollsSideways}`);
-console.log(`smallest tap target: ${report.smallestTarget}px${tooSmall ? '  BELOW THE 44px FLOOR' : ''}`);
+console.log(`smallest tap target: ${report.smallestTarget}px${tooSmall ? `  BELOW THE 44px FLOOR on ${report.smallestCulprit}` : ''}`);
 console.log(`elements past the right edge: ${report.clipped.length}`);
 for (const el of report.clipped) {
   console.log(`  ${el.tag}.${el.cls} right=${el.right}  "${el.text}"`);
