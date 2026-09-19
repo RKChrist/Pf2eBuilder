@@ -1,6 +1,6 @@
 {
   "index": "aon-20260902-190924",
-  "pulledAtUtc": "2026-09-18T16:06:26Z",
+  "pulledAtUtc": "2026-09-19T09:19:06Z",
   "endpoint": "https://elasticsearch.aonprd.com/aon/_search",
   "pageSize": 500,
   "sort": "id.keyword:asc",
@@ -175,6 +175,342 @@
       "indexed": 50,
       "written": 33,
       "droppedAsLegacy": 17,
+      "legacyTargetMissing": 0
+    },
+    "lesson": {
+      "indexed": 31,
+      "written": 19,
+      "droppedAsLegacy": 12,
+      "legacyTargetMissing": 0
+    },
+    "bloodline": {
+      "indexed": 28,
+      "written": 18,
+      "droppedAsLegacy": 10,
+      "legacyTargetMissing": 0
+    },
+    "arcane-school": {
+      "indexed": 27,
+      "written": 27,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "patron": {
+      "indexed": 27,
+      "written": 17,
+      "droppedAsLegacy": 10,
+      "legacyTargetMissing": 0
+    },
+    "eidolon": {
+      "indexed": 26,
+      "written": 26,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "mystery": {
+      "indexed": 22,
+      "written": 12,
+      "droppedAsLegacy": 10,
+      "legacyTargetMissing": 0
+    },
+    "ikon": {
+      "indexed": 21,
+      "written": 21,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "implement": {
+      "indexed": 19,
+      "written": 10,
+      "droppedAsLegacy": 9,
+      "legacyTargetMissing": 0
+    },
+    "epithet": {
+      "indexed": 18,
+      "written": 18,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "instinct": {
+      "indexed": 16,
+      "written": 10,
+      "droppedAsLegacy": 6,
+      "legacyTargetMissing": 0
+    },
+    "hybrid-study": {
+      "indexed": 15,
+      "written": 15,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "apparition": {
+      "indexed": 14,
+      "written": 14,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "cause": {
+      "indexed": 13,
+      "written": 7,
+      "droppedAsLegacy": 6,
+      "legacyTargetMissing": 0
+    },
+    "druidic-order": {
+      "indexed": 13,
+      "written": 9,
+      "droppedAsLegacy": 4,
+      "legacyTargetMissing": 0
+    },
+    "conscious-mind": {
+      "indexed": 12,
+      "written": 6,
+      "droppedAsLegacy": 6,
+      "legacyTargetMissing": 0
+    },
+    "style": {
+      "indexed": 11,
+      "written": 6,
+      "droppedAsLegacy": 5,
+      "legacyTargetMissing": 0
+    },
+    "way": {
+      "indexed": 11,
+      "written": 11,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "arcane-thesis": {
+      "indexed": 10,
+      "written": 5,
+      "droppedAsLegacy": 5,
+      "legacyTargetMissing": 0
+    },
+    "racket": {
+      "indexed": 10,
+      "written": 6,
+      "droppedAsLegacy": 4,
+      "legacyTargetMissing": 0
+    },
+    "methodology": {
+      "indexed": 9,
+      "written": 5,
+      "droppedAsLegacy": 4,
+      "legacyTargetMissing": 0
+    },
+    "muse": {
+      "indexed": 9,
+      "written": 5,
+      "droppedAsLegacy": 4,
+      "legacyTargetMissing": 0
+    },
+    "research-field": {
+      "indexed": 8,
+      "written": 4,
+      "droppedAsLegacy": 4,
+      "legacyTargetMissing": 0
+    },
+    "subconscious-mind": {
+      "indexed": 8,
+      "written": 4,
+      "droppedAsLegacy": 4,
+      "legacyTargetMissing": 0
+    },
+    "hunters-edge": {
+      "indexed": 7,
+      "written": 4,
+      "droppedAsLegacy": 3,
+      "legacyTargetMissing": 0
+    },
+    "innovation": {
+      "indexed": 7,
+      "written": 7,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "element": {
+      "indexed": 6,
+      "written": 6,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "doctrine": {
+      "indexed": 5,
+      "written": 3,
+      "droppedAsLegacy": 2,
+      "legacyTargetMissing": 0
+    },
+    "tradition": {
+      "indexed": 5,
+      "written": 5,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "grim-fascination": {
+      "indexed": 4,
+      "written": 4,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "practice": {
+      "indexed": 4,
+      "written": 4,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "fatal-method": {
+      "indexed": 2,
+      "written": 2,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "shield": {
+      "indexed": 32,
+      "written": 16,
+      "droppedAsLegacy": 16,
+      "legacyTargetMissing": 0
+    },
+    "item-bonus": {
+      "indexed": 1369,
+      "written": 993,
+      "droppedAsLegacy": 376,
+      "legacyTargetMissing": 0
+    },
+    "source": {
+      "indexed": 254,
+      "written": 254,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "domain": {
+      "indexed": 124,
+      "written": 63,
+      "droppedAsLegacy": 61,
+      "legacyTargetMissing": 0
+    },
+    "familiar-ability": {
+      "indexed": 191,
+      "written": 142,
+      "droppedAsLegacy": 49,
+      "legacyTargetMissing": 0
+    },
+    "familiar-specific": {
+      "indexed": 47,
+      "written": 38,
+      "droppedAsLegacy": 9,
+      "legacyTargetMissing": 0
+    },
+    "animal-companion": {
+      "indexed": 115,
+      "written": 97,
+      "droppedAsLegacy": 18,
+      "legacyTargetMissing": 0
+    },
+    "animal-companion-specialization": {
+      "indexed": 17,
+      "written": 11,
+      "droppedAsLegacy": 6,
+      "legacyTargetMissing": 0
+    },
+    "animal-companion-advanced": {
+      "indexed": 8,
+      "written": 5,
+      "droppedAsLegacy": 3,
+      "legacyTargetMissing": 0
+    },
+    "animal-companion-unique": {
+      "indexed": 2,
+      "written": 2,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "follower": {
+      "indexed": 6,
+      "written": 6,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "weapon-group": {
+      "indexed": 17,
+      "written": 17,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "armor-group": {
+      "indexed": 7,
+      "written": 7,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "runesmith-rune": {
+      "indexed": 44,
+      "written": 44,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "draconic-exemplar": {
+      "indexed": 44,
+      "written": 44,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "tactic": {
+      "indexed": 37,
+      "written": 37,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "class-kit": {
+      "indexed": 32,
+      "written": 32,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "relic": {
+      "indexed": 219,
+      "written": 122,
+      "droppedAsLegacy": 97,
+      "legacyTargetMissing": 0
+    },
+    "set-relic": {
+      "indexed": 14,
+      "written": 14,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "curse": {
+      "indexed": 92,
+      "written": 56,
+      "droppedAsLegacy": 36,
+      "legacyTargetMissing": 0
+    },
+    "deity-category": {
+      "indexed": 40,
+      "written": 40,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "mythic-calling": {
+      "indexed": 15,
+      "written": 15,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "skill-general-action": {
+      "indexed": 25,
+      "written": 19,
+      "droppedAsLegacy": 6,
+      "legacyTargetMissing": 0
+    },
+    "hellknight-order": {
+      "indexed": 14,
+      "written": 14,
+      "droppedAsLegacy": 0,
+      "legacyTargetMissing": 0
+    },
+    "deviant-ability-classification": {
+      "indexed": 10,
+      "written": 10,
+      "droppedAsLegacy": 0,
       "legacyTargetMissing": 0
     }
   }

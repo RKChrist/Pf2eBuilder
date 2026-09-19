@@ -7,9 +7,29 @@ static class FieldPolicy
 {
     public static readonly IReadOnlyList<string> Categories =
     [
-        "equipment", "feat", "action", "spell", "class-feature", "trait",
-        "deity", "background", "weapon", "heritage", "archetype", "ritual",
-        "language", "condition", "ancestry", "armor", "class", "skill",
+        "equipment", "feat", "action", "spell", "class-feature", "trait", "deity", "background",
+        "weapon", "heritage", "archetype", "ritual", "language", "condition", "ancestry",
+        "armor", "class", "skill",
+
+        // Every first-level subclass choice lives in its own category. A class-feature record
+        // holds the empty slot; these hold the options. Without them a sorcerer has no
+        // spellcasting tradition and a barbarian has no instinct.
+        "lesson", "bloodline", "arcane-school", "patron", "eidolon", "mystery", "ikon",
+        "implement", "epithet", "instinct", "hybrid-study", "apparition", "cause",
+        "druidic-order", "conscious-mind", "style", "way", "arcane-thesis", "racket",
+        "methodology", "muse", "research-field", "subconscious-mind", "hunters-edge",
+        "innovation", "element", "doctrine", "tradition", "grim-fascination", "practice",
+        "fatal-method",
+
+        // shield is the only place ac, hardness and hp_raw exist anywhere in the data.
+        // item-bonus carries values that are empty on the parent equipment record.
+        // source is the rulebook list the Manage Available Rulebooks screen needs.
+        "shield", "item-bonus", "source", "domain", "familiar-ability", "familiar-specific",
+        "animal-companion", "animal-companion-specialization", "animal-companion-advanced",
+        "animal-companion-unique", "follower", "weapon-group", "armor-group", "runesmith-rune",
+        "draconic-exemplar", "tactic", "class-kit", "relic", "set-relic", "curse",
+        "deity-category", "mythic-calling", "skill-general-action", "hellknight-order",
+        "deviant-ability-classification",
     ];
 
     // What we withhold is Paizo's expression, meaning flavour text and rule descriptions. Short
@@ -45,7 +65,7 @@ static class FieldPolicy
     // never reaches the seed, so a new AoN field is withheld until someone reviews and lists it.
     public static readonly FrozenSet<string> SeedAllowList = new[]
     {
-        "ac", "actions", "actions_number", "ammunition", "archetype", "area", "area_raw", "area_type",
+        "hardness", "hardness_raw", "item_bonus_value", "item_bonus_note", "item_bonus_consumable", "item_subcategory", "trait_group", "source_raw", "ac", "actions", "actions_number", "ammunition", "archetype", "area", "area_raw", "area_type",
         "armor_category", "armor_group", "attack_proficiency", "attribute", "attribute_flaw",
         "base_item", "bloodline", "bulk", "bulk_raw", "check_penalty", "class", "cleric_spell",
         "component", "cost", "damage", "damage_die", "damage_type", "defense_proficiency", "deity",

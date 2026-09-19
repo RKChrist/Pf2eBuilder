@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using FluentValidation;
 using Pf2e.Application.Features.Conditions;
 using Pf2e.Application.Features.Rules;
@@ -108,5 +109,60 @@ public class HandlerRules(SeededDatabase database) : IClassFixture<SeededDatabas
 
         Assert.False(failures.IsValid);
         Assert.Contains(failures.Errors, e => e.ErrorMessage.Contains("MinLevel must not exceed MaxLevel"));
+    }
+
+    [Theory]
+    [InlineData("bloodline", "sorcerer")]
+    [InlineData("instinct", "barbarian")]
+    [InlineData("doctrine", "cleric")]
+    [InlineData("racket", "rogue")]
+    [InlineData("muse", "bard")]
+    [InlineData("hunters-edge", "ranger")]
+    [InlineData("research-field", "alchemist")]
+    public async Task ASubclassChoiceHasRealOptionsAndNotJustAnEmptySlot(string category, string forClass)
+    {
+        await using var db = database.NewContext();
+
+        var result = await new SearchRulesHandler(db)
+            .Handle(new SearchRules(Category: category, PageSize: 200), default);
+
+        // A class-feature record holds the slot. These hold the options a player picks from,
+        // and without them the builder cannot produce a legal character of that class.
+        Assert.True(result.TotalMatching > 1,
+            $"a {forClass} needs real {category} options, found {result.TotalMatching}");
+        Assert.All(result.Items, item => Assert.False(string.IsNullOrWhiteSpace(item.Name)));
+    }
+
+    [Fact]
+    public async Task ShieldsCarryTheArmourClassBonusThatExistsNowhereElse()
+    {
+        await using var db = database.NewContext();
+
+        var shields = await new SearchRulesHandler(db)
+            .Handle(new SearchRules(Category: "shield", PageSize: 200), default);
+
+        Assert.NotEmpty(shields.Items);
+        var buckler = shields.Items.FirstOrDefault(s => s.Name.Contains("Buckler", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(buckler);
+
+        var record = await db.RuleRecords.FindAsync(buckler!.Id);
+        Assert.Contains("\"ac\"", record!.Mechanics);
+        Assert.Contains("\"hardness\"", record.Mechanics);
+    }
+
+    [Fact]
+    public async Task ItemBonusRecordsCarryTheNumberTheEngineNeeds()
+    {
+        await using var db = database.NewContext();
+
+        var bonuses = await db.RuleRecords
+            .Where(r => r.Category == "item-bonus")
+            .Take(50)
+            .ToListAsync();
+
+        Assert.NotEmpty(bonuses);
+        // Only the highest item bonus applies, so the engine needs the value, and the parent
+        // equipment record has an empty skill_mod on every row in the snapshot.
+        Assert.All(bonuses, b => Assert.Contains("item_bonus_value", b.Mechanics));
     }
 }
