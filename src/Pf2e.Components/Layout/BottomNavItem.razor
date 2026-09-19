@@ -1,0 +1,33 @@
+@if (!string.IsNullOrEmpty(Href))
+{
+    <a @attributes="Attributes" class="pf-bottomnav__item @Class" href="@Href" aria-current="@(Active ? "page" : null)">@Inner</a>
+}
+else
+{
+    <button @attributes="Attributes" type="button" class="pf-bottomnav__item @Class" aria-current="@(Active ? "page" : null)" @onclick="OnClick">@Inner</button>
+}
+
+@code {
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    [Parameter] public RenderFragment? Icon { get; set; }
+
+    [Parameter] public string? Href { get; set; }
+
+    [Parameter] public bool Active { get; set; }
+
+    [Parameter] public EventCallback<MouseEventArgs> OnClick { get; set; }
+
+    private RenderFragment Inner => @<text>
+        @if (Icon is not null)
+        {
+            <span class="pf-bottomnav__icon" aria-hidden="true">@Icon</span>
+        }
+        <span>@Label</span>
+    </text>;
+}

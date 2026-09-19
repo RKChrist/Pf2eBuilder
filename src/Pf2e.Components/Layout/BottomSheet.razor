@@ -1,0 +1,40 @@
+<div @attributes="Attributes"
+     class="pf-sheet @Class"
+     hidden="@(!Open)"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="@_titleId">
+    @if (Open)
+    {
+        <div class="pf-sheet__scrim" @onclick="Close"></div>
+        <div class="pf-sheet__panel">
+            <div class="pf-sheet__grab" aria-hidden="true"></div>
+            <div class="pf-sheet__head">
+                <h2 class="pf-sheet__title" id="@_titleId">@Title</h2>
+                <button type="button" class="pf-sheet__close" aria-label="@CloseLabel" @onclick="Close"></button>
+            </div>
+            <div class="pf-sheet__body">@ChildContent</div>
+        </div>
+    }
+</div>
+
+@code {
+    private readonly string _titleId = $"pf-{Guid.NewGuid():N}";
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter] public bool Open { get; set; }
+
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    [Parameter] public string CloseLabel { get; set; } = "Close";
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private Task Close() => OnClose.InvokeAsync();
+}

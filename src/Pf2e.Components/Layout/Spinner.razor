@@ -1,0 +1,10 @@
+<span @attributes="Attributes" class="pf-spinner @Class" role="status" aria-label="@Label"></span>
+
+@code {
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter] public string Label { get; set; } = "Loading";
+}

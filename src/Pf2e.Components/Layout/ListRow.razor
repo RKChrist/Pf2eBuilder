@@ -1,0 +1,42 @@
+@if (!string.IsNullOrEmpty(Href))
+{
+    <a @attributes="Attributes" class="pf-row @Class" href="@Href">@Inner</a>
+}
+else
+{
+    <button @attributes="Attributes" type="button" class="pf-row @Class" disabled="@Disabled" @onclick="OnClick">@Inner</button>
+}
+
+@code {
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    [Parameter] public RenderFragment? Lead { get; set; }
+
+    [Parameter] public RenderFragment? Meta { get; set; }
+
+    [Parameter] public string? Href { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+
+    [Parameter] public EventCallback<MouseEventArgs> OnClick { get; set; }
+
+    private RenderFragment Inner => @<text>
+        @if (Lead is not null)
+        {
+            <span class="pf-row__lead">@Lead</span>
+        }
+        <span class="pf-row__main">
+            <span class="pf-row__title">@Title</span>
+            @if (Meta is not null)
+            {
+                <span class="pf-row__meta">@Meta</span>
+            }
+        </span>
+        <span class="pf-row__chevron" aria-hidden="true"></span>
+    </text>;
+}

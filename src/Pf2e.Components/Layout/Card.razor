@@ -1,0 +1,32 @@
+<section @attributes="Attributes" class="pf-card @Class">
+    @if (!string.IsNullOrEmpty(Title) || HeadContent is not null)
+    {
+        <div class="pf-card__head">
+            <h2 class="pf-card__title">@Title</h2>
+            @HeadContent
+        </div>
+    }
+    @if (ListContent is not null)
+    {
+        <div class="pf-card__list">@ListContent</div>
+    }
+    else
+    {
+        <div class="pf-card__body">@ChildContent</div>
+    }
+</section>
+
+@code {
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter] public string? Title { get; set; }
+
+    [Parameter] public RenderFragment? HeadContent { get; set; }
+
+    [Parameter] public RenderFragment? ListContent { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

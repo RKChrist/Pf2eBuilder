@@ -1,0 +1,18 @@
+<span @attributes="Attributes"
+      class="pf-cost @(Cost.CssModifier() is string modifier ? $"pf-cost--{modifier}" : null) @Class"
+      role="img"
+      aria-label="@Cost.AriaLabel()">
+    @for (var glyph = 0; glyph < Cost.GlyphCount(); glyph++)
+    {
+        <i class="pf-cost__glyph"></i>
+    }
+</span>
+
+@code {
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter] public ActionCostKind Cost { get; set; }
+}

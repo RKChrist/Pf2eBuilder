@@ -1,0 +1,10 @@
+<span @attributes="Attributes" class="pf-rarity pf-rarity--@(Value.CssSuffix()) @Class">@Value.DisplayText()</span>
+
+@code {
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter] public Rarity Value { get; set; }
+}
