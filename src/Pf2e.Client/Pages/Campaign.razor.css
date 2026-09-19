@@ -811,3 +811,103 @@
     color: var(--text-secondary);
     text-wrap: pretty;
 }
+
+.downtime {
+    padding: var(--space-3) var(--layout-gutter) var(--space-6);
+}
+
+.downtime__top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.downtime__heading {
+    margin: 0;
+    font-size: var(--font-size-subhead);
+}
+
+.downtime__day {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    margin: 0;
+}
+
+.downtime__day-label {
+    font-size: var(--font-size-chip);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.downtime__day-value {
+    font-size: var(--font-size-stat);
+    font-variant-numeric: tabular-nums;
+}
+
+.spending {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4) 0;
+    border-top: var(--border-hair) solid var(--line-subtle);
+}
+
+.spending__task {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-4);
+}
+
+.spending__level {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.spending__level-label,
+.spending__dc-label {
+    font-size: var(--font-size-chip);
+    color: var(--text-secondary);
+}
+
+/* The number the DM would otherwise open the book for, beside the modifier the roller adds. */
+.spending__dc {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    margin: 0;
+}
+
+.spending__dc-value {
+    font-size: var(--font-size-stat);
+    font-variant-numeric: tabular-nums;
+}
+
+.spending__skill {
+    font-size: var(--font-size-data);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+}
+
+.spending__says {
+    margin: 0;
+    font-size: var(--font-size-chip);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}
+
+.downtime__next {
+    margin-top: var(--space-5);
+}
+
+.downtime__next-says {
+    margin: var(--space-2) 0 0;
+    font-size: var(--font-size-chip);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}

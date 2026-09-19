@@ -129,6 +129,22 @@ public sealed class TrackerApi(HttpClient http)
     public Task<CampaignView> RestAsync(string code, CancellationToken ct) =>
         SendAsync<CampaignView>(new HttpRequestMessage(HttpMethod.Post, $"{Campaign(code)}/rest"), ct);
 
+    public Task<IReadOnlyList<DowntimeActivityView>> GetDowntimeActivitiesAsync(CancellationToken ct) =>
+        SendAsync<IReadOnlyList<DowntimeActivityView>>(
+            new HttpRequestMessage(HttpMethod.Get, "downtime-activities"), ct);
+
+    public Task<CampaignView> SetDowntimeActivityAsync(
+        string code, Guid character, string? activity, int? taskLevel, CancellationToken ct) =>
+        SendAsync<CampaignView>(
+            Carrying(
+                HttpMethod.Put,
+                $"{Campaign(code)}/characters/{character}/downtime",
+                new SetDowntimeActivityRequest(activity, taskLevel)),
+            ct);
+
+    public Task<CampaignView> AdvanceDayAsync(string code, CancellationToken ct) =>
+        SendAsync<CampaignView>(new HttpRequestMessage(HttpMethod.Post, $"{Campaign(code)}/day"), ct);
+
     /// <summary>Whether this browser holds a DM key at all, which is what the shell reads to
     /// decide between offering the DM controls and not drawing them.</summary>
     public bool HoldsDmKey => _dmKey is { Length: > 0 };

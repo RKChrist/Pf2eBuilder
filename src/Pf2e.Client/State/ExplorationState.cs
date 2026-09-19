@@ -22,6 +22,17 @@ public sealed record ExplorationState
     /// round trip's worth of latency, because both are needed by the same screen.</summary>
     public IReadOnlyList<CampActivityView> Camp { get; init; } = [];
 
+    public IReadOnlyList<DowntimeActivityView> Downtime { get; init; } = [];
+
+    public IReadOnlyList<ChoiceOption<string>> DowntimeOptions =>
+    [
+        new(string.Empty, "Nothing today"),
+        .. Downtime.Select(activity => new ChoiceOption<string>(activity.Key, activity.Name)),
+    ];
+
+    public DowntimeActivityView? DowntimeNamed(string? key) =>
+        key is { Length: > 0 } ? Downtime.FirstOrDefault(a => a.Key == key) : null;
+
     /// <summary>What the picker offers, with an empty key for "nothing in particular", because a
     /// character who has not chosen is the normal case and needs a way back to it.</summary>
     public IReadOnlyList<ChoiceOption<string>> Options =>
@@ -43,6 +54,13 @@ public sealed record ExplorationState
 public sealed record ExplorationActivitiesRequested;
 
 public sealed record CampActivitiesLoaded(IReadOnlyList<CampActivityView> Activities);
+
+public sealed record DowntimeActivitiesLoaded(IReadOnlyList<DowntimeActivityView> Activities);
+
+/// <summary>Null clears it. A task level with no activity is a level for nothing.</summary>
+public sealed record DowntimeActivityChosen(Guid CharacterId, string? Activity, int? TaskLevel);
+
+public sealed record DayAdvanced;
 
 /// <summary>A ten-minute activity, by one character.</summary>
 public sealed record CampActivityTaken(Guid CharacterId, string Activity);
@@ -70,6 +88,10 @@ public static class ExplorationReducers
     [ReducerMethod]
     public static ExplorationState On(ExplorationState state, CampActivitiesLoaded action) =>
         state with { Camp = action.Activities };
+
+    [ReducerMethod]
+    public static ExplorationState On(ExplorationState state, DowntimeActivitiesLoaded action) =>
+        state with { Downtime = action.Activities };
 }
 
 public sealed class ExplorationEffects(TrackerApi tracker)
@@ -83,6 +105,8 @@ public sealed class ExplorationEffects(TrackerApi tracker)
                 await tracker.GetExplorationActivitiesAsync(CancellationToken.None)));
             dispatcher.Dispatch(new CampActivitiesLoaded(
                 await tracker.GetCampActivitiesAsync(CancellationToken.None)));
+            dispatcher.Dispatch(new DowntimeActivitiesLoaded(
+                await tracker.GetDowntimeActivitiesAsync(CancellationToken.None)));
         }
         catch (CampaignApiException failure)
         {

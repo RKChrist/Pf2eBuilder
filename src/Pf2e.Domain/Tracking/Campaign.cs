@@ -27,6 +27,14 @@ public sealed class Campaign
     /// </summary>
     public int ElapsedMinutes { get; set; }
 
+    /// <summary>
+    /// Which downtime day the party is on, counting from one. Separate from
+    /// <see cref="ElapsedMinutes"/> because downtime is counted in days and camp in minutes,
+    /// and a single number in one unit would make one of the two screens do arithmetic to
+    /// answer the question it exists for.
+    /// </summary>
+    public int Day { get; set; } = 1;
+
     public List<TrackedCharacter> Characters { get; init; } = [];
 
     /// <summary>Every effect in play, on characters and on monsters alike. They hang off the

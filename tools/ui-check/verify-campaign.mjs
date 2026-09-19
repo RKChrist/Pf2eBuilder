@@ -138,6 +138,43 @@ check('a night adds eight hours to the clock', morning.clock === '8 hours 20 min
 check('and nobody is still immune in the morning', morning.immune === 'none', morning.immune);
 await shot(dm, 'dm-06-camp');
 
+// Downtime: a day counter and one activity each, with the DC the task level comes to.
+await clickText(dm, '.shell__modes button', 'Downtime');
+await waitFor(dm, '[data-spending]');
+check('downtime starts on day one', await dm.eval(
+  `document.querySelector('.downtime__day-value')?.textContent.trim() ?? ''`).then(t => t === '1'),
+  await dm.eval(`document.querySelector('.downtime__day-value')?.textContent.trim() ?? 'missing'`));
+
+await dm.eval(`(() => {
+  const select = document.querySelector('[data-spending] select');
+  const earn = [...select.options].find(o => o.textContent.trim() === 'Earn Income');
+  Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(select, earn.value);
+  select.dispatchEvent(new Event('change', { bubbles: true }));
+  return true;
+})()`);
+await sleep(1400);
+const spending = await dm.eval(`({
+  dc: document.querySelector('.spending__dc-value')?.textContent.trim() ?? '',
+  level: document.querySelector('.spending__level .pf-stepper__value')?.textContent.trim() ?? '',
+  says: document.querySelector('.spending__says')?.textContent.trim() ?? '',
+})`);
+check("a task level defaults to the character own level", spending.level === "7", spending.level);
+check('and the DC for it comes down with the character', spending.dc === '23', spending.dc);
+check('Earn Income says where its payment table is rather than inventing one',
+  spending.says.includes('table is in the book'), spending.says);
+await shot(dm, 'dm-07-downtime');
+
+await clickText(dm, '.downtime__next', 'Next day');
+const tomorrow = await dm.eval(`({
+  day: document.querySelector('.downtime__day-value')?.textContent.trim() ?? '',
+  chosen: document.querySelector('[data-spending] select')?.value ?? 'gone',
+  dc: document.querySelector('.spending__dc-value')?.textContent.trim() ?? 'none',
+})`);
+check('the day turns', tomorrow.day === '2', tomorrow.day);
+check('and clears what everybody chose', tomorrow.chosen === '' && tomorrow.dc === 'none',
+  JSON.stringify(tomorrow));
+
+
 
 // Into a fight.
 await clickText(dm, '.shell__modes button', 'Fight');

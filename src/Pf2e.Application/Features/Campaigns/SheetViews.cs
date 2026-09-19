@@ -43,7 +43,10 @@ internal static class SheetViews
             character.Spellcasting?.Tradition,
             Edit(character.ToBuild()),
             character.ExplorationActivity,
-            ImmuneFor(character, elapsedMinutes));
+            ImmuneFor(character, elapsedMinutes),
+            character.DowntimeActivity,
+            character.DowntimeTaskLevel,
+            character.DowntimeTaskLevel is { } task ? LevelBasedDc.For(task) : null);
     }
 
     static NamedBreakdownView Of(NamedBreakdown named) => new(named.Name, Of(named.Value), named.Rank?.ToString());

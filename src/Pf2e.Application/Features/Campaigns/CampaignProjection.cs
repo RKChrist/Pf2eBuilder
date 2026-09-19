@@ -43,7 +43,8 @@ internal static class CampaignProjection
                 .Select(application => Of(role, application, campaign, visibleIds))
                 .OfType<EffectApplicationView>()],
             campaign.Encounter is { } present ? Of(role, present, campaign, visible, visibleIds) : null,
-            campaign.ElapsedMinutes);
+            campaign.ElapsedMinutes,
+            campaign.Day);
     }
 
     /// <summary>The list a viewer is allowed to know exists. For the DM that is everybody; for a

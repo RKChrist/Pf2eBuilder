@@ -47,6 +47,21 @@ public static class CampaignEndpoints
             (ISender sender, HttpRequest request, string code, CancellationToken ct) =>
                 sender.Send(new RestForTheNight(code, DmKeyOf(request)), ct));
 
+        app.MapPut("/campaigns/{code}/characters/{id:guid}/downtime",
+            (ISender sender, HttpRequest request, string code, Guid id,
+             SetDowntimeActivityRequest body, CancellationToken ct) =>
+                sender.Send(
+                    new SetDowntimeActivity(code, DmKeyOf(request), id, body.Activity, body.TaskLevel),
+                    ct));
+
+        app.MapPost("/campaigns/{code}/day",
+            (ISender sender, HttpRequest request, string code, CancellationToken ct) =>
+                sender.Send(new AdvanceDay(code, DmKeyOf(request)), ct));
+
+        app.MapGet("/downtime-activities", () => Results.Ok(
+            Pf2e.Domain.DowntimeActivities.All
+                .Select(a => new DowntimeActivityView(a.Key, a.Name, a.Skill, a.What))));
+
         app.MapGet("/camp-activities", () => Results.Ok(
             Pf2e.Domain.CampActivities.All
                 .Select(a => new CampActivityView(a.Key, a.Name, a.Minutes, a.What))));

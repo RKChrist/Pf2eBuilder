@@ -70,6 +70,14 @@ public sealed class TrackedCharacter
     /// </summary>
     public int? TreatedAtMinute { get; set; }
 
+    /// <summary>What this character is spending the current downtime day on, and null when
+    /// they have not said. Cleared when the day turns, because a day is what it is one of.</summary>
+    public string? DowntimeActivity { get; set; }
+
+    /// <summary>The level of the task they took on, which is what the DC comes from. Null
+    /// where the activity has no task level, such as Subsist.</summary>
+    public int? DowntimeTaskLevel { get; set; }
+
     /// <summary>
     /// Effects are not here. They belong to the campaign, one row per application, because one
     /// application can reach five characters and a monster, and a list hanging off each

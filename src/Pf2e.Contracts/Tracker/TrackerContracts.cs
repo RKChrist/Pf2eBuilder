@@ -103,7 +103,14 @@ public sealed record CharacterSheetView(
     string? ExplorationActivity,
     /// <summary>Minutes left on this character's Treat Wounds immunity, and zero when there is
     /// none. Computed against the campaign clock so a screen never has to subtract.</summary>
-    int TreatWoundsImmuneFor);
+    int TreatWoundsImmuneFor,
+    /// <summary>What this character is spending today on, by key, and null when nobody has said.</summary>
+    string? DowntimeActivity,
+    /// <summary>The level of the task they took on, and null where the activity has none.</summary>
+    int? DowntimeTaskLevel,
+    /// <summary>The DC that task level comes to, so no screen carries the table. Null when no
+    /// task level was set.</summary>
+    int? DowntimeDc);
 
 /// <summary>One thing a character can be doing between fights, with the sentence a screen
 /// shows under it. The list is the engine's, so a screen never spells one out itself.</summary>
@@ -115,6 +122,12 @@ public sealed record SetExplorationActivityRequest(string? Activity);
 public sealed record CampActivityView(string Key, string Name, int Minutes, string What);
 
 public sealed record CampActivityRequest(string Activity);
+
+/// <summary>One thing a day can be spent on. Skill is the one it is rolled with and null
+/// where the activity has no single skill.</summary>
+public sealed record DowntimeActivityView(string Key, string Name, string? Skill, string What);
+
+public sealed record SetDowntimeActivityRequest(string? Activity, int? TaskLevel);
 
 /// <summary>A computed number with a name of its own rather than a slot on the sheet: one skill,
 /// one weapon. Rank is the skill's proficiency by name and null for a weapon.</summary>
@@ -177,7 +190,9 @@ public sealed record CampaignView(
     IReadOnlyList<EffectApplicationView> Effects,
     EncounterView? Encounter,
     /// <summary>How long the party has been at this, in minutes. Only ever goes up.</summary>
-    int ElapsedMinutes);
+    int ElapsedMinutes,
+    /// <summary>Which downtime day the party is on, counting from one.</summary>
+    int Day);
 
 /// <summary>The one payload that ever carries the DM key. Whoever asked for it is the DM, and
 /// no later response repeats it.</summary>
