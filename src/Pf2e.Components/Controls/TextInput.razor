@@ -5,6 +5,7 @@
            type="text"
            value="@Value"
            @oninput="OnInput"
+           inputmode="@InputMode"
            placeholder="@Placeholder"
            disabled="@Disabled"
            aria-describedby="@DescribedBy"
@@ -32,6 +33,8 @@
     [Parameter] public string? Value { get; set; }
 
     [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    [Parameter] public string? InputMode { get; set; }
 
     [Parameter] public string? Placeholder { get; set; }
 
