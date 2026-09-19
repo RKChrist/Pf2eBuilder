@@ -77,7 +77,7 @@ public sealed class SearchRulesHandler(IRulesDbContext db) : IRequestHandler<Sea
             .Take(query.PageSize)
             .ToListAsync(ct);
 
-        return new RuleSearchResult([.. page.Select(Summarise)], total, query.Page, query.PageSize);
+        return new RuleSearchResult([.. page.Select(RuleSummaries.Of)], total, query.Page, query.PageSize);
     }
 
     static RuleSearchResult Page(List<RuleRecord> all, int total, SearchRules query)
@@ -86,12 +86,9 @@ public sealed class SearchRulesHandler(IRulesDbContext db) : IRequestHandler<Sea
             .OrderBy(r => r.Name, StringComparer.Ordinal).ThenBy(r => r.Id, StringComparer.Ordinal)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
-            .Select(Summarise)
+            .Select(RuleSummaries.Of)
             .ToList();
 
         return new RuleSearchResult(items, total, query.Page, query.PageSize);
     }
-
-    static RuleSummary Summarise(RuleRecord r) =>
-        new(r.Id, r.Category, r.Name, r.Level, r.Rarity, r.PrimarySource, r.Traits, r.SourceUrl);
 }

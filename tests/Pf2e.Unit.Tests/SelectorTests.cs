@@ -4,6 +4,35 @@ namespace Pf2e.Unit.Tests;
 
 public class SelectorTests
 {
+    public static TheoryData<StatKind> EveryKind => [.. Enum.GetValues<StatKind>()];
+
+    /// <summary>
+    /// A selector's description reaches the player through the conditions screen, so a newly
+    /// added statistic with no readable name must fail here rather than at a table.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(EveryKind))]
+    public void EveryStatisticHasAPlayerReadableName(StatKind kind)
+    {
+        Assert.False(string.IsNullOrWhiteSpace(Selector.Exactly(kind).Describe()));
+    }
+
+    [Theory]
+    [InlineData(StatKind.ArmorClass, "Armor Class")]
+    [InlineData(StatKind.ClassDc, "Class DC")]
+    [InlineData(StatKind.SpellDc, "Spell DC")]
+    [InlineData(StatKind.SpellAttack, "Spell Attack")]
+    public void CompoundStatisticsAreSpeltOutRatherThanLeftAsTheEnumToken(StatKind kind, string expected)
+    {
+        Assert.Equal(expected, Selector.Exactly(kind).Describe());
+    }
+
+    [Fact]
+    public void ANamedSkillStillWinsOverTheKindName()
+    {
+        Assert.Equal("Stealth", Selector.Exactly(StatKind.Skill, "Stealth").Describe());
+    }
+
     [Theory]
     [InlineData("Acrobatics", AttributeKind.Dexterity)]
     [InlineData("Athletics", AttributeKind.Strength)]

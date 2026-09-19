@@ -15,6 +15,9 @@ public static class RulesEndpoints
         app.MapGet("/rules", (ISender sender, [AsParameters] SearchRules query, CancellationToken ct) =>
             sender.Send(query, ct));
 
+        app.MapGet("/rules/{id}", async (ISender sender, string id, CancellationToken ct) =>
+            await sender.Send(new GetRule(id), ct) is { } rule ? Results.Ok(rule) : Results.NotFound());
+
         app.MapGet("/conditions", (ISender sender, CancellationToken ct) =>
             sender.Send(new GetConditions(), ct));
 

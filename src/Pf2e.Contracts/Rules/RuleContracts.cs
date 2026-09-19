@@ -40,3 +40,13 @@ public sealed record BreakdownSummary(
     IReadOnlyList<SuppressedSummary> Suppressed);
 
 public sealed record SuppressedSummary(ModifierSummary Modifier, string Reason);
+
+/// <summary>
+/// One record with the sparse per-category fields a list deliberately leaves out. The mechanics
+/// arrive already flattened to strings, because their JSON shape differs per category and a
+/// client that had to parse it would be reimplementing the seed's schema.
+/// </summary>
+public sealed record RuleDetail(RuleSummary Summary, IReadOnlyList<MechanicField> Mechanics);
+
+/// <summary>A scalar becomes one value; a JSON array becomes one value per element.</summary>
+public sealed record MechanicField(string Key, IReadOnlyList<string> Values);
