@@ -91,7 +91,13 @@ public static class ComponentModel
         _ => throw new ArgumentOutOfRangeException(nameof(rank), rank, null),
     };
 
-    public static int FilledPips(this ProficiencyRank rank) => (int)rank + 1;
+    /// <summary>
+    /// Steps of training, so Untrained fills none. Four pips rather than five, because five
+    /// ranks on five pips forces Untrained to light one, and untrained is the absence of
+    /// training rather than the first degree of it. This also matches the arithmetic: the
+    /// proficiency bonus is twice the number of filled pips.
+    /// </summary>
+    public static int FilledPips(this ProficiencyRank rank) => (int)rank;
 
     public static string DisplayText(this ModifierKind kind) => kind switch
     {
