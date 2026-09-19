@@ -44,8 +44,9 @@ public sealed class ChangeHitPointsHandler(
 {
     public async Task<CampaignView> Handle(ChangeHitPoints command, CancellationToken ct)
     {
-        var (campaign, role) = await CampaignAccess.LoadForChangeAsync(
+        var change = await CampaignAccess.LoadForChangeAsync(
             db, undo, command.Code, command.DmKey, "hit points", ct);
+        var (campaign, role) = (change.Campaign, change.Role);
         var delta = command.Direction is HitPointDirection.Damage ? -command.Amount : command.Amount;
 
         if (campaign.Encounter?.Find(command.CreatureId) is MonsterCombatant monster)
@@ -56,7 +57,7 @@ public sealed class ChangeHitPointsHandler(
                 HitPoints.AfterDelta(monster.CurrentHitPoints, delta, monster.Stats.MaxHitPoints);
 
             await db.SaveChangesAsync(ct);
-            return await CampaignAccess.PublishAsync(broadcaster, campaign, role, ct);
+            return await CampaignAccess.PublishChangeAsync(broadcaster, undo, change, ct);
         }
 
         if (campaign.Characters.FirstOrDefault(c => c.Id == command.CreatureId) is not { } character)
@@ -85,6 +86,6 @@ public sealed class ChangeHitPointsHandler(
         // The re-read is untracked, so identity resolution cannot hand back the same stale
         // object, which is what makes this a real re-read rather than one that looks like one.
         var (after, _) = await CampaignAccess.LoadAsync(db, campaign.Code, command.DmKey, ct, tracking: false);
-        return await CampaignAccess.PublishAsync(broadcaster, after, role, ct);
+        return await CampaignAccess.PublishChangeAsync(broadcaster, undo, change, ct, after);
     }
 }

@@ -31,8 +31,9 @@ public sealed class RevealMonsterHandler(
 {
     public async Task<CampaignView> Handle(RevealMonster command, CancellationToken ct)
     {
-        var (campaign, role) = await CampaignAccess.LoadForChangeAsync(
+        var change = await CampaignAccess.LoadForChangeAsync(
             db, undo, command.Code, command.DmKey, "a reveal", ct);
+        var (campaign, role) = (change.Campaign, change.Role);
         CampaignAccess.RequireDm(role, "reveal a monster");
 
         if (campaign.Encounter?.Find(command.CombatantId) is not MonsterCombatant monster)
@@ -43,7 +44,7 @@ public sealed class RevealMonsterHandler(
         monster.Revealed = command.Revealed;
 
         await db.SaveChangesAsync(ct);
-        return await CampaignAccess.PublishAsync(broadcaster, campaign, role, ct);
+        return await CampaignAccess.PublishChangeAsync(broadcaster, undo, change, ct);
     }
 }
 

@@ -49,18 +49,19 @@ internal static class CampaignAccess
     }
 
     /// <summary>
-    /// Loads for a command that is going to change something, and records the prior state on the
-    /// way past so undo has something to put back.
-    /// <para>The snapshot is taken here rather than in each handler on purpose. A rule written
-    /// down once per handler is a rule somebody adding the eighth handler will not know about,
-    /// and the command whose prior state nobody captured is the one that cannot be undone.</para>
+    /// A command that is going to change something, with the state it found on arrival.
+    /// <para>The snapshot is taken on the way in and pushed on the way out, by
+    /// <see cref="LoadForChangeAsync"/> and <see cref="PublishAsync"/>, which every changing
+    /// command already passes through. A rule written down once per handler is a rule the
+    /// person adding the eighth handler will not know about.</para>
     /// </summary>
-    public static async Task<(Campaign Campaign, ViewerRole Role)> LoadForChangeAsync(
+    public readonly record struct CampaignChange(Campaign Campaign, ViewerRole Role, CampaignSnapshot Before);
+
+    public static async Task<CampaignChange> LoadForChangeAsync(
         ITrackerDbContext db, IUndoStack undo, string code, string? dmKey, string label, CancellationToken ct)
     {
-        var loaded = await LoadAsync(db, code, dmKey, ct);
-        undo.Push(loaded.Campaign.Id, CampaignSnapshots.Of(loaded.Campaign, label));
-        return loaded;
+        var (campaign, role) = await LoadAsync(db, code, dmKey, ct);
+        return new CampaignChange(campaign, role, CampaignSnapshots.Of(campaign, label));
     }
 
     public static void RequireDm(ViewerRole role, string action)
@@ -75,6 +76,26 @@ internal static class CampaignAccess
     /// Projects once per role, pushes each to its own group, and answers the caller with theirs.
     /// Every encounter command ends here, so "what does each role get told" is decided once.
     /// </summary>
+    /// <summary>
+    /// Publishes, and records the prior state now that the change has actually been saved.
+    /// <para>Pushed here and not on the way in, so a command that was refused leaves no undo
+    /// step. A snapshot from a request that changed nothing is an undo the DM taps and watches
+    /// do nothing, which is worse than no undo at all.</para>
+    /// <para><paramref name="projectFrom"/> is for the one command that re-reads after writing
+    /// in the database: the snapshot belongs to the campaign it loaded, and the answer belongs
+    /// to the one it read back.</para>
+    /// </summary>
+    public static Task<CampaignView> PublishChangeAsync(
+        ICampaignBroadcaster broadcaster,
+        IUndoStack undo,
+        CampaignChange change,
+        CancellationToken ct,
+        Campaign? projectFrom = null)
+    {
+        undo.Push(change.Campaign.Id, change.Before);
+        return PublishAsync(broadcaster, projectFrom ?? change.Campaign, change.Role, ct);
+    }
+
     public static async Task<CampaignView> PublishAsync(
         ICampaignBroadcaster broadcaster, Campaign campaign, ViewerRole role, CancellationToken ct)
     {

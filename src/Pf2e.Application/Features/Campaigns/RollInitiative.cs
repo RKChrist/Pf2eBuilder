@@ -36,8 +36,9 @@ public sealed class RollInitiativeHandler(
 {
     public async Task<CampaignView> Handle(RollInitiative command, CancellationToken ct)
     {
-        var (campaign, role) = await CampaignAccess.LoadForChangeAsync(
+        var change = await CampaignAccess.LoadForChangeAsync(
             db, undo, command.Code, command.DmKey, "initiative", ct);
+        var (campaign, role) = (change.Campaign, change.Role);
         CampaignAccess.RequireDm(role, "roll initiative");
 
         if (campaign.Encounter is not { Combatants.Count: > 0 } encounter)
@@ -68,7 +69,7 @@ public sealed class RollInitiativeHandler(
         await broadcaster.ModeChangedAsync(
             campaign.Code, new CampaignModeView(campaign.Code, campaign.Mode.ToString()), ct);
 
-        return await CampaignAccess.PublishAsync(broadcaster, campaign, role, ct);
+        return await CampaignAccess.PublishChangeAsync(broadcaster, undo, change, ct);
     }
 
     /// <summary>A d20 plus the creature's Perception, which is what initiative usually is.</summary>

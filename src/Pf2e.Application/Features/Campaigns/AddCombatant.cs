@@ -43,8 +43,9 @@ public sealed class AddCombatantHandler(
 {
     public async Task<CampaignView> Handle(AddCombatant command, CancellationToken ct)
     {
-        var (campaign, role) = await CampaignAccess.LoadForChangeAsync(
+        var change = await CampaignAccess.LoadForChangeAsync(
             db, undo, command.Code, command.DmKey, "a combatant", ct);
+        var (campaign, role) = (change.Campaign, change.Role);
         CampaignAccess.RequireDm(role, "add a combatant");
 
         var encounter = campaign.Encounter ??= new Encounter
@@ -66,7 +67,7 @@ public sealed class AddCombatantHandler(
         }
 
         await db.SaveChangesAsync(ct);
-        return await CampaignAccess.PublishAsync(broadcaster, campaign, role, ct);
+        return await CampaignAccess.PublishChangeAsync(broadcaster, undo, change, ct);
     }
 
     static Combatant Added(Encounter encounter, Combatant combatant)

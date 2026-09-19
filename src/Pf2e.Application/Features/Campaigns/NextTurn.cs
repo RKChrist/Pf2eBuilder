@@ -31,8 +31,9 @@ public sealed class NextTurnHandler(
 {
     public async Task<CampaignView> Handle(NextTurn command, CancellationToken ct)
     {
-        var (campaign, role) = await CampaignAccess.LoadForChangeAsync(
+        var change = await CampaignAccess.LoadForChangeAsync(
             db, undo, command.Code, command.DmKey, "the turn", ct);
+        var (campaign, role) = (change.Campaign, change.Role);
         CampaignAccess.RequireDm(role, "advance the turn");
 
         if (campaign.Encounter is not { Round: > 0 } encounter)
@@ -63,6 +64,6 @@ public sealed class NextTurnHandler(
         encounter.Reminders = [.. reminders];
 
         await db.SaveChangesAsync(ct);
-        return await CampaignAccess.PublishAsync(broadcaster, campaign, role, ct);
+        return await CampaignAccess.PublishChangeAsync(broadcaster, undo, change, ct);
     }
 }

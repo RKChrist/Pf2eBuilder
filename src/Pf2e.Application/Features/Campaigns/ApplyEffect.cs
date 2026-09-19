@@ -68,8 +68,9 @@ public sealed class ApplyEffectHandler(
 {
     public async Task<CampaignView> Handle(ApplyEffect command, CancellationToken ct)
     {
-        var (campaign, role) = await CampaignAccess.LoadForChangeAsync(
+        var change = await CampaignAccess.LoadForChangeAsync(
             db, undo, command.Code, command.DmKey, "an effect", ct);
+        var (campaign, role) = (change.Campaign, change.Role);
 
         var existing = campaign.EffectApplications.FirstOrDefault(e => e.Id == command.ApplicationId);
 
@@ -110,13 +111,7 @@ public sealed class ApplyEffectHandler(
             return CampaignProjection.For(settledRole, settled);
         }
 
-        var view = CampaignProjection.For(role, campaign);
-        foreach (var sheet in view.Characters)
-        {
-            await broadcaster.CharacterChangedAsync(campaign.Code, sheet, ct);
-        }
-
-        return view;
+        return await CampaignAccess.PublishChangeAsync(broadcaster, undo, change, ct);
     }
 
     /// <summary>

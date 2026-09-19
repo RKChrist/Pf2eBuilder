@@ -36,14 +36,18 @@ public sealed class ImportCharacterHandler(
 {
     public async Task<CharacterSheetView> Handle(ImportCharacter command, CancellationToken ct)
     {
-        var parsed = PathbuilderBuild.Parse(command.Pathbuilder);
-        var build = await WithSeededArmor(parsed, ct);
-
         // A campaign nobody created is a refusal that names the problem, not a campaign this
         // handler starts on the way past. One started here would have a DM key that reached
         // nobody, which is a campaign with no DM.
+        //
+        // Checked before the paste is parsed, because if there is nowhere to put the character
+        // then what the player pasted is beside the point, and being told about their JSON when
+        // the real problem is the code sends them to fix the wrong thing.
         var (campaign, _) = await CampaignAccess.LoadAsync(tracker, command.Code, null, ct);
         var code = campaign.Code;
+
+        var parsed = PathbuilderBuild.Parse(command.Pathbuilder);
+        var build = await WithSeededArmor(parsed, ct);
 
         // Pathbuilder stores one JSON id per player and overwrites it on each export, so it is a
         // slot and not an identity. Matching on the name is what makes a level-up a re-import.
