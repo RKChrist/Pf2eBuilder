@@ -1,10 +1,14 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Pf2e.Api.Configuration;
 using Pf2e.Api.Endpoints;
+using Pf2e.Api.Hubs;
 using Pf2e.Application;
+using Pf2e.Application.Abstractions;
+using Pf2e.Application.Features.Tracker;
 using Pf2e.Infrastructure;
 using Pf2e.Infrastructure.Configuration;
 using Pf2e.Infrastructure.Persistence;
@@ -21,9 +25,24 @@ builder.Services.AddCors();
 
 // Built from our own bound options rather than from configuration directly, so the
 // post-configure binding that lets appsettings beat a library default still applies.
+// AllowCredentials is what the SignalR handshake needs from a cross-origin client, and it is
+// why the origin list stays explicit: a wildcard and credentials cannot both hold.
 builder.Services.AddOptions<AspNetCorsOptions>()
     .Configure<IOptions<CorsOptions>>((aspnet, mine) => aspnet.AddDefaultPolicy(policy =>
-        policy.WithOrigins([.. mine.Value.AllowedOrigins]).AllowAnyHeader().AllowAnyMethod()));
+        policy.WithOrigins([.. mine.Value.AllowedOrigins])
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials()));
+
+builder.Services.AddSection<RealtimeOptions>(builder.Configuration, RealtimeOptions.Section);
+builder.Services.AddSignalR();
+builder.Services.AddOptions<HubOptions>()
+    .Configure<IOptions<RealtimeOptions>>((hub, mine) =>
+    {
+        hub.KeepAliveInterval = TimeSpan.FromSeconds(mine.Value.KeepAliveSeconds);
+        hub.ClientTimeoutInterval = TimeSpan.FromSeconds(mine.Value.ClientTimeoutSeconds);
+    });
+builder.Services.AddScoped<ITableBroadcaster, TableBroadcaster>();
 
 var app = builder.Build();
 
@@ -40,6 +59,15 @@ app.UseExceptionHandler(handler => handler.Run(async context =>
             title = "The request was not valid.",
             errors = validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }),
         });
+        return;
+    }
+
+    // A paste that is not an export is the player's mistake and reads as one, not as a fault
+    // in the server.
+    if (error is PathbuilderFormatException pathbuilder)
+    {
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        await context.Response.WriteAsJsonAsync(new { title = pathbuilder.Message });
         return;
     }
 
@@ -66,6 +94,8 @@ await using (var scope = app.Services.CreateAsyncScope())
 app.UseCors();
 
 app.MapRules();
+app.MapTracker();
+app.MapHub<TableHub>(app.Services.GetRequiredService<IOptions<RealtimeOptions>>().Value.HubPath);
 
 app.MapGet("/health", async (RulesDbContext db) => Results.Ok(new
 {
