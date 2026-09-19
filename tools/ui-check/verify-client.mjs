@@ -40,16 +40,22 @@ async function waitFor(selector, timeout = 15000) {
 
 async function openFeats() {
   await click('.pf-bottomnav__item:nth-child(2)');
-  await waitFor('.pf-row');
-  await click('.pf-row');
-  await waitFor('.pf-row__title');
+  await waitFor('.categories .category');
+  await click('.categories .category');
+  await waitFor('.rule .name');
 }
 
 await page.goto(client);
 await waitFor('.pf-bottomnav__item');
 
 check.eq('six navigation items', await count('.pf-bottomnav__item'), 6);
-check('the group opens its category list', await waitFor('.pf-row'));
+check('the group opens its category list', await waitFor('.categories .category'));
+await waitFor('.category .size');
+check('the board says what the group is for', (await text('.top .blurb'))?.length > 20, await text('.top .blurb'));
+check('the board counts every category', await page.eval(`[...document.querySelectorAll('.categories .category')]
+  .every(card => /^\\d{1,3}(,\\d{3})*$/.test(card.querySelector('.size')?.textContent.trim() ?? ''))`));
+check('a category card explains itself', await count('.category .note') > 0);
+check('the board groups categories under headings', await count('.section-title') > 1);
 
 const topSearch = '[data-site-search]';
 const typeTop = (typed) => page.eval(`(() => {
@@ -130,7 +136,22 @@ await typeTop('');
 await sleep(300);
 
 await openFeats();
-check('a category lists its records', await count('.pf-row') > 1);
+check('a category lists its records', await count('.rule') > 1);
+check('the list says how many records the category holds',
+  /^\d{1,3}(,\d{3})* feats$/.test(await text('.top .total')), await text('.top .total'));
+check('list rows show a glance line', await count('.rule .glance') > 0);
+check('a glance line reads as facts', await page.eval(
+  `[...document.querySelectorAll('.rule .glance')].some(line => line.textContent.includes('Prerequisites: '))`));
+check.eq('a common record wears no rarity badge', await count('.rule .pf-rarity--common'), 0);
+check('a row shows at most four traits', await page.eval(
+  `[...document.querySelectorAll('.rule .marks')].every(marks => marks.querySelectorAll('.pf-trait').length <= 4)`));
+check('filters are folded away on a phone', await page.eval(
+  `getComputedStyle(document.querySelector('.refine')).display === 'none'`));
+await click('.refine-toggle');
+await sleep(200);
+check('the Filters toggle opens them', await page.eval(
+  `getComputedStyle(document.querySelector('.refine')).display !== 'none'
+    && document.querySelector('.refine-toggle').getAttribute('aria-expanded') === 'true'`));
 check('the level filter is one dual-thumb range', await count('.pf-slider--range') === 1);
 
 const before = (await searches()).length;
@@ -148,7 +169,7 @@ const after = await searches();
 check.eq('six keystrokes make one search', after.length - before, 1);
 check('the last keystroke is the one searched', after.at(-1).includes('Name=shield'), after.at(-1));
 check('the results are the searched ones',
-  (await text('.pf-row__title')).toLowerCase().includes('shield'), await text('.pf-row__title'));
+  (await text('.rule .name')).toLowerCase().includes('shield'), await text('.rule .name'));
 
 await page.eval(`(() => {
   const field = document.querySelector('.filters .pf-search__input');
@@ -175,7 +196,7 @@ await sleep(1200);
 check('the range slider filters by level', levelled && (await searches()).at(-1).includes('MinLevel=5'),
   (await searches()).at(-1));
 check('every listed record is inside the range', await page.eval(`
-  [...document.querySelectorAll('.pf-row__meta')].every(meta => {
+  [...document.querySelectorAll('.rule .level')].every(meta => {
     const level = meta.textContent.match(/Level (-?\\d+)/);
     return !level || Number(level[1]) >= 5;
   })`));
@@ -216,8 +237,8 @@ await page.viewport(390, 844, true);
 await page.coarse(false);
 await sleep(300);
 
-const rowName = await text('.pf-row__title');
-await click('.pf-row');
+const rowName = await text('.rule .name');
+await click('.rule .open');
 check('a record opens the sheet', await waitFor('.pf-sheet__panel'));
 await sleep(500);
 check.eq('the sheet is titled with the record', await text('.pf-sheet__title'), rowName);
@@ -229,9 +250,9 @@ const deepLink = await page.eval('location.href');
 await page.key('Escape', 'Escape', 27);
 await sleep(600);
 check.eq('Escape closes the sheet', await count('.pf-sheet__panel'), 0);
-check('Escape leaves the list behind it', await count('.pf-row') > 1);
+check('Escape leaves the list behind it', await count('.rule') > 1);
 
-await click('.pf-row');
+await click('.rule .open');
 await waitFor('.pf-sheet__panel');
 await sleep(400);
 await page.eval('history.back()');
@@ -262,19 +283,21 @@ check('the failure says what went wrong',
 
 await page.send('Network.setBlockedURLs', { urls: [] });
 await click('.pf-state--error .pf-btn');
-check('retry recovers', await waitFor('.pf-row__title'));
+check('retry recovers', await waitFor('.rule .name'));
 
 // The three bands of design/003. Widths are measured, not assumed: a screenshot of a wide layout
 // has twice fooled a reader of this repo.
 const columns = () => page.eval(`(() => {
-  const tops = [...document.querySelectorAll('.categories .pf-row')]
+  const fullest = [...document.querySelectorAll('.categories')]
+    .sort((a, b) => b.children.length - a.children.length)[0];
+  const tops = [...fullest.querySelectorAll('.category')]
     .slice(0, 6).map(row => Math.round(row.getBoundingClientRect().top));
   return tops.filter(top => top === tops[0]).length;
 })()`);
 
 const frame = () => page.eval(`(() => {
   const nav = document.querySelector('.pf-bottomnav').getBoundingClientRect();
-  const row = document.querySelector('.pf-row')?.getBoundingClientRect();
+  const row = document.querySelector('.rule')?.getBoundingClientRect();
   const panel = document.querySelector('.pf-sheet__panel')?.getBoundingClientRect();
   const scrim = document.querySelector('.pf-sheet__scrim');
   return {
@@ -306,7 +329,7 @@ check('the navigation stands up as a rail', rail.navWidth <= 80 && rail.navHeigh
   `${rail.navWidth}x${rail.navHeight}`);
 
 await openFeats();
-await click('.pf-row');
+await click('.rule .open');
 await waitFor('.pf-sheet__panel');
 await sleep(600);
 const docked = await frame();

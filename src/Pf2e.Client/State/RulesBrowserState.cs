@@ -28,7 +28,9 @@ public sealed record RulesBrowserState
 
 public sealed record GroupSelected(GroupKey Group);
 
-public sealed record CategorySelected(string Category);
+/// <summary>Opens a category, optionally already narrowed to one trait, from wherever the reader
+/// is: the group follows the category.</summary>
+public sealed record CategorySelected(string Category, string? Trait = null);
 
 public sealed record CategoryCleared;
 

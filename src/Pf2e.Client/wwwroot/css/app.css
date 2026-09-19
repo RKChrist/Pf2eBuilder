@@ -184,8 +184,9 @@ a {
     border-bottom: var(--border-hair) solid var(--line-subtle);
 }
 
+/* The same measure as the list under it, so the field and the rows share both edges. */
 .site-search {
-    max-width: var(--layout-content-max);
+    max-width: calc(var(--layout-content-max) - var(--layout-gutter) * 2);
 }
 
 /* FocusOnNavigate moves focus to the heading so a screen reader announces the new screen. The
