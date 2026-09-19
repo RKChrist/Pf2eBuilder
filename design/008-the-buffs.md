@@ -118,6 +118,33 @@ imports the sample bard, opens the picker, raises a shield, blesses the bard, an
 armour class moved by one, the rapier and the spell attack moved by one, and Performance did
 not.
 
+## Why the registry is hand-written, and what the ingest can extract
+
+The obvious alternative to writing these seven out by hand is reading them out of the rule text
+at ingest. That is not possible here, and the reason is worth recording so nobody tries it a
+second time: **the snapshot carries no prose at all.** The pull does not fetch rule text, by
+licence, so a spell record states its tradition, its level, its range and its traits and not one
+word of what the spell does. There is no description field to parse. `design/005` said
+extraction at ingest would store structure and not prose; what it did not say is that there is
+no prose to extract structure from.
+
+What the ingest can extract is the handful of places Archives of Nethys publishes a number as a
+field of its own. There is exactly one that yields a modifier today: an item bonus to a skill.
+987 `item-bonus` records state `item_bonus_value`, and 829 of them name the `skill` it applies
+to. `tools/rules-import/Modifiers.cs` turns those into the `modifiers` array the seed carries and
+`RuleModifiers.Of` reads, so the effect picker's rules arm now applies 829 records where it used
+to apply none.
+
+The other 158 qualify a Perception bonus by the action being taken, such as "Perception rolls for
+initiative". That is a predicate this engine has no way to say, so they state nothing rather than
+stating something wrong, the same call as cover's Reflex saves against area effects.
+
+Two other fields look like modifiers and are not. Armour's `check_penalty` and `speed_penalty`
+belong to the build rather than to the session, and the check penalty applies to
+Strength-based and Dexterity-based *skills*, which needs a selector the engine does not have:
+`Governed` reaches attack rolls and damage too. A creature's `ac`, saves, `skill_mod` and
+`attack_bonus` are its statistics, not modifiers it grants.
+
 ## What is still missing
 
 Damage is not on the sheet, so the damage half of Courageous Anthem still lands nowhere visible.

@@ -338,7 +338,11 @@ const allow = new Set(lines(process.argv[3]));
 const prose = new Set(lines(process.argv[4]));
 const ceilingFields = new Set(lines(process.argv[5]));
 const ceiling = Number(process.argv[6]);
-for (const k of ['id', 'name', 'category', 'sourceUrl']) allow.add(k);
+// id, name, category and sourceUrl are written by the transform. So is modifiers, which is
+// computed from fields that are themselves on the allow-list rather than copied from a field of
+// its own, and so has no entry there. Check 11 still holds it to the no-markup rule, and check 2
+// still holds the fields it is derived from to the prose rule.
+for (const k of ['id', 'name', 'category', 'sourceUrl', 'modifiers']) allow.add(k);
 
 const PREFIX = 'https://2e.aonprd.com/';
 const ASPX = /^[A-Za-z0-9._%-]+\.aspx(\?[^#]*)?$/;
@@ -422,7 +426,7 @@ else
   if [ -n "$bad_keys" ]; then
     fail "keys outside the allow-list: $(printf '%s' "$bad_keys" | tr '\n' ' ')"
   else
-    pass "every seed key is id/name/category/sourceUrl or on SeedAllowList"
+    pass "every seed key is id/name/category/sourceUrl/modifiers or on SeedAllowList"
   fi
 fi
 

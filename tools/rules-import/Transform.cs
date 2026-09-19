@@ -140,6 +140,13 @@ static class Transform
             seed[key] = value;
         }
 
+        // Computed rather than copied, so it is not in the allow-list. It is what lets the effect
+        // picker apply a record instead of only listing it.
+        if (Modifiers.Of(record, category) is { } modifiers)
+        {
+            seed["modifiers"] = modifiers;
+        }
+
         return seed;
     }
 

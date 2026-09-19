@@ -34,6 +34,10 @@ internal static class Highlights
         ["skill"] = ["attribute"],
         ["curse"] = ["saving_throw", "usage"],
         ["relic"] = ["prerequisite"],
+        // The number, what it applies to, and the qualifier that narrows it. A row reading only
+        // "Horn of Blasting" says nothing about why anyone would put it on a character.
+        ["item-bonus"] = ["item_bonus_value", "skill", "item_bonus_note", "level"],
+        ["creature"] = ["level", "ac", "hp", "size"],
     };
 
     public static IReadOnlyList<MechanicField> Of(string category, IReadOnlyList<MechanicField> mechanics)
