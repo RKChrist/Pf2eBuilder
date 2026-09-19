@@ -27,6 +27,9 @@
     },
     "on-accent": {
       "$value": "{color.ink.0}"
+    },
+    "on-danger": {
+      "$value": "{color.ink.0}"
     }
   },
   "line": {
@@ -52,6 +55,21 @@
     "wash": {
       "$value": "{color.teal.300}"
     }
+  },
+  "danger": {
+    "$type": "color",
+    "$description": "Destructive UI actions and invalid input. Deliberately not the outcome ramp: a delete button is not a failed roll, and overloading the four degrees of success would move them whenever the chrome changes.",
+    "base": {
+      "$value": "{color.crimson.600}"
+    },
+    "press": {
+      "$value": "{color.crimson.700}"
+    }
+  },
+  "scrim": {
+    "$type": "color",
+    "$description": "The ground behind a bottom sheet. It must darken the page in both themes, so no surface role fits: surface-sunken is a pale grey in light.",
+    "$value": "{color.ink.950}"
   },
   "rarity": {
     "$type": "color",

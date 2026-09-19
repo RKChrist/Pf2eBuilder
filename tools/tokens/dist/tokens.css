@@ -51,6 +51,8 @@
   --color-violet-400: #B48ED2;
   --color-violet-500: #9668B8;
   --color-violet-600: #7A4B9E;
+  --danger-base: #8E2323;
+  --danger-press: #6E1A1A;
   --font-family-data: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, sans-serif; /** Everything numeric and structural. Engineered to disambiguate 0/O, 1/l/I and 6/8, which is the exact failure a character sheet must not have. */
   --font-family-display: 'Archivo', 'Archivo Expanded', system-ui, sans-serif; /** Character name and section heads only. Equipment signage, not fantasy. */
   --font-leading-normal: 1.55; /** Prose. */
@@ -83,6 +85,7 @@
   --motion-duration-instant: 0ms;
   --motion-duration-quick: 120ms; /** A control answering a tap. */
   --motion-duration-sheet: 220ms; /** A drawer or breakdown opening. */
+  --motion-duration-spin: 900ms; /** One revolution of an indeterminate progress indicator. A loop, not a transition, so it is not derived from the transition durations. Reduced motion stops the rotation outright rather than shortening it. */
   --motion-easing-enter: cubic-bezier(0, 0, 0.2, 1);
   --motion-easing-exit: cubic-bezier(0.4, 0, 1, 1);
   --outcome-critical-failure: #6E1A1A;
@@ -99,6 +102,7 @@
   --rarity-rare: #2F5FA8;
   --rarity-uncommon: #96591F;
   --rarity-unique: #7A4B9E;
+  --scrim: #0E151C; /** The ground behind a bottom sheet. It must darken the page in both themes, so no surface role fits: surface-sunken is a pale grey in light. */
   --space-0: 0;
   --space-1: 4px;
   --space-2: 8px;
@@ -118,6 +122,7 @@
   --tap-separation: 8px; /** Minimum gap between two adjacent tap targets so a mis-tap needs real travel. */
   --text-muted: #5A7186;
   --text-on-accent: #FFFFFF;
+  --text-on-danger: #FFFFFF;
   --text-primary: #16202B;
   --text-secondary: #3E5265;
 }
@@ -127,6 +132,8 @@
     --accent-base: #4FB3C4;
     --accent-press: #86D0DC;
     --accent-wash: #0F4F5A;
+    --danger-base: #E08C8C;
+    --danger-press: #C96060;
     --line-focus: #4FB3C4;
     --line-strong: #8397A9;
     --line-subtle: #2B3B4D;
@@ -140,12 +147,14 @@
     --rarity-rare: #7BA3DC;
     --rarity-uncommon: #D9963F;
     --rarity-unique: #B48ED2;
+    --scrim: #0E151C;
     --surface-overlay: #2B3B4D;
     --surface-page: #16202B;
     --surface-raised: #1D2A38;
     --surface-sunken: #0E151C;
     --text-muted: #8397A9;
     --text-on-accent: #0E151C;
+    --text-on-danger: #0E151C;
     --text-primary: #E6ECF1;
     --text-secondary: #AEBDC9;
   }
@@ -155,6 +164,8 @@
   --accent-base: #4FB3C4;
   --accent-press: #86D0DC;
   --accent-wash: #0F4F5A;
+  --danger-base: #E08C8C;
+  --danger-press: #C96060;
   --line-focus: #4FB3C4;
   --line-strong: #8397A9;
   --line-subtle: #2B3B4D;
@@ -168,12 +179,14 @@
   --rarity-rare: #7BA3DC;
   --rarity-uncommon: #D9963F;
   --rarity-unique: #B48ED2;
+  --scrim: #0E151C;
   --surface-overlay: #2B3B4D;
   --surface-page: #16202B;
   --surface-raised: #1D2A38;
   --surface-sunken: #0E151C;
   --text-muted: #8397A9;
   --text-on-accent: #0E151C;
+  --text-on-danger: #0E151C;
   --text-primary: #E6ECF1;
   --text-secondary: #AEBDC9;
 }

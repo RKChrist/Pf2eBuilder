@@ -27,6 +27,9 @@
     },
     "on-accent": {
       "$value": "{color.ink.950}"
+    },
+    "on-danger": {
+      "$value": "{color.ink.950}"
     }
   },
   "line": {
@@ -52,6 +55,19 @@
     "wash": {
       "$value": "{color.teal.700}"
     }
+  },
+  "danger": {
+    "$type": "color",
+    "base": {
+      "$value": "{color.crimson.300}"
+    },
+    "press": {
+      "$value": "{color.crimson.400}"
+    }
+  },
+  "scrim": {
+    "$type": "color",
+    "$value": "{color.ink.950}"
   },
   "rarity": {
     "$type": "color",

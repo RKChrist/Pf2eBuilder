@@ -1,0 +1,1193 @@
+/* Every visual decision in this library lives here. The .razor wrappers emit markup and class
+   names only, so this file and the static gallery are the same design with no second copy.
+   Requires tools/tokens/dist/tokens.css to be loaded first: nothing below defines a value. */
+
+/* ---------------------------------------------------------------- foundation */
+
+/* Every size below is a border-box size. Zero specificity so a host page never has to
+   fight it, and scoped to whole pf- class tokens so it never reaches the host's own. */
+:where([class^='pf-'], [class*=' pf-']),
+:where([class^='pf-'], [class*=' pf-'])::before,
+:where([class^='pf-'], [class*=' pf-'])::after {
+  box-sizing: border-box;
+}
+
+.pf-visually-hidden {
+  position: absolute;
+  width: var(--border-hair);
+  height: var(--border-hair);
+  margin: calc(var(--border-hair) * -1);
+  padding: var(--space-0);
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Adjacent tap targets need real travel between them, so every cluster of controls
+   uses this rather than an ad hoc gap. */
+.pf-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tap-separation);
+}
+
+:is(
+  .pf-btn,
+  .pf-input,
+  .pf-search__input,
+  .pf-search__clear,
+  .pf-stepper__btn,
+  .pf-select__native,
+  .pf-segmented__option,
+  .pf-check__input,
+  .pf-switch__input,
+  .pf-row,
+  .pf-sheet__close,
+  .pf-bottomnav__item,
+  .pf-pager__btn
+):focus-visible {
+  outline: var(--border-focus) solid var(--line-focus);
+  outline-offset: var(--space-1);
+}
+
+.pf-check__input:focus-visible,
+.pf-switch__input:focus-visible {
+  outline: none;
+}
+
+.pf-check__input:focus-visible ~ .pf-check__box,
+.pf-switch__input:focus-visible ~ .pf-switch__track {
+  outline: var(--border-focus) solid var(--line-focus);
+  outline-offset: var(--space-1);
+}
+
+/* ---------------------------------------------------------------- button */
+
+.pf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--tap-default);
+  min-width: var(--tap-min);
+  padding: var(--space-2) var(--space-5);
+  border: var(--border-strong) solid transparent;
+  border-radius: var(--radius-card);
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-family-data);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--font-leading-snug);
+  letter-spacing: var(--font-tracking-wide);
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-duration-quick) var(--motion-easing-exit),
+    border-color var(--motion-duration-quick) var(--motion-easing-exit),
+    color var(--motion-duration-quick) var(--motion-easing-exit);
+}
+
+.pf-btn--primary {
+  min-height: var(--tap-primary);
+  border-color: var(--accent-base);
+  background: var(--accent-base);
+  color: var(--text-on-accent);
+}
+
+.pf-btn--primary:active {
+  border-color: var(--accent-press);
+  background: var(--accent-press);
+}
+
+.pf-btn--secondary {
+  border-color: var(--accent-base);
+  background: var(--surface-raised);
+  color: var(--accent-base);
+}
+
+.pf-btn--quiet {
+  padding-inline: var(--space-3);
+  color: var(--accent-base);
+}
+
+.pf-btn--destructive {
+  min-height: var(--tap-primary);
+  border-color: var(--danger-base);
+  background: var(--danger-base);
+  color: var(--text-on-danger);
+}
+
+.pf-btn--destructive:active {
+  border-color: var(--danger-press);
+  background: var(--danger-press);
+}
+
+:is(.pf-btn--secondary, .pf-btn--quiet):active {
+  background: var(--surface-sunken);
+}
+
+.pf-btn:disabled,
+.pf-btn[aria-disabled='true'] {
+  border-color: var(--line-subtle);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.pf-btn--busy {
+  cursor: progress;
+}
+
+.pf-btn__full {
+  display: flex;
+  width: 100%;
+}
+
+/* ---------------------------------------------------------------- field, input */
+
+.pf-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.pf-field__label {
+  color: var(--text-secondary);
+  font-family: var(--font-family-data);
+  font-size: var(--font-size-data);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--font-leading-snug);
+}
+
+.pf-field__hint {
+  margin: var(--space-0);
+  color: var(--text-muted);
+  font-family: var(--font-family-data);
+  font-size: var(--font-size-chip);
+  line-height: var(--font-leading-normal);
+}
+
+.pf-field__error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: var(--space-0);
+  color: var(--danger-base);
+  font-family: var(--font-family-data);
+  font-size: var(--font-size-chip);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--font-leading-normal);
+}
+
+.pf-field__error::before {
+  content: '';
+  flex: none;
+  width: 1em;
+  height: 1em;
+  margin-top: 0.1em;
+  background: currentColor;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.pf-input,
+.pf-select__native {
+  width: 100%;
+  min-height: var(--tap-default);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-hair) solid var(--line-strong);
+  border-radius: var(--radius-chip);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font-family: var(--font-family-data);
+  font-size: var(--font-size-body);
+  line-height: var(--font-leading-snug);
+  transition: border-color var(--motion-duration-quick) var(--motion-easing-exit);
+}
+
+.pf-input::placeholder,
+.pf-search__input::placeholder {
+  color: var(--text-muted);
+}
+
+.pf-field--invalid :is(.pf-input, .pf-select__native) {
+  border-width: var(--border-strong);
+  border-color: var(--danger-base);
+}
+
+.pf-input:disabled,
+.pf-select__native:disabled {
+  border-color: var(--line-subtle);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------- select */
+
+.pf-select {
+  position: relative;
+  display: block;
+}
+
+.pf-select__native {
+  appearance: none;
+  padding-right: var(--space-7);
+  cursor: pointer;
+}
+
+.pf-select::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: var(--space-4);
+  width: 0.5em;
+  height: 0.5em;
+  border-right: var(--border-strong) solid var(--text-secondary);
+  border-bottom: var(--border-strong) solid var(--text-secondary);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+
+.pf-select:has(.pf-select__native:disabled)::after {
+  border-color: var(--text-muted);
+}
+
+/* ---------------------------------------------------------------- search */
+
+.pf-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-left: var(--space-3);
+  border: var(--border-hair) solid var(--line-strong);
+  border-radius: var(--radius-chip);
+  background: var(--surface-raised);
+}
+
+.pf-search:has(.pf-search__input:disabled) {
+  border-color: var(--line-subtle);
+  background: var(--surface-sunken);
+}
+
+.pf-search__icon {
+  flex: none;
+  width: 1em;
+  height: 1em;
+  border: var(--border-strong) solid var(--text-muted);
+  border-radius: 50%;
+  font-size: var(--font-size-body);
+}
+
+.pf-search__icon::after {
+  content: '';
+  display: block;
+  width: 0.45em;
+  height: var(--border-strong);
+  margin: 0.72em 0 0 0.62em;
+  background: var(--text-muted);
+  transform: rotate(45deg);
+}
+
+.pf-search__input {
+  flex: 1;
+  min-width: var(--space-0);
+  min-height: var(--tap-default);
+  padding: var(--space-2) var(--space-0);
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-family-data);
+  font-size: var(--font-size-body);
+}
+
+.pf-search__input::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+.pf-search__clear {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  margin: var(--space-1);
+  border: none;
+  border-radius: var(--radius-chip);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.pf-search__clear:active {
+  background: var(--surface-sunken);
+}
+
+.pf-search__clear::before,
+.pf-search__clear::after {
+  content: '';
+  grid-area: 1 / 1;
+  width: var(--space-4);
+  height: var(--border-strong);
+  background: currentColor;
+}
+
+.pf-search__clear::before {
+  transform: rotate(45deg);
+}
+
+.pf-search__clear::after {
+  transform: rotate(-45deg);
+}
+
+/* ---------------------------------------------------------------- number stepper */
+
+/* Hit points and damage get typed one-handed while something else is happening at the
+   table, so both keys are primary-sized and the value never shifts between them. */
+.pf-stepper {
+  display: inline-flex;
+  align-items: stretch;
+  gap: var(--tap-separation);
+  padding: var(--space-1);
+  border: var(--border-hair) solid var(--line-strong);
+  border-radius: var(--radius-chip);
+  background: var(--surface-raised);
+}
+
+.pf-stepper__btn {
+  display: grid;
+  place-items: center;
+  width: var(--tap-primary);
+  height: var(--tap-primary);
+  border: var(--border-hair) solid var(--line-subtle);
+  border-radius: var(--radius-chip);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color var(--motion-duration-quick) var(--motion-easing-exit);
+}
+
+.pf-stepper__btn:active {
+  background: var(--accent-base);
+  color: var(--text-on-accent);
+}
+
+.pf-stepper__btn:disabled {
+  border-color: var(--line-subtle);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.pf-stepper__btn::before,
+.pf-stepper__btn::after {
+  content: '';
+  grid-area: 1 / 1;
+  width: var(--space-5);
+  height: var(--border-focus);
+  border-radius: var(--radius-chip);
+  background: currentColor;
+}
+
+.pf-stepper__btn--minus::after {
+  display: none;
+}
+
+.pf-stepper__btn--plus::after {
+  transform: rotate(90deg);
+}
+
+.pf-stepper__value {
+  display: grid;
+  place-items: center;
+  min-width: var(--tap-primary);
+  padding-inline: var(--space-3);
+  color: var(--text-primary);
+  font-family: var(--font-family-data);
+  font-size: var(--font-size-stat);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--font-leading-tight);
+  letter-spacing: var(--font-tracking-tight);
+}
+
+/* ---------------------------------------------------------------- segmented control */
+
+.pf-segmented {
+  display: flex;
+  gap: var(--tap-separation);
+  padding: var(--space-1);
+  border: var(--border-hair) solid var(--line-subtle);
+  border-radius: var(--radius-chip);
+  background: var(--surface-sunken);
+}
+
+.pf-segmented__option {
+  flex: 1;
+  min-width: var(--tap-min);
+  min-height: var(--tap-default);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-hair) solid transparent;
+  border-radius: var(--radius-chip);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-family-data);
+  font-size: var(--font-size-data);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: background-color var(--motion-duration-quick) var(--motion-easing-exit);
+}
+
+/* Selection is weight plus fill, never fill alone. */
+.pf-segmented__option[aria-pressed='true'] {
+  border-color: var(--accent-base);
+  background: var(--accent-base);
+  color: var(--text-on-accent);
+  font-weight: var(--font-weight-bold);
+}
+
+.pf-segmented__option:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------- checkbox, switch */
+
+.pf-check,
+.pf-switch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--tap-default);
+  padding-block: var(--space-1);
+  color: var(--text-primary);
+  font-family: var(--font-family-data);
+  font-size: var(--font-size-body);
+  line-height: var(--font-leading-snug);
+  cursor: pointer;
+}
+
+.pf-check:has(:disabled),
+.pf-switch:has(:disabled) {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.pf-check__input,
+.pf-switch__input {
+  position: absolute;
+  width: var(--border-hair);
+  height: var(--border-hair);
+  opacity: 0;
+}
+
+.pf-check__box {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--space-5);
+  height: var(--space-5);
+  border: var(--border-strong) solid var(--line-strong);
+  border-radius: var(--radius-chip);
+  background: var(--surface-raised);
+  transition: background-color var(--motion-duration-quick) var(--motion-easing-exit);
+}
+
+.pf-check__box::after {
+  content: '';
+  width: 0.62em;
+  height: 0.34em;
+  border-left: var(--border-strong) solid var(--text-on-accent);
+  border-bottom: var(--border-strong) solid var(--text-on-accent);
+  transform: translateY(-0.1em) rotate(-45deg);
+  opacity: 0;
+}
+
+.pf-check__input:checked ~ .pf-check__box {
+  border-color: var(--accent-base);
+  background: var(--accent-base);
+}
+
+.pf-check__input:checked ~ .pf-check__box::after {
+  opacity: 1;
+}
+
+.pf-check__input:disabled ~ .pf-check__box {
+  border-color: var(--line-subtle);
+  background: var(--surface-sunken);
+}
+
+.pf-check__input:checked:disabled ~ .pf-check__box {
+  border-color: var(--line-strong);
+  background: var(--line-strong);
+}
+
+/* 56 wide minus two 2px borders and two 4px pads leaves 44 of track; the thumb fills the
+   20 of content height and is square, so its travel is exactly one --space-5. */
+.pf-switch__track {
+  flex: none;
+  display: flex;
+  align-items: center;
+  width: var(--tap-primary);
+  height: var(--space-6);
+  padding: var(--space-1);
+  border: var(--border-strong) solid var(--line-strong);
+  border-radius: calc(var(--space-6) / 2);
+  background: var(--surface-sunken);
+  transition: background-color var(--motion-duration-quick) var(--motion-easing-exit);
+}
+
+.pf-switch__thumb {
+  height: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--line-strong);
+  transition: transform var(--motion-duration-quick) var(--motion-easing-enter);
+}
+
+/* Position carries the state, so it still reads with no colour at all. */
+.pf-switch__input:checked ~ .pf-switch__track {
+  border-color: var(--accent-base);
+  background: var(--accent-base);
+}
+
+.pf-switch__input:checked ~ .pf-switch__track .pf-switch__thumb {
+  background: var(--text-on-accent);
+  transform: translateX(var(--space-5));
+}
+
+.pf-switch__input:disabled ~ .pf-switch__track {
+  border-color: var(--line-subtle);
+  background: var(--surface-sunken);
+}
+
+.pf-switch__input:disabled ~ .pf-switch__track .pf-switch__thumb {
+  background: var(--line-subtle);
+}
+
+.pf-check__label,
+.pf-switch__label {
+  flex: 1;
+}
+
+/* ---------------------------------------------------------------- action cost */
+
+/* Cost is a count, so it is drawn as a count. Three separate diamonds stay countable at the
+   chip size and in greyscale; one mark with three internal chevrons turns to mush there, and
+   the chip size is what a feat list renders at. Reaction and free action are shapes, not
+   colours. */
+.pf-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34em;
+  color: var(--text-primary);
+  font-size: inherit;
+  line-height: var(--font-leading-tight);
+  vertical-align: middle;
+}
+
+.pf-cost__glyph {
+  flex: none;
+  width: 0.6em;
+  height: 0.6em;
+  background: currentColor;
+  transform: rotate(45deg);
+}
+
+.pf-cost--free .pf-cost__glyph {
+  border: 0.14em solid currentColor;
+  background: transparent;
+}
+
+.pf-cost--reaction .pf-cost__glyph {
+  width: 0.95em;
+  height: 0.8em;
+  background: currentColor;
+  clip-path: polygon(0 42%, 55% 42%, 55% 10%, 100% 55%, 55% 100%, 55% 70%, 0 70%);
+  transform: none;
+}
+
+.pf-cost--accent {
+  color: var(--accent-base);
+}
+
+/* ---------------------------------------------------------------- trait chip */
+
+.pf-trait {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--space-5);
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-hair) solid var(--line-strong);
+  border-radius: var(--radius-chip);
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+  font-family: var(--font-family-data);
+  font-size: var(--font-size-chip);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--font-leading-tight);
+  letter-spacing: var(--font-tracking-wide);
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------------- rarity badge */
+
+/* The rarity word is always present, so the four are still four in greyscale. Border weight
+   escalates with rarity as a second non-colour channel. */
+.pf-rarity {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--space-5);
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-hair) solid currentColor;
+  border-radius: var(--radius-chip);
+  background: var(--surface-raised);
+  font-family: var(--font-family-data);
+  font-size: var(--font-size-chip);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--font-leading-tight);
+  letter-spacing: var(--font-tracking-wide);
+  text-transform: uppercase;
+}
+
+.pf-rarity--common {
+  color: var(--rarity-common);
+}
+
+.pf-rarity--uncommon {
+  border-width: var(--border-strong);
+  color: var(--rarity-uncommon);
+}
+
+.pf-rarity--rare {
+  border-width: var(--border-strong);
+  color: var(--rarity-rare);
+}
+
+.pf-rarity--unique {
+  border-width: var(--border-focus);
+  color: var(--rarity-unique);
+}
+
+/* ---------------------------------------------------------------- proficiency pips */
+
+/* Rank is a quantity, so it is five steps rather than five colours. The rank name sits
+   beside them because the pips alone make Expert and Master a counting exercise. */
+.pf-pips {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-family-data);
+  font-size: var(--font-size-chip);
+}
+
+.pf-pips__track {
+  display: inline-flex;
+  gap: 0.2em;
+}
+
+.pf-pips__pip {
+  width: 0.62em;
+  height: 1.1em;
+  border: var(--border-hair) solid var(--rank-filled);
+  border-radius: var(--radius-chip);
+  background: var(--rank-empty);
+}
+
+.pf-pips__pip--filled {
+  background: var(--rank-filled);
+}
+
+.pf-pips__label {
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--font-tracking-wide);
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------------- modifier value */
+
+/* The sign is always drawn, and a penalty uses a true minus rather than a hyphen, because
+   the failure this component exists to prevent is reading -2 as +2 in bad light. */
+.pf-mod {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-family: var(--font-family-data);
+}
+
+.pf-mod__value {
+  font-size: var(--font-size-stat);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--font-leading-tight);
+  letter-spacing: var(--font-tracking-tight);
+}
+
+.pf-mod--bonus .pf-mod__value {
+  color: var(--outcome-success);
+}
+
+.pf-mod--penalty .pf-mod__value {
+  color: var(--outcome-failure);
+}
+
+.pf-mod__type {
+  color: var(--text-muted);
+  font-size: var(--font-size-chip);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--font-tracking-wide);
+  text-transform: uppercase;
+}
+
+.pf-mod--inline .pf-mod__value {
+  font-size: var(--font-size-body);
+}
+
+/* ---------------------------------------------------------------- card */
+
+.pf-card {
+  display: flex;
+  flex-direction: column;
+  border: var(--border-hair) solid var(--line-subtle);
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+.pf-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--border-hair) solid var(--line-subtle);
+}
+
+.pf-card__title {
+  margin: var(--space-0);
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-subhead);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--font-leading-tight);
+  letter-spacing: var(--font-tracking-tight);
+}
+
+.pf-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.pf-card__list {
+  display: flex;
+  flex-direction: column;
+  margin: var(--space-0);
+  padding: var(--space-0);
+  list-style: none;
+}
+
+/* ---------------------------------------------------------------- list row */
+
+.pf-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--tap-default);
+  padding: var(--space-3) var(--space-4);
+  border: none;
+  border-bottom: var(--border-hair) solid var(--line-subtle);
+  border-radius: var(--radius-grid);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font-family: var(--font-family-data);
+  font-size: var(--font-size-data);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--motion-duration-quick) var(--motion-easing-exit);
+}
+
+.pf-row:active {
+  background: var(--surface-sunken);
+}
+
+.pf-row:last-child {
+  border-bottom: none;
+}
+
+.pf-row__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: var(--space-0);
+}
+
+.pf-row__title {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--font-leading-snug);
+}
+
+.pf-row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--font-size-chip);
+  line-height: var(--font-leading-snug);
+}
+
+.pf-row__lead {
+  flex: none;
+  display: flex;
+  align-items: center;
+}
+
+.pf-row__chevron {
+  flex: none;
+  width: 0.5em;
+  height: 0.5em;
+  border-top: var(--border-strong) solid var(--text-muted);
+  border-right: var(--border-strong) solid var(--text-muted);
+  font-size: var(--font-size-body);
+  transform: rotate(45deg);
+}
+
+/* ---------------------------------------------------------------- bottom sheet */
+
+.pf-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.pf-sheet[hidden] {
+  display: none;
+}
+
+.pf-sheet__scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--scrim);
+  opacity: 0.66;
+}
+
+/* Capped so the whole sheet, title included, stays inside the thumb arc. */
+.pf-sheet__panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-height: var(--layout-thumb-reach);
+  padding-bottom: env(safe-area-inset-bottom);
+  border-top-left-radius: var(--radius-sheet);
+  border-top-right-radius: var(--radius-sheet);
+  background: var(--surface-overlay);
+  color: var(--text-primary);
+  animation: pf-sheet-rise var(--motion-duration-sheet) var(--motion-easing-enter);
+}
+
+@keyframes pf-sheet-rise {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+.pf-sheet__grab {
+  flex: none;
+  width: var(--space-7);
+  height: var(--space-1);
+  margin: var(--space-2) auto var(--space-0);
+  border-radius: var(--radius-chip);
+  background: var(--line-strong);
+}
+
+.pf-sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--border-hair) solid var(--line-subtle);
+}
+
+.pf-sheet__title {
+  margin: var(--space-0);
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-subhead);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--font-leading-tight);
+}
+
+.pf-sheet__close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  border: none;
+  border-radius: var(--radius-chip);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.pf-sheet__close:active {
+  background: var(--surface-sunken);
+}
+
+.pf-sheet__close::before,
+.pf-sheet__close::after {
+  content: '';
+  grid-area: 1 / 1;
+  width: var(--space-4);
+  height: var(--border-strong);
+  background: currentColor;
+}
+
+.pf-sheet__close::before {
+  transform: rotate(45deg);
+}
+
+.pf-sheet__close::after {
+  transform: rotate(-45deg);
+}
+
+.pf-sheet__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  overflow-y: auto;
+}
+
+/* ---------------------------------------------------------------- bottom nav */
+
+.pf-bottomnav {
+  display: flex;
+  gap: var(--tap-separation);
+  min-height: var(--layout-bottom-bar);
+  padding: var(--space-1) var(--layout-gutter) calc(var(--space-1) + env(safe-area-inset-bottom));
+  border-top: var(--border-hair) solid var(--line-subtle);
+  background: var(--surface-raised);
+}
+
+.pf-bottomnav__item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-width: var(--tap-min);
+  min-height: var(--tap-min);
+  border: none;
+  border-radius: var(--radius-chip);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-family-data);
+  font-size: var(--font-size-chip);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Current is weight plus colour plus a rule under the label, so it survives greyscale. */
+.pf-bottomnav__item[aria-current='page'] {
+  color: var(--accent-base);
+  font-weight: var(--font-weight-bold);
+  box-shadow: inset 0 calc(var(--border-focus) * -1) 0 0 var(--accent-base);
+}
+
+.pf-bottomnav__item:active {
+  background: var(--surface-sunken);
+}
+
+.pf-bottomnav__icon {
+  display: grid;
+  place-items: center;
+  width: var(--space-5);
+  height: var(--space-5);
+}
+
+.pf-bottomnav__icon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+/* ---------------------------------------------------------------- pager */
+
+.pf-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tap-separation);
+  padding: var(--space-2) var(--space-0);
+}
+
+.pf-pager__btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--tap-default);
+  height: var(--tap-default);
+  border: var(--border-hair) solid var(--line-strong);
+  border-radius: var(--radius-chip);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color var(--motion-duration-quick) var(--motion-easing-exit);
+}
+
+.pf-pager__btn:active {
+  background: var(--surface-sunken);
+}
+
+.pf-pager__btn:disabled {
+  border-color: var(--line-subtle);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.pf-pager__btn::after {
+  content: '';
+  width: 0.45em;
+  height: 0.45em;
+  border-top: var(--border-strong) solid currentColor;
+  border-right: var(--border-strong) solid currentColor;
+  font-size: var(--font-size-body);
+}
+
+.pf-pager__btn--prev::after {
+  transform: translateX(0.12em) rotate(-135deg);
+}
+
+.pf-pager__btn--next::after {
+  transform: translateX(-0.12em) rotate(45deg);
+}
+
+.pf-pager__status {
+  color: var(--text-secondary);
+  font-family: var(--font-family-data);
+  font-size: var(--font-size-data);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------- spinner */
+
+.pf-spinner {
+  display: inline-block;
+  width: 1.4em;
+  height: 1.4em;
+  border: var(--border-strong) solid var(--line-subtle);
+  border-top-color: var(--accent-base);
+  border-radius: 50%;
+  vertical-align: middle;
+  animation: pf-spin var(--motion-duration-spin) linear infinite;
+}
+
+.pf-spinner--page {
+  font-size: var(--font-size-hero);
+}
+
+.pf-btn .pf-spinner {
+  border-color: currentColor;
+  border-top-color: transparent;
+}
+
+@keyframes pf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* A stopped ring plus the adjacent text is the honest reduced-motion answer; a zeroed
+   duration would leave an infinite animation that never advances. */
+@media (prefers-reduced-motion: reduce) {
+  .pf-spinner {
+    animation: none;
+  }
+
+  .pf-sheet__panel {
+    animation: none;
+  }
+}
+
+.pf-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-4);
+  color: var(--text-secondary);
+  font-family: var(--font-family-data);
+  font-size: var(--font-size-body);
+}
+
+/* ---------------------------------------------------------------- empty and error state */
+
+.pf-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-7) var(--space-4);
+  color: var(--text-secondary);
+  font-family: var(--font-family-data);
+  text-align: center;
+}
+
+.pf-state__icon {
+  display: grid;
+  place-items: center;
+  width: var(--space-7);
+  height: var(--space-7);
+  color: var(--text-muted);
+}
+
+.pf-state__icon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+.pf-state__title {
+  margin: var(--space-0);
+  color: var(--text-primary);
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-subhead);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--font-leading-tight);
+}
+
+.pf-state__body {
+  max-width: var(--layout-content-max);
+  margin: var(--space-0);
+  font-size: var(--font-size-body);
+  line-height: var(--font-leading-normal);
+}
+
+.pf-state__action {
+  margin-top: var(--space-2);
+}
+
+.pf-state--error .pf-state__icon {
+  color: var(--danger-base);
+}
+
+.pf-state--error .pf-state__title {
+  color: var(--danger-base);
+}
