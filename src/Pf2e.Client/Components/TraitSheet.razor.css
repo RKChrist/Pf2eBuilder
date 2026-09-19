@@ -50,6 +50,7 @@
 }
 
 .places {
+    flex: none;
     margin: var(--space-0);
     padding: var(--space-0);
     border: var(--border-hair) solid var(--line-subtle);

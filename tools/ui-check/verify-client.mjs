@@ -302,6 +302,42 @@ check.eq('the deep-linked record is the right one', await text('.pf-sheet__title
 check('the sheet names where the rule is printed',
   (await text('.pf-sheet__body')).includes('Archives of Nethys'));
 
+await typeTop('Reactive Shield');
+await waitFor('.site-search .option');
+await sleep(300);
+await page.key('ArrowDown', 'ArrowDown', 40);
+await page.key('Enter', 'Enter', 13);
+await waitFor('.rule-sheet .stats');
+await sleep(500);
+check.eq('the record is headed with its kind and level', await text('.rule-sheet .kind'), 'Feat 1');
+check('its traits can be opened from the sheet', await count('.rule-sheet .trait-link') > 0);
+check('its key facts lead as a stat block', (await text('.rule-sheet .stats'))?.includes('Reaction'),
+  await text('.rule-sheet .stats'));
+check('a trigger or requirement is marked as a gate', await page.eval(
+  `[...document.querySelectorAll('.rule-sheet .stat.gate dt')].map(dt => dt.textContent.trim()).join()`) === 'Trigger,Requirements',
+  await page.eval(`[...document.querySelectorAll('.rule-sheet .stat.gate dt')].map(dt => dt.textContent.trim()).join()`));
+check('the source is stated', await page.eval(
+  `[...document.querySelectorAll('.rule-sheet dt')].some(dt => dt.textContent.trim() === 'Source')`));
+check.eq('the full text is one clear button', await text('.rule-sheet a.pf-btn.archives'), 'Full rules text on Archives of Nethys');
+const referenced = await text('.rule-sheet .ref');
+await click('.rule-sheet .ref');
+await sleep(1500);
+check.eq('a named record opens from the sheet', await text('.pf-sheet__title'), referenced);
+check('and it is in the address bar', (await page.eval('location.search')).includes('rule=archetype-'),
+  await page.eval('location.search'));
+await page.eval('history.back()');
+await sleep(800);
+check.eq('back returns to the record that named it', await text('.pf-sheet__title'), 'Reactive Shield');
+await click('.rule-sheet .trait-link');
+check('a trait opens over the record', await waitFor('.trait-sheet .pf-sheet__panel'));
+await page.eval('history.back()');
+await sleep(800);
+check.eq('and back closes it onto the record', await text('.rule-sheet .pf-sheet__title'), 'Reactive Shield');
+await page.eval('history.back()');
+await sleep(600);
+await typeTop('');
+await sleep(300);
+
 await page.goto(`${client}conditions`);
 check('the conditions screen loads', await waitFor('.pf-card'));
 check('a condition states its modifiers', await count('.pf-mod') > 0);
