@@ -3,7 +3,7 @@
 @inject IDispatcher Dispatcher
 @inject NavigationManager Navigation
 
-<BottomNav Label="Rule groups">
+<BottomNav Label="Rule groups" Class="pf-bottomnav--rail">
     @foreach (var group in RuleGroups.All)
     {
         <BottomNavItem Label="@group.Label"

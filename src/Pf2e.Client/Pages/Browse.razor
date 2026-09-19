@@ -22,20 +22,22 @@
 
 @if (State.ActiveCategory is null)
 {
-    <div class="panel">
+    <div class="board">
         <Card>
             <ListContent>
-                @foreach (var category in RuleCatalog.InGroup(State.ActiveGroup))
-                {
-                    @if (category.Route == RuleCatalog.BrowseRoute)
+                <div class="categories">
+                    @foreach (var category in RuleCatalog.InGroup(State.ActiveGroup))
                     {
-                        <ListRow Title="@category.Label" OnClick="() => Open(category.Key)" />
+                        @if (category.Route == RuleCatalog.BrowseRoute)
+                        {
+                            <ListRow Title="@category.Label" OnClick="() => Open(category.Key)" />
+                        }
+                        else
+                        {
+                            <ListRow Title="@category.Label" Href="@category.Route" />
+                        }
                     }
-                    else
-                    {
-                        <ListRow Title="@category.Label" Href="@category.Route" />
-                    }
-                }
+                </div>
             </ListContent>
         </Card>
     </div>

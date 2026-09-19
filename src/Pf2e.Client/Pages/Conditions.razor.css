@@ -16,6 +16,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
+    max-width: calc(var(--layout-content-max) + var(--layout-gutter) * 2);
     padding: var(--space-4) var(--layout-gutter) var(--space-2);
     color: var(--text-secondary);
     font-size: var(--font-size-data);
@@ -27,10 +28,26 @@
 }
 
 .cards {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
     gap: var(--space-3);
     padding: var(--space-3) var(--layout-gutter) var(--space-0);
+}
+
+/* A condition card is a name and a short table, not prose, so it takes the width as columns.
+   600px and 1024px are layout.viewport-wide and layout.viewport-desk; a media query cannot read
+   a custom property. */
+@media (min-width: 600px) {
+    .cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1024px) {
+    .cards {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 
 .valued {

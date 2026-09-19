@@ -186,6 +186,69 @@ await page.send('Network.setBlockedURLs', { urls: [] });
 await click('.pf-state--error .pf-btn');
 check('retry recovers', await waitFor('.pf-row__title'));
 
+// The three bands of design/003. Widths are measured, not assumed: a screenshot of a wide layout
+// has twice fooled a reader of this repo.
+const columns = () => page.eval(`(() => {
+  const tops = [...document.querySelectorAll('.categories .pf-row')]
+    .slice(0, 6).map(row => Math.round(row.getBoundingClientRect().top));
+  return tops.filter(top => top === tops[0]).length;
+})()`);
+
+const frame = () => page.eval(`(() => {
+  const nav = document.querySelector('.pf-bottomnav').getBoundingClientRect();
+  const row = document.querySelector('.pf-row')?.getBoundingClientRect();
+  const panel = document.querySelector('.pf-sheet__panel')?.getBoundingClientRect();
+  const scrim = document.querySelector('.pf-sheet__scrim');
+  return {
+    navWidth: Math.round(nav.width),
+    navHeight: Math.round(nav.height),
+    rowRight: row ? Math.round(row.right) : null,
+    panelLeft: panel ? Math.round(panel.left) : null,
+    panelRight: panel ? Math.round(panel.right) : null,
+    scrimShown: scrim ? getComputedStyle(scrim).display !== 'none' : false,
+    viewport: document.documentElement.clientWidth,
+    sideways: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+  };
+})()`);
+
+await page.goto(client);
+await waitFor('.pf-bottomnav__item');
+check.eq('one column of categories on a phone', await columns(), 1);
+
+await page.viewport(834, 900, false);
+await sleep(400);
+check.eq('two columns of categories on a tablet', await columns(), 2);
+check('the bar is still a bar on a tablet', (await frame()).navWidth > 600);
+
+await page.viewport(1440, 900, false);
+await sleep(400);
+check.eq('three columns of categories on a laptop', await columns(), 3);
+const rail = await frame();
+check('the navigation stands up as a rail', rail.navWidth <= 80 && rail.navHeight > 600,
+  `${rail.navWidth}x${rail.navHeight}`);
+
+await openFeats();
+await click('.pf-row');
+await waitFor('.pf-sheet__panel');
+await sleep(600);
+const docked = await frame();
+check('the record docks at the side', docked.panelRight === docked.viewport && docked.panelLeft > docked.viewport / 2,
+  `${docked.panelLeft}..${docked.panelRight} of ${docked.viewport}`);
+check('the list is still beside it, not under it', docked.rowRight <= docked.panelLeft,
+  `row ends ${docked.rowRight}, panel starts ${docked.panelLeft}`);
+check('nothing is dimmed behind a docked record', !docked.scrimShown);
+check('no sideways scroll on a laptop', !docked.sideways);
+check('prose keeps its measure', await page.eval(`(() => {
+  const body = document.querySelector('.pf-sheet__body');
+  return Math.round(body.getBoundingClientRect().width) <= 560;
+})()`));
+
+await page.key('Escape', 'Escape', 27);
+await sleep(500);
+check.eq('Escape closes a docked record too', await count('.pf-sheet__panel'), 0);
+await page.viewport(390, 844, true);
+await sleep(300);
+
 const errors = page.consoleErrors().filter(entry => !entry.includes('ERR_BLOCKED_BY_CLIENT'));
 check.eq('no console errors', errors.length, 0, errors.join(' | '));
 

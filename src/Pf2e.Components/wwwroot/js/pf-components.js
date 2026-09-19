@@ -163,6 +163,9 @@
       if (!handle || event.target.closest('.pf-sheet__close')) return;
       const dragged = handle.closest('.pf-sheet__panel');
       if (!dragged) return;
+      /* Docked at the side, down is not the way out, and the stylesheet is what knows the sheet
+         is docked. Asking it keeps the width that decides this in one place. */
+      if (getComputedStyle(dragged).getPropertyValue('--pf-sheet-docked').trim() === '1') return;
       panel = dragged;
       startY = event.clientY;
       distance = 0;

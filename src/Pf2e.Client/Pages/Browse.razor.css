@@ -84,3 +84,27 @@
     letter-spacing: var(--font-tracking-wide);
     white-space: nowrap;
 }
+
+/* 600px and 1024px are layout.viewport-wide and layout.viewport-desk; a media query cannot read
+   a custom property. */
+@media (min-width: 600px) {
+    /* Seventy-four category names are short labels, so they take the width as more columns. */
+    .categories {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    /* The records are one column at any width: the row is already as wide as it reads, and at a
+       laptop width the space beside it is where the record itself opens. */
+    .filters,
+    .levels,
+    .trait-scroller {
+        max-width: var(--layout-content-max);
+    }
+}
+
+@media (min-width: 1024px) {
+    .categories {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}

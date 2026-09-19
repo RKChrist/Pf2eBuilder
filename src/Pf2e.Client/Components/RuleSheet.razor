@@ -3,7 +3,7 @@
 @inject IDispatcher Dispatcher
 @inject IJSRuntime Js
 
-<BottomSheet Open="@(Detail.Value.Id is not null)" Title="@Title" OnClose="Close">
+<BottomSheet Open="@(Detail.Value.Id is not null)" Title="@Title" OnClose="Close" Class="pf-sheet--dock">
     <RemoteView T="RuleDetail" Data="Detail.Value.Detail">
         <Loading>
             <div class="pending">

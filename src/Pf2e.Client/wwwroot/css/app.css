@@ -61,9 +61,68 @@ a {
     white-space: nowrap;
 }
 
+/* ---------------------------------------------------------------- the frame
+
+   Three bands, from design/003. A phone gets one column under a bottom bar. A tablet spends its
+   extra width on more columns of short labels, never on a longer line of prose. A laptop stands
+   the navigation up as a rail beside the content, because a pointer has no thumb arc, and opens
+   a record next to the list instead of over it. 600px and 1024px are layout.viewport-wide and
+   layout.viewport-desk; a media query cannot read a custom property. */
+
+.page {
+    max-width: var(--layout-content-max);
+    margin-inline: auto;
+    padding-bottom: calc(var(--layout-bottom-bar) + var(--space-5) + var(--layout-safe-bottom));
+}
+
+.bar {
+    position: fixed;
+    inset-inline: var(--space-0);
+    bottom: var(--space-0);
+    z-index: 3;
+}
+
 /* A card, a spinner or a state block, laid on the page at its gutter. */
 .panel {
     padding: var(--space-3) var(--layout-gutter);
+}
+
+/* A grid of short labels, which is the thing that gains columns as the viewport grows. */
+.board {
+    padding: var(--space-3) var(--layout-gutter);
+}
+
+@media (min-width: 600px) {
+    .page {
+        max-width: none;
+    }
+}
+
+@media (min-width: 1024px) {
+    .page {
+        margin-inline: var(--layout-bottom-bar) var(--space-0);
+        padding-bottom: var(--space-5);
+    }
+
+    /* A column again, but only here, and only because the width beside it is now spent on the
+       record rather than left empty. Capping it is also what keeps the list still while a
+       record opens: the panel eats the margin, not the list. */
+    .panel,
+    .pending {
+        max-width: var(--layout-content-max);
+    }
+
+    /* Only as much as the docked panel takes, and only while one is open, so the list keeps its
+       left edge and nothing moves under the reader. */
+    .page:has(.pf-sheet:not([hidden])) {
+        margin-inline-end: var(--pf-sheet-dock-width);
+    }
+
+    .bar {
+        inset-block: var(--space-0);
+        inset-inline-end: auto;
+        width: var(--layout-bottom-bar);
+    }
 }
 
 /* The delay is the feature: an answer that beats it replaces the spinner before a frame is
