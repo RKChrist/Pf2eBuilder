@@ -25,12 +25,28 @@ public abstract record Selector
 
     public static Selector Speeds { get; } = new SpeedSelector();
 
+    static readonly Dictionary<StatKind, string> KindNames = new()
+    {
+        [StatKind.ArmorClass] = "Armor Class",
+        [StatKind.Fortitude] = "Fortitude",
+        [StatKind.Reflex] = "Reflex",
+        [StatKind.Will] = "Will",
+        [StatKind.Perception] = "Perception",
+        [StatKind.Attack] = "Attack",
+        [StatKind.Damage] = "Damage",
+        [StatKind.Skill] = "Skill",
+        [StatKind.ClassDc] = "Class DC",
+        [StatKind.SpellAttack] = "Spell Attack",
+        [StatKind.SpellDc] = "Spell DC",
+        [StatKind.Speed] = "Speed",
+    };
+
     sealed record ExactSelector(StatKind Kind, string? SkillName) : Selector
     {
         public override bool Matches(StatTarget target) =>
             Kind == target.Kind && (SkillName is null || SkillName.Equals(target.SkillName, StringComparison.OrdinalIgnoreCase));
 
-        public override string Describe() => SkillName ?? Kind.ToString();
+        public override string Describe() => SkillName ?? KindNames[Kind];
     }
 
     sealed record AttributeSelector(AttributeKind Attribute) : Selector

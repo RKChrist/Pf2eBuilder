@@ -1,0 +1,24 @@
+@typeparam T
+
+@(Data switch
+{
+    RemoteData<T>.NotAsked => NotAsked,
+    RemoteData<T>.Loading => Loading,
+    RemoteData<T>.Loaded loaded => Loaded(loaded.Value),
+    RemoteData<T>.Failed failed => Failed(failed.Message),
+    _ => null,
+})
+
+@code {
+    // RemoteData's constructor is private, so the four arms above are the whole set and the
+    // discard is unreachable. The compiler cannot see that, which is the only reason it is here.
+    [Parameter, EditorRequired] public RemoteData<T> Data { get; set; } = new RemoteData<T>.NotAsked();
+
+    [Parameter] public RenderFragment? NotAsked { get; set; }
+
+    [Parameter] public RenderFragment? Loading { get; set; }
+
+    [Parameter, EditorRequired] public RenderFragment<T> Loaded { get; set; } = default!;
+
+    [Parameter, EditorRequired] public RenderFragment<string> Failed { get; set; } = default!;
+}

@@ -1,0 +1,71 @@
+.scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    background: var(--color-ink-950);
+    opacity: 0.55;
+    animation: dim var(--motion-duration-sheet) var(--motion-easing-enter);
+}
+
+.sheet {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 11;
+    display: flex;
+    flex-direction: column;
+    max-height: 88%;
+    margin-inline: auto;
+    max-width: var(--layout-content-max);
+    border-radius: var(--radius-sheet) var(--radius-sheet) var(--radius-grid) var(--radius-grid);
+    background: var(--surface-overlay);
+    animation: rise var(--motion-duration-sheet) var(--motion-easing-enter);
+}
+
+@keyframes dim {
+    from {
+        opacity: 0;
+    }
+}
+
+@keyframes rise {
+    from {
+        transform: translateY(100%);
+    }
+}
+
+.grip {
+    width: var(--space-7);
+    height: var(--space-1);
+    margin: var(--space-2) auto var(--space-0);
+    border-radius: var(--radius-chip);
+    background: var(--line-subtle);
+}
+
+.body {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--space-4) var(--layout-gutter) var(--space-2);
+}
+
+.foot {
+    padding: var(--space-3) var(--layout-gutter) calc(var(--space-3) + env(safe-area-inset-bottom));
+    border-top: var(--border-hair) solid var(--line-subtle);
+}
+
+.close {
+    width: 100%;
+    min-height: var(--tap-primary);
+    border: var(--border-hair) solid var(--accent-base);
+    border-radius: var(--radius-card);
+    background: var(--accent-base);
+    color: var(--text-on-accent);
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-semibold);
+}
+
+.close:active {
+    background: var(--accent-press);
+    border-color: var(--accent-press);
+}

@@ -1,0 +1,60 @@
+@inherits FluxorComponent
+@inject IState<RuleDetailState> Detail
+@inject IDispatcher Dispatcher
+@inject IJSRuntime Js
+
+@if (Detail.Value.Id is not null)
+{
+    <BottomSheet Label="Rule detail" OnClose="Close">
+        <RemoteView T="RuleDetail" Data="Detail.Value.Detail">
+            <Loading>
+                <SkeletonRows Rows="5" />
+            </Loading>
+            <Failed Context="message">
+                <FailureState Message="@message" OnRetry="@(() => Dispatcher.Dispatch(new RuleRetried()))" />
+            </Failed>
+            <Loaded Context="rule">
+                <header class="head">
+                    <h2 class="name">@rule.Summary.Name</h2>
+                    <div class="marks">
+                        @if (rule.Summary.Level is int level)
+                        {
+                            <span class="level">Level @level</span>
+                        }
+                        <RarityTag Rarity="@rule.Summary.Rarity" />
+                    </div>
+                    <TraitList Traits="rule.Summary.Traits" AlreadyShown="@rule.Summary.Rarity" />
+                </header>
+
+                <dl class="mechanics">
+                    @foreach (var row in MechanicsDisplay.Rows(rule))
+                    {
+                        <dt>@row.Label</dt>
+                        <dd>@string.Join(", ", row.Values)</dd>
+                    }
+                </dl>
+
+                <a class="archives" href="@rule.Summary.SourceUrl" target="_blank" rel="noopener">
+                    Read it on Archives of Nethys
+                </a>
+            </Loaded>
+        </RemoteView>
+    </BottomSheet>
+}
+
+@code {
+    /// <summary>Owned by the query string so the phone's back button closes the sheet.</summary>
+    [Parameter] public string? RuleId { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        if (RuleId != Detail.Value.Id)
+        {
+            Dispatcher.Dispatch(RuleId is null ? new RuleClosed() : (object)new RuleOpened(RuleId));
+        }
+    }
+
+    async Task Close() => await Js.InvokeVoidAsync("history.back");
+}

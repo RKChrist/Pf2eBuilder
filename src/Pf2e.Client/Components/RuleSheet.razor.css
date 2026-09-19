@@ -1,0 +1,58 @@
+.head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding-bottom: var(--space-4);
+    border-bottom: var(--border-hair) solid var(--line-subtle);
+}
+
+.name {
+    font-size: var(--font-size-subhead);
+    font-weight: var(--font-weight-bold);
+}
+
+.marks {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.level {
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--font-tracking-wide);
+    color: var(--text-secondary);
+}
+
+.mechanics {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-0);
+    margin: var(--space-0);
+}
+
+.mechanics dt {
+    margin-top: var(--space-3);
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--font-tracking-wide);
+    text-transform: uppercase;
+}
+
+.mechanics dd {
+    margin: var(--space-1) var(--space-0) var(--space-0);
+    color: var(--text-primary);
+    font-size: var(--font-size-data);
+    line-height: var(--font-leading-snug);
+    overflow-wrap: anywhere;
+}
+
+.archives {
+    display: block;
+    margin-top: var(--space-5);
+    min-height: var(--tap-min);
+    padding: var(--space-3) var(--space-0);
+    color: var(--accent-base);
+    font-weight: var(--font-weight-semibold);
+}

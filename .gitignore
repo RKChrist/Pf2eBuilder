@@ -12,6 +12,9 @@ tools/rules-import/out/
 .claude/settings.local.json
 
 
+# Copied from tools/tokens/dist by the client's SyncDesignTokens target on every build.
+src/Pf2e.Client/wwwroot/css/tokens.css
+
 # Local databases, rebuilt from migrations and reseeded on startup.
 *.db
 *.db-shm

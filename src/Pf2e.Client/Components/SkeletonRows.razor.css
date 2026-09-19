@@ -1,0 +1,40 @@
+/* The delay is the feature: a response that beats it replaces this before a frame is painted. */
+.skeleton {
+    animation: reveal var(--motion-duration-quick) var(--motion-easing-enter) var(--motion-duration-sheet);
+    animation-fill-mode: backwards;
+}
+
+@keyframes reveal {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.row {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: var(--tap-default);
+    padding: var(--space-3) var(--layout-gutter);
+    border-bottom: var(--border-hair) solid var(--line-subtle);
+}
+
+.line {
+    height: var(--space-3);
+    border-radius: var(--radius-chip);
+    background: var(--surface-sunken);
+}
+
+.wide {
+    width: 62%;
+}
+
+.narrow {
+    width: 34%;
+    height: var(--space-2);
+}

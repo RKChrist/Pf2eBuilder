@@ -2,16 +2,28 @@ using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Pf2e.Api.Configuration;
 using Pf2e.Api.Endpoints;
 using Pf2e.Application;
 using Pf2e.Infrastructure;
+using Pf2e.Infrastructure.Configuration;
 using Pf2e.Infrastructure.Persistence;
+using AspNetCorsOptions = Microsoft.AspNetCore.Cors.Infrastructure.CorsOptions;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddProblemDetails();
+
+builder.Services.AddSection<CorsOptions>(builder.Configuration, CorsOptions.Section);
+builder.Services.AddCors();
+
+// Built from our own bound options rather than from configuration directly, so the
+// post-configure binding that lets appsettings beat a library default still applies.
+builder.Services.AddOptions<AspNetCorsOptions>()
+    .Configure<IOptions<CorsOptions>>((aspnet, mine) => aspnet.AddDefaultPolicy(policy =>
+        policy.WithOrigins([.. mine.Value.AllowedOrigins]).AllowAnyHeader().AllowAnyMethod()));
 
 var app = builder.Build();
 
@@ -50,6 +62,8 @@ await using (var scope = app.Services.CreateAsyncScope())
         await scope.ServiceProvider.GetRequiredService<RulesSeeder>().SeedAsync();
     }
 }
+
+app.UseCors();
 
 app.MapRules();
 

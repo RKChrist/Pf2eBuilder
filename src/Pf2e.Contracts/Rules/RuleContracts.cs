@@ -40,3 +40,9 @@ public sealed record BreakdownSummary(
     IReadOnlyList<SuppressedSummary> Suppressed);
 
 public sealed record SuppressedSummary(ModifierSummary Modifier, string Reason);
+
+/// <summary>Mechanics arrive flattened, so a client never reimplements the seed's JSON schema.</summary>
+public sealed record RuleDetail(RuleSummary Summary, IReadOnlyList<MechanicField> Mechanics);
+
+/// <summary>A scalar becomes one value; a JSON array becomes one value per element.</summary>
+public sealed record MechanicField(string Key, IReadOnlyList<string> Values);
