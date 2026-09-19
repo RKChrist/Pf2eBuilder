@@ -4,8 +4,10 @@
     bottom: 0;
     z-index: 3;
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    column-gap: var(--tap-separation);
+    /* minmax(0, 1fr), not 1fr: a 1fr track is minmax(auto, 1fr), so each column refuses
+       to shrink below its own content and six of them overflowed the viewport. Two of the
+       six groups were unreachable at 320px. */
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     min-height: var(--layout-bottom-bar);
     padding-bottom: env(safe-area-inset-bottom);
     background: var(--surface-raised);
@@ -20,6 +22,7 @@
     gap: var(--space-1);
     position: relative;
     min-height: var(--tap-min);
+    min-width: 0;
     padding: var(--space-1) var(--space-0);
     border: 0;
     background: none;
@@ -50,6 +53,13 @@
 
 .item:active {
     background: var(--surface-sunken);
+}
+
+.label {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 ::deep .glyph {

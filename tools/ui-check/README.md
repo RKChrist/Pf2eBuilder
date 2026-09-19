@@ -1,0 +1,25 @@
+# UI checks
+
+`measure.mjs` reads the running client's real layout through the Chrome DevTools Protocol.
+Node 24 ships a WebSocket client, so it needs no Puppeteer, no Playwright and no driver.
+
+    chrome --headless=new --remote-debugging-port=9222 --user-data-dir=<temp> about:blank
+    dotnet run --project src/Pf2e.Client --launch-profile http
+    node tools/ui-check/measure.mjs http://localhost:5173/ 320 740
+
+It reports the viewport, every navigation item's box, whether any sits offscreen, whether the
+page scrolls sideways, and the smallest tap target on the page. The exit code is the number of
+problems, so it works as a check.
+
+## Why it exists
+
+A screenshot is not a measurement. Reading one led to a confident diagnosis of a navigation
+overflow at 320px that did not exist, and the fix was written before anything was measured.
+
+`INJECT_CSS` is the part that catches that. It puts a rule back before measuring, so a layout
+fix can be shown to matter instead of assumed:
+
+    INJECT_CSS='nav.bar{grid-template-columns:repeat(6,1fr) !important}' \
+      node tools/ui-check/measure.mjs http://localhost:5173/ 320 740
+
+If the numbers do not move, the change was not a fix. That is exactly what happened here.
