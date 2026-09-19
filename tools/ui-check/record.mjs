@@ -115,6 +115,22 @@ const clickRow = text => evaluate(`(() => {
   return true;
 })()`);
 
+// A result row, not a back link or a filter control. Every result shows its level, which is
+// the one thing that distinguishes a record from the page furniture around it. Keyed on that
+// rather than on a record name, because a name only exists until the data changes.
+const clickResult = () => evaluate(`(() => {
+  const nav = document.querySelector('nav, [role=navigation]');
+  const el = [...document.querySelectorAll('button, a')]
+    .filter(e => !nav?.contains(e))
+    // No regex escapes here. This whole expression is a template literal, and a template
+    // literal swallows a lone backslash, so /level\\s/ arrived as /levels/ and matched nothing.
+    .find(e => (e.textContent ?? '').toLowerCase().includes('level '));
+  if (!el) throw new Error('no result row showing a level');
+  el.scrollIntoView({ block: 'center' });
+  el.click();
+  return el.textContent.trim().split(/\s+/)[0];
+})()`);
+
 const searchBox = () =>
   `document.querySelector('input[type=search]') ?? document.querySelector('input[inputmode=search]')`;
 
@@ -167,7 +183,7 @@ const scenarios = {
     await clickRow('weapon');
     await sleep(900);
     await frames_over(700, 'Weapons.', 4);
-    await clickRow('club');
+    await clickResult();
     await frames_over(1300, 'A record opens with its mechanics as labelled pairs and a link to its source. On a wide screen it docks beside the list so you keep your place.', 8);
   },
 
