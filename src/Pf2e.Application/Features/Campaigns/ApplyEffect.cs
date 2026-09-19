@@ -48,10 +48,17 @@ public sealed class EffectTargetSpecValidator : AbstractValidator<EffectTargetSp
 {
     public EffectTargetSpecValidator()
     {
-        RuleFor(t => t.Kind).Must(kind => kind is "Character")
-                            .WithMessage("Kind must be Character.");
+        RuleFor(t => t.Kind).Must(EffectTargets.Kinds.Contains)
+                            .WithMessage($"Kind must be one of {string.Join(", ", EffectTargets.Kinds)}.");
+
+        // A group carries no id and a named creature needs one, so a request that says "every
+        // monster, this one" has not decided what it meant.
         RuleFor(t => t.Id).NotNull().NotEqual(Guid.Empty)
-                          .WithMessage("A named target needs the id of the creature it names.");
+                          .WithMessage("A named target needs the id of the creature it names.")
+                          .When(t => t.Kind is EffectTargets.Character or EffectTargets.Monster);
+        RuleFor(t => t.Id).Null()
+                          .WithMessage("A group of targets does not name one creature.")
+                          .When(t => t.Kind is EffectTargets.AllPlayerCharacters or EffectTargets.AllMonsters);
     }
 }
 
@@ -75,7 +82,9 @@ public sealed class ApplyEffectHandler(
         }
         else
         {
-            Write(campaign, command, existing);
+            // Resolved before anything is written, so a player who asked for every monster is
+            // refused without having changed half the party first.
+            Write(campaign, command, existing, EffectTargets.Resolve(campaign, role, command.Targets));
         }
 
         try
@@ -116,7 +125,11 @@ public sealed class ApplyEffectHandler(
     /// reconciled rather than appended to, because re-sending an apply with fewer targets means
     /// fewer targets and not the union of both attempts.
     /// </summary>
-    static void Write(Campaign campaign, ApplyEffect command, EffectApplication? existing)
+    static void Write(
+        Campaign campaign,
+        ApplyEffect command,
+        EffectApplication? existing,
+        List<(EffectTargetKind Kind, Guid Id)> wanted)
     {
         var spec = command.Effect!;
         var active = SheetViews.ToActive(command.ApplicationId, spec);
@@ -133,21 +146,6 @@ public sealed class ApplyEffectHandler(
         application.Overwrite(active, timing, spec.SourceCreatureId);
         application.PersistentDamage = spec.PersistentDamage;
         application.PersistentDamageType = spec.PersistentDamageType;
-
-        var wanted = command.Targets
-            .Select(target => (Kind: Enum.Parse<EffectTargetKind>(target.Kind, ignoreCase: true), Id: target.Id!.Value))
-            .DistinctBy(target => target.Id)
-            .ToList();
-
-        // A target nothing in this campaign answers to would become a row nobody ever reads,
-        // and the effect would look applied while doing nothing.
-        foreach (var (_, id) in wanted)
-        {
-            if (campaign.Characters.All(c => c.Id != id) && campaign.Encounter?.Find(id) is null)
-            {
-                throw new CombatantNotFoundException($"Nothing in this campaign has the id {id}.");
-            }
-        }
 
         application.Targets.RemoveAll(target => wanted.All(w => w.Id != target.TargetId));
 

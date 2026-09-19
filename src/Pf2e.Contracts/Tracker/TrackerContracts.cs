@@ -27,7 +27,12 @@ public sealed record EffectSpec(
     int? PersistentDamage = null,
     string? PersistentDamageType = null);
 
-/// <summary>Kind is "Character" for a named character. Id names the creature.</summary>
+/// <summary>
+/// Who an effect is being applied to. Kind is "Character" or "Monster", which name one creature
+/// through Id, or "AllPlayerCharacters" or "AllMonsters", which name a group and carry no Id.
+/// <para>"All player characters" is the campaign's whole roster and not only the ones in the
+/// fight, because Rallying Anthem reaches the party whether or not initiative has been rolled.</para>
+/// </summary>
 public sealed record EffectTargetSpec(string Kind, Guid? Id);
 
 /// <summary>A null Effect removes the application this id names.</summary>

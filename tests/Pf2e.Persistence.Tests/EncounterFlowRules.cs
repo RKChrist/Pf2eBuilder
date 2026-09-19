@@ -250,6 +250,83 @@ public class EncounterFlowRules(SeededDatabase database) : IClassFixture<SeededD
         Assert.Equal(0, Stack.Depth(campaignId));
     }
 
+    // "The bard taps the party, not the DM" is design/006's line, and it is what removes "who is
+    // tracking the +1" from a table. One row reaching exactly the party is the whole mechanism.
+    [Fact]
+    public async Task AnEffectOnAllPlayerCharactersReachesExactlyThemAndNotTheMonsters()
+    {
+        var campaign = await NewCampaign();
+        var bard = await Import(campaign.Code, "Zuz");
+        var fighter = await Import(campaign.Code, "Rune");
+        await AddPlayer(campaign, bard.Id);
+        await AddPlayer(campaign, fighter.Id);
+        var withOgre = await AddMonster(campaign, Ogre, "Ogre boss");
+        var ogre = MonsterNamed(withOgre, "Ogre boss");
+        await Roll(campaign, new InitiativeRoll(bard.Id, 21), new InitiativeRoll(ogre, 23));
+
+        // Sent without a DM key, because a player is who applies a party-wide buff.
+        var after = await Apply(campaign.Code, null, new EffectTargetSpec("AllPlayerCharacters", null));
+
+        var anthem = Assert.Single(after.Effects);
+        Assert.Equal(
+            new[] { bard.Id, fighter.Id }.Order(),
+            anthem.Targets.Select(t => t.Id).Order());
+        Assert.All(anthem.Targets, target => Assert.Equal("Character", target.Kind));
+        Assert.DoesNotContain(ogre, anthem.Targets.Select(t => t.Id));
+
+        // And it really landed on both sheets, through the same row.
+        Assert.All(after.Characters, character => Assert.Equal(anthem.Id, Assert.Single(character.Effects).Id));
+    }
+
+    [Fact]
+    public async Task OnlyTheDmAppliesAnEffectToAMonster()
+    {
+        var campaign = await NewCampaign();
+        var bard = await Import(campaign.Code, "Zuz");
+        await AddPlayer(campaign, bard.Id);
+        var withOgre = await AddMonster(campaign, Ogre, "Ogre boss");
+        var ogre = MonsterNamed(withOgre, "Ogre boss");
+        await Roll(campaign, new InitiativeRoll(bard.Id, 21), new InitiativeRoll(ogre, 23));
+
+        await Assert.ThrowsAsync<NotTheDmException>(
+            () => Apply(campaign.Code, null, new EffectTargetSpec("Monster", ogre)));
+        await Assert.ThrowsAsync<NotTheDmException>(
+            () => Apply(campaign.Code, null, new EffectTargetSpec("AllMonsters", null)));
+
+        var dm = await Apply(campaign.Code, campaign.DmKey, new EffectTargetSpec("AllMonsters", null));
+
+        Assert.Equal(ogre, Assert.Single(Assert.Single(dm.Effects).Targets).Id);
+        Assert.Equal("Monster", Assert.Single(Assert.Single(dm.Effects).Targets).Kind);
+    }
+
+    // A stated kind that does not match what is there is a client confusing two ids, and doing
+    // the other thing quietly is how a player ends up buffing the ogre.
+    [Fact]
+    public async Task NamingAMonsterAsACharacterIsRefusedRatherThanReinterpreted()
+    {
+        var campaign = await NewCampaign();
+        var bard = await Import(campaign.Code, "Zuz");
+        await AddPlayer(campaign, bard.Id);
+        var withOgre = await AddMonster(campaign, Ogre, "Ogre boss");
+        var ogre = MonsterNamed(withOgre, "Ogre boss");
+
+        var failure = await Assert.ThrowsAsync<CombatantNotFoundException>(
+            () => Apply(campaign.Code, campaign.DmKey, new EffectTargetSpec("Character", ogre)));
+
+        Assert.Contains("not a character", failure.Message);
+    }
+
+    async Task<CampaignView> Apply(string code, string? dmKey, params EffectTargetSpec[] targets)
+    {
+        await using var db = database.NewContext();
+        return await new ApplyEffectHandler(db, Stack, Broadcaster).Handle(
+            new ApplyEffect(code, dmKey, Guid.NewGuid(),
+                new EffectSpec("Rallying Anthem", "Custom", null, 0, null,
+                    [new EffectModifierView("Status", 1, [new SelectorSpecView("Exactly", "Will", null, null)])]),
+                targets),
+            default);
+    }
+
     async Task<Guid> CampaignId(string code)
     {
         await using var db = database.NewContext();
