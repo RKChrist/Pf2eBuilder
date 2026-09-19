@@ -19,15 +19,39 @@ internal static class RuleMechanics
     /// never heard of can be given.</summary>
     public static IReadOnlyList<MechanicField> Fields(string json) =>
         JsonNode.Parse(json) is JsonObject fields
-            ? [.. fields.Select(field => new MechanicField(field.Key, Flatten(field.Value)))]
+            ? [.. fields.Select(field => new MechanicField(field.Key, Flatten(field.Key, field.Value)))
+                        .Where(field => field.Values.Count > 0)]
             : [];
 
-    static IReadOnlyList<string> Flatten(JsonNode? node) => node switch
+    static IReadOnlyList<string> Flatten(string key, JsonNode? node) => node switch
     {
         JsonArray array => [.. array.Select(Render)],
+        JsonObject map => Readings.TryGetValue(key, out var read) ? read(map) : Pairs(map),
         null => [],
         _ => [Render(node)],
     };
+
+    /// <summary>A structured field read the way the rules print it. Keyed by field, so a field with
+    /// no row here still reads as name and value pairs rather than as JSON.</summary>
+    static readonly Dictionary<string, Func<JsonObject, IReadOnlyList<string>>> Readings = new(StringComparer.Ordinal)
+    {
+        ["speed"] = Speeds,
+    };
+
+    /// <summary>Land speed first and unnamed, then every other movement by name. AoN's "max" is the
+    /// fastest of the others, a sort key and not a speed.</summary>
+    static IReadOnlyList<string> Speeds(JsonObject speeds) =>
+    [
+        .. speeds.Where(speed => speed.Key != "max" && speed.Value is not null)
+            .OrderBy(speed => speed.Key == "land" ? 0 : 1)
+            .ThenBy(speed => speed.Key, StringComparer.Ordinal)
+            .Select(speed => speed.Key == "land" ? $"{Render(speed.Value)} feet" : $"{speed.Key} {Render(speed.Value)} feet"),
+    ];
+
+    static IReadOnlyList<string> Pairs(JsonObject map) =>
+    [
+        .. map.Where(pair => pair.Value is not null).Select(pair => $"{pair.Key.Replace('_', ' ')} {Render(pair.Value)}"),
+    ];
 
     static string Render(JsonNode? node) => node switch
     {

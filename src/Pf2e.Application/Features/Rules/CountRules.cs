@@ -31,21 +31,21 @@ public sealed class CountRulesHandler(IRulesDbContext db) : IRequestHandler<Coun
         {
             // Unfiltered, every one of the 21,000 records is a candidate, so only the two
             // columns the count needs are read and the mechanics document is never touched.
-            var rows = await records.Select(r => new { r.Category, r.Traits }).ToListAsync(ct);
+            var rows = await records.Select(r => new { r.Category, r.Level, r.Traits }).ToListAsync(ct);
             counts =
             [
                 .. rows.Where(r => RuleFilters.HasTrait(r.Traits, trait))
                        .GroupBy(r => r.Category)
-                       .Select(g => new CategoryCount(g.Key, g.Count())),
+                       .Select(g => new CategoryCount(g.Key, g.Count(), g.Min(r => r.Level), g.Max(r => r.Level))),
             ];
         }
         else
         {
             var grouped = await records
                 .GroupBy(r => r.Category)
-                .Select(g => new { Category = g.Key, Count = g.Count() })
+                .Select(g => new { Category = g.Key, Count = g.Count(), Lowest = g.Min(r => r.Level), Highest = g.Max(r => r.Level) })
                 .ToListAsync(ct);
-            counts = [.. grouped.Select(g => new CategoryCount(g.Category, g.Count))];
+            counts = [.. grouped.Select(g => new CategoryCount(g.Category, g.Count, g.Lowest, g.Highest))];
         }
 
         return new RuleCounts(

@@ -330,6 +330,98 @@ public class HandlerRules(SeededDatabase database) : IClassFixture<SeededDatabas
     }
 
     [Fact]
+    public async Task CountsCarryTheLevelRangeOfEachCategory()
+    {
+        await using var db = database.NewContext();
+
+        var counts = (await new CountRulesHandler(db).Handle(new CountRules(), default))
+            .Categories.ToDictionary(c => c.Category);
+
+        Assert.Equal((1, 10), (counts["spell"].LowestLevel, counts["spell"].HighestLevel));
+        Assert.Equal((1, 20), (counts["feat"].LowestLevel, counts["feat"].HighestLevel));
+        Assert.Equal(-1, counts["equipment"].LowestLevel);
+        Assert.Null(counts["action"].LowestLevel);
+        Assert.Null(counts["ancestry"].HighestLevel);
+    }
+
+    [Fact]
+    public async Task TheTraitFacetCountsTheWholeCategoryMostCommonFirst()
+    {
+        await using var db = database.NewContext();
+
+        var facet = (await new CountTraitsHandler(db).Handle(new CountTraits("feat"), default)).Traits;
+        var search = new SearchRulesHandler(db);
+
+        Assert.True(facet.Count > 100, $"feats carry hundreds of traits, not {facet.Count}");
+        Assert.Equal(facet.OrderByDescending(t => t.Count).Select(t => t.Count), facet.Select(t => t.Count));
+        Assert.Equal(facet.Count, facet.Select(t => t.Trait.ToLowerInvariant()).Distinct().Count());
+        foreach (var trait in new[] { "Fighter", "Elf", "General", "Skill", "Archetype" })
+        {
+            var counted = Assert.Single(facet, t => t.Trait == trait);
+            var listed = await search.Handle(new SearchRules(Category: "feat", Trait: trait, PageSize: 1), default);
+            Assert.Equal(listed.TotalMatching, counted.Count);
+        }
+
+        Assert.Equal("Class", facet.Single(t => t.Trait == "Fighter").Group);
+        Assert.Equal("Ancestry", facet.Single(t => t.Trait == "Elf").Group);
+        Assert.Equal("Feat", facet.Single(t => t.Trait == "General").Group);
+    }
+
+    [Fact]
+    public async Task TheTraitFacetFollowsTheNameAndLevelFilters()
+    {
+        await using var db = database.NewContext();
+
+        var facet = (await new CountTraitsHandler(db).Handle(new CountTraits("feat", "shield", 1, 4), default)).Traits;
+        var whole = (await new CountTraitsHandler(db).Handle(new CountTraits("feat"), default)).Traits;
+        var search = new SearchRulesHandler(db);
+
+        Assert.NotEmpty(facet);
+        Assert.True(facet.Count < whole.Count, "a name and level filter narrows the traits on offer");
+        foreach (var trait in facet)
+        {
+            var listed = await search.Handle(
+                new SearchRules(Category: "feat", Name: "shield", MinLevel: 1, MaxLevel: 4, Trait: trait.Trait, PageSize: 1), default);
+            Assert.Equal(listed.TotalMatching, trait.Count);
+        }
+    }
+
+    [Fact]
+    public void TheTraitFacetNeedsACategory()
+    {
+        Assert.False(new CountTraitsValidator().Validate(new CountTraits("")).IsValid);
+        Assert.False(new CountTraitsValidator().Validate(new CountTraits("feat", MinLevel: 5, MaxLevel: 2)).IsValid);
+    }
+
+    [Fact]
+    public async Task ASheetLinksOnlyTheValuesThatNameARecord()
+    {
+        await using var db = database.NewContext();
+        var get = new GetRuleHandler(db);
+
+        var scion = (await get.Handle(new GetRule("background-491"), default))!;
+        var skills = scion.Mechanics.Single(m => m.Key == "skill").Values;
+        Assert.Contains("Academia Lore or a Lore skill associated with your school", skills);
+        var link = Assert.Single(scion.Links, l => l.Field == "skill");
+        Assert.Equal("Arcana", link.Value);
+        Assert.Equal("Arcana", (await get.Handle(new GetRule(link.Id), default))!.Summary.Name);
+
+        var reactive = (await new SearchRulesHandler(db).Handle(new SearchRules(Category: "feat", Name: "Reactive Shield"), default)).Items[0];
+        var archetype = Assert.Single((await get.Handle(new GetRule(reactive.Id), default))!.Links, l => l.Field == "archetype");
+        Assert.StartsWith("archetype-", archetype.Id);
+    }
+
+    [Fact]
+    public async Task ASpeedReadsInFeetWithEveryMovementNamed()
+    {
+        await using var db = database.NewContext();
+
+        var companion = (await new GetRuleHandler(db).Handle(new GetRule("animal-companion-11"), default))!;
+
+        Assert.Equal(["10 feet", "fly 45 feet"], companion.Mechanics.Single(m => m.Key == "speed").Values);
+    }
+
+    [Fact]
     public async Task ACategoryWithNothingWorthAGlanceHighlightsNothing()
     {
         await using var db = database.NewContext();

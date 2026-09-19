@@ -27,6 +27,6 @@ public sealed class GetRuleHandler(IRulesDbContext db) : IRequestHandler<GetRule
         }
 
         var mechanics = RuleMechanics.Fields(record.Mechanics);
-        return new RuleDetail(RuleSummaries.Of(record, mechanics), mechanics);
+        return new RuleDetail(RuleSummaries.Of(record, mechanics), mechanics, await RuleLinks.Resolve(db, mechanics, ct));
     }
 }

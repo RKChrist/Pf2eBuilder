@@ -41,24 +41,10 @@ public sealed class SearchRulesHandler(IRulesDbContext db) : IRequestHandler<Sea
 {
     public async Task<RuleSearchResult> Handle(SearchRules query, CancellationToken ct)
     {
-        IQueryable<RuleRecord> records = db.RuleRecords.AsNoTracking();
-
-        if (query.Category is { Length: > 0 } category)
-        {
-            records = records.Where(r => r.Category == category);
-        }
-
-        records = records.NameContains(query.Name);
-
-        if (query.MinLevel is int min)
-        {
-            records = records.Where(r => r.Level >= min);
-        }
-
-        if (query.MaxLevel is int max)
-        {
-            records = records.Where(r => r.Level <= max);
-        }
+        var records = db.RuleRecords.AsNoTracking()
+            .InCategory(query.Category)
+            .NameContains(query.Name)
+            .LevelBetween(query.MinLevel, query.MaxLevel);
 
         if (query.Trait is { Length: > 0 } trait)
         {

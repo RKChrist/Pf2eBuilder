@@ -23,7 +23,17 @@ public sealed record RuleSearchResult(
 /// is behind a door before anyone opens it.</summary>
 public sealed record RuleCounts(int Total, IReadOnlyList<CategoryCount> Categories);
 
-public sealed record CategoryCount(string Category, int Count);
+/// <summary>The lowest and highest level in the category, over the same filter as the count, and
+/// null where no record in it has a level at all.</summary>
+public sealed record CategoryCount(string Category, int Count, int? LowestLevel = null, int? HighestLevel = null);
+
+/// <summary>How many records in one category carry each trait, most common first, so a filter can
+/// offer the traits that matter there rather than the ones that happen to be on screen.</summary>
+public sealed record TraitCounts(IReadOnlyList<TraitCount> Traits);
+
+/// <summary><paramref name="Group"/> is the kind of trait, such as Class or Ancestry, from the trait's
+/// own record, and null for a trait the ruleset has no record of.</summary>
+public sealed record TraitCount(string Trait, int Count, string? Group);
 
 /// <summary>
 /// A condition the engine can compute, paired with where its rule is printed. The modifiers
@@ -49,8 +59,13 @@ public sealed record BreakdownSummary(
 
 public sealed record SuppressedSummary(ModifierSummary Modifier, string Reason);
 
-/// <summary>Mechanics arrive flattened, so a client never reimplements the seed's JSON schema.</summary>
-public sealed record RuleDetail(RuleSummary Summary, IReadOnlyList<MechanicField> Mechanics);
+/// <summary>Mechanics arrive flattened, so a client never reimplements the seed's JSON schema.
+/// <see cref="Links"/> names every value that is another record's exact name, so a client links
+/// only what exists.</summary>
+public sealed record RuleDetail(RuleSummary Summary, IReadOnlyList<MechanicField> Mechanics, IReadOnlyList<RuleLink> Links);
+
+/// <summary>The value <paramref name="Value"/> of field <paramref name="Field"/> is the record <paramref name="Id"/>.</summary>
+public sealed record RuleLink(string Field, string Value, string Id);
 
 /// <summary>A scalar becomes one value; a JSON array becomes one value per element.</summary>
 public sealed record MechanicField(string Key, IReadOnlyList<string> Values);

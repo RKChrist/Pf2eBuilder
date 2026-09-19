@@ -9,10 +9,23 @@ internal static class RuleFilters
 {
     const string Escape = "\\";
 
+    public static IQueryable<RuleRecord> InCategory(this IQueryable<RuleRecord> records, string? category) =>
+        category is { Length: > 0 } ? records.Where(r => r.Category == category) : records;
+
     public static IQueryable<RuleRecord> NameContains(this IQueryable<RuleRecord> records, string? name) =>
         name is { Length: > 0 }
             ? records.Where(r => EF.Functions.Like(r.Name, $"%{Escaped(name)}%", Escape))
             : records;
+
+    public static IQueryable<RuleRecord> LevelBetween(this IQueryable<RuleRecord> records, int? min, int? max)
+    {
+        if (min is int low)
+        {
+            records = records.Where(r => r.Level >= low);
+        }
+
+        return max is int high ? records.Where(r => r.Level <= high) : records;
+    }
 
     public static bool HasTrait(IEnumerable<string> traits, string trait) =>
         traits.Contains(trait, StringComparer.OrdinalIgnoreCase);
