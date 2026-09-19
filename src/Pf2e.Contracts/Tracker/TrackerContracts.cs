@@ -97,7 +97,16 @@ public sealed record CharacterSheetView(
     // The values the totals above are computed from, in exactly the shape an edit sends back.
     // Without this the edit screen has nothing to open with: a sheet states Fortitude +11 and
     // an edit states Trained, and one cannot be worked back from the other.
-    CharacterBuildEdit Build);
+    CharacterBuildEdit Build,
+    /// <summary>What this character is doing while the party travels, by key, and null when
+    /// nobody has said. Session state: a level-up does not stop them scouting.</summary>
+    string? ExplorationActivity);
+
+/// <summary>One thing a character can be doing between fights, with the sentence a screen
+/// shows under it. The list is the engine's, so a screen never spells one out itself.</summary>
+public sealed record ExplorationActivityView(string Key, string Name, string Consequence);
+
+public sealed record SetExplorationActivityRequest(string? Activity);
 
 /// <summary>A computed number with a name of its own rather than a slot on the sheet: one skill,
 /// one weapon. Rank is the skill's proficiency by name and null for a weapon.</summary>

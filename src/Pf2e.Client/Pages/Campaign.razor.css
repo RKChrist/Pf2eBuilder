@@ -649,3 +649,41 @@
     font-size: var(--font-size-chip);
     color: var(--text-secondary);
 }
+
+.explore {
+    padding: var(--space-3) var(--layout-gutter) var(--space-6);
+}
+
+.explore__heading {
+    margin: 0;
+    font-size: var(--font-size-subhead);
+}
+
+.explore__blurb {
+    margin: var(--space-2) 0 0;
+    font-size: var(--font-size-data);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}
+
+/* One row per character, side by side once there is room. A party of five is five short
+   pickers, and a single column of them on a laptop is a scroll for no reason. */
+.doing {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+    gap: var(--space-4);
+    margin-top: var(--space-4);
+}
+
+.doing__row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.doing__says {
+    margin: 0;
+    font-size: var(--font-size-chip);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}

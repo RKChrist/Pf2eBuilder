@@ -34,6 +34,9 @@ public sealed record MonsterRevealed(Guid CombatantId, bool Revealed);
 
 public sealed record EncounterEnded;
 
+/// <summary>Null clears it, which is what "nothing in particular" means.</summary>
+public sealed record ExplorationActivityChosen(Guid CharacterId, string? Activity);
+
 public sealed record EditorOpened(Guid CharacterId);
 
 public sealed record EditorClosed;

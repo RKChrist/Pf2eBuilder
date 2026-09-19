@@ -97,6 +97,22 @@ public sealed class TrackerApi(HttpClient http)
     public Task<CampaignView> EndEncounterAsync(string code, CancellationToken ct) =>
         SendAsync<CampaignView>(new HttpRequestMessage(HttpMethod.Delete, $"{Campaign(code)}/encounter"), ct);
 
+    /// <summary>The nine activities and what each one means. Not part of a campaign, so it has
+    /// no code in its path and is fetched once.</summary>
+    public Task<IReadOnlyList<ExplorationActivityView>> GetExplorationActivitiesAsync(CancellationToken ct) =>
+        SendAsync<IReadOnlyList<ExplorationActivityView>>(
+            new HttpRequestMessage(HttpMethod.Get, "exploration-activities"), ct);
+
+    /// <summary>Not a DM command: a player chooses their own activity at a real table.</summary>
+    public Task<CampaignView> SetExplorationActivityAsync(
+        string code, Guid character, string? activity, CancellationToken ct) =>
+        SendAsync<CampaignView>(
+            Carrying(
+                HttpMethod.Put,
+                $"{Campaign(code)}/characters/{character}/exploration",
+                new SetExplorationActivityRequest(activity)),
+            ct);
+
     /// <summary>Whether this browser holds a DM key at all, which is what the shell reads to
     /// decide between offering the DM controls and not drawing them.</summary>
     public bool HoldsDmKey => _dmKey is { Length: > 0 };

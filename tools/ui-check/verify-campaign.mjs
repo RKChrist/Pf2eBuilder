@@ -32,17 +32,26 @@ const waitFor = async (page, selector, ms = 25000) => {
   throw new Error(`never saw ${selector}`);
 };
 
-const clickText = async (page, selector, text) => {
-  const hit = await page.eval(`(() => {
-    const el = [...document.querySelectorAll(${JSON.stringify(selector)})]
-      .find(e => e.textContent.trim() === ${JSON.stringify(text)});
-    if (!el || el.disabled) return false;
-    el.scrollIntoView({ block: 'center' });
-    el.click();
-    return true;
-  })()`);
-  if (!hit) throw new Error(`nothing to click: ${selector} "${text}"`);
-  await sleep(700);
+// Blazor re-renders on every answer from the server, so a control can be absent for a frame
+// after an unrelated change lands. Waiting for it beats sleeping longer and hoping.
+const clickText = async (page, selector, text, ms = 10000) => {
+  const deadline = Date.now() + ms;
+  while (Date.now() < deadline) {
+    const hit = await page.eval(`(() => {
+      const el = [...document.querySelectorAll(${JSON.stringify(selector)})]
+        .find(e => e.textContent.trim() === ${JSON.stringify(text)});
+      if (!el || el.disabled) return false;
+      el.scrollIntoView({ block: 'center' });
+      el.click();
+      return true;
+    })()`);
+    if (hit) {
+      await sleep(700);
+      return;
+    }
+    await sleep(200);
+  }
+  throw new Error(`nothing to click: ${selector} "${text}"`);
 };
 
 const type = (page, selector, value) => page.eval(`(() => {
@@ -77,6 +86,28 @@ await clickText(dm, 'button', 'Import');
 await waitFor(dm, '.character');
 check('the imported character is on the card', (await dm.eval(`document.querySelector('.character__name').textContent.trim()`)) === 'Gnibbo');
 await shot(dm, 'dm-01-exploration');
+
+// Exploration: what everyone is doing, and the one that changes how the fight starts.
+check('exploration asks what each character is doing', await dm.eval(
+  `!!document.querySelector('[data-doing]')`));
+const activities = await dm.eval(
+  `[...document.querySelector('[data-doing] select').options].map(o => o.textContent.trim())`);
+check('and offers every printed activity plus doing nothing', activities.length === 10,
+  activities.join(", "));
+check('starting on nothing in particular', activities[0] === 'Nothing in particular', activities[0]);
+
+await dm.eval(`(() => {
+  const select = document.querySelector('[data-doing] select');
+  const scout = [...select.options].find(o => o.textContent.trim() === 'Scout');
+  Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(select, scout.value);
+  select.dispatchEvent(new Event('change', { bubbles: true }));
+  return true;
+})()`);
+await sleep(1200);
+check('choosing one says what it means at the table', await dm.eval(
+  `document.querySelector('.doing__says')?.textContent.trim() ?? ''`).then(t => t.includes('initiative')),
+  await dm.eval(`document.querySelector('.doing__says')?.textContent.trim() ?? 'nothing'`));
+await shot(dm, 'dm-05-exploration');
 
 // Into a fight.
 await clickText(dm, '.shell__modes button', 'Fight');

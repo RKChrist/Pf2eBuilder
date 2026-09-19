@@ -56,6 +56,14 @@ public sealed class TrackedCharacter
     public int HeroPoints { get; set; }
 
     /// <summary>
+    /// What this character is doing while the party travels, by
+    /// <see cref="ExplorationActivity.Key"/>, and null when they have not said.
+    /// <para>Session state, not build state, which is why <see cref="Apply"/> does not touch it:
+    /// a player who levels up mid-session is still scouting afterwards.</para>
+    /// </summary>
+    public string? ExplorationActivity { get; set; }
+
+    /// <summary>
     /// Effects are not here. They belong to the campaign, one row per application, because one
     /// application can reach five characters and a monster, and a list hanging off each
     /// character could not say that.

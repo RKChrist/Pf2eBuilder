@@ -49,15 +49,31 @@ public sealed class RollInitiativeHandler(
 
         var given = command.Rolls.ToDictionary(roll => roll.CombatantId, roll => roll.Initiative);
 
+        // Scout is the one activity that reaches everybody: one character ranging ahead hands
+        // the whole party a circumstance bonus, so it is read once before anyone rolls.
+        var scouted = Initiative.PartyBonus(campaign.Characters
+            .Select(character => ExplorationActivities.Find(character.ExplorationActivity)));
+
         foreach (var combatant in encounter.Combatants)
         {
             combatant.Initiative = given.TryGetValue(combatant.Id, out var stated)
                 ? stated
-                : Rolled(campaign, combatant);
+                : Rolled(campaign, combatant, scouted);
         }
 
         encounter.Round = 1;
-        encounter.Reminders = [];
+
+        // What the party was doing when the fight started, for the things this engine states and
+        // does not compute. A shield it does not know the bonus of is a reminder, not a guess.
+        encounter.Reminders =
+        [
+            .. campaign.Characters
+                .Where(character => ExplorationActivities.Find(character.ExplorationActivity)
+                    is { Effect: InitiativeEffect.None } activity && activity.Key == "defend")
+                .Select(character => new TurnReminder(
+                    character.Id,
+                    $"{character.Name} was Defending: their shield is already raised.")),
+        ];
 
         // The marker is set from the sorted order, so the tie rule decides who goes first here
         // in exactly the same way it decides every later turn.
@@ -72,18 +88,34 @@ public sealed class RollInitiativeHandler(
         return await CampaignAccess.PublishChangeAsync(broadcaster, undo, change, ct);
     }
 
-    /// <summary>A d20 plus the creature's Perception, which is what initiative usually is.</summary>
-    internal static int Rolled(Campaign campaign, Combatant combatant)
+    /// <summary>
+    /// A d20 plus whatever the creature adds to it. What they add is decided by
+    /// <see cref="Initiative.Modifier"/>, which is pure and tested without a die; this is only
+    /// the die and the lookups that feed it.
+    /// </summary>
+    internal static int Rolled(Campaign campaign, Combatant combatant, int partyBonus = 0)
     {
-        var perception = combatant switch
-        {
-            MonsterCombatant monster => monster.Stats.Perception,
-            _ => campaign.Characters.FirstOrDefault(c => c.Id == combatant.Id) is { } character
-                ? CharacterSheet.Compute(character.ToBuild(), character.ToSession(campaign.EffectApplications))
-                                .Perception.Total
-                : 0,
-        };
+        var die = RandomNumberGenerator.GetInt32(1, 21);
 
-        return RandomNumberGenerator.GetInt32(1, 21) + perception;
+        if (combatant is MonsterCombatant monster)
+        {
+            return die + Initiative.Modifier(
+                monster.Stats.Perception, null, _ => null, partyBonus, isAlly: false);
+        }
+
+        if (campaign.Characters.FirstOrDefault(c => c.Id == combatant.Id) is not { } character)
+        {
+            return die;
+        }
+
+        var sheet = CharacterSheet.Compute(
+            character.ToBuild(), character.ToSession(campaign.EffectApplications));
+
+        return die + Initiative.Modifier(
+            sheet.Perception.Total,
+            ExplorationActivities.Find(character.ExplorationActivity),
+            named => sheet.Skills.FirstOrDefault(skill => skill.Name == named)?.Value.Total,
+            partyBonus,
+            isAlly: true);
     }
 }

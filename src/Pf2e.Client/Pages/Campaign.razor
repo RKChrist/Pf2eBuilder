@@ -3,6 +3,7 @@
 @inherits FluxorComponent
 @inject IState<CampaignState> Store
 @inject IState<ConditionsState> ConditionsStore
+@inject IState<ExplorationState> ExplorationStore
 @inject IState<RulesBrowserState> Browser
 @inject IDispatcher Dispatcher
 
@@ -71,6 +72,10 @@
         @if (table.Mode == "Encounter")
         {
             @Fight(table)
+        }
+        else if (table.Mode == "Exploration" && table.Characters.Count > 0)
+        {
+            @Exploring(table)
         }
 
         @if (!State.Live)
@@ -751,6 +756,46 @@
     void Edit(CharacterBuildEdit draft) => Dispatcher.Dispatch(new EditDraftChanged(draft));
 
     /// <summary>
+    /// What everyone is doing while the party moves. One row per character, because that is the
+    /// question the DM asks before opening a door and the one nobody remembers the answer to.
+    /// <para>The consequence is printed under the choice rather than left in a rulebook. Three
+    /// of the nine reach the fight and the rest are the table's to play out, and a sentence is
+    /// how a screen tells those apart honestly.</para>
+    /// </summary>
+    RenderFragment Exploring(CampaignView table) => @<div class="explore">
+        <Card Class="explore__card">
+            <ChildContent>
+                <h2 class="explore__heading">While you travel</h2>
+                <p class="explore__blurb">
+                    What each of you is doing. Scouting and sneaking change how the next fight
+                    starts, so this is worth setting before anyone opens a door.
+                </p>
+
+                <div class="doing">
+                    @foreach (var character in table.Characters)
+                    {
+                        <div class="doing__row" data-doing="@character.Id">
+                            <Select TValue="string"
+                                    Label="@character.Name"
+                                    Options="ExplorationStore.Value.Options"
+                                    Value="@(character.ExplorationActivity ?? string.Empty)"
+                                    ValueChanged="key => Dispatcher.Dispatch(
+                                        new ExplorationActivityChosen(
+                                            character.Id,
+                                            string.IsNullOrEmpty(key) ? null : key))" />
+
+                            @if (ExplorationStore.Value.ConsequenceOf(character.ExplorationActivity) is { } says)
+                            {
+                                <p class="doing__says">@says</p>
+                            }
+                        </div>
+                    }
+                </div>
+            </ChildContent>
+        </Card>
+    </div>;
+
+    /// <summary>
     /// The fight. Initiative order, whose turn it is, and what the last turn change left the DM
     /// to do. A player gets the same list with the monsters they have been shown and nothing at
     /// all about the ones they have not; that is the projection's doing, not this screen's, so
@@ -984,6 +1029,11 @@
         if (ConditionsStore.Value.Conditions is RemoteData<IReadOnlyList<ConditionSummary>>.NotAsked)
         {
             Dispatcher.Dispatch(new ConditionsRequested());
+        }
+
+        if (ExplorationStore.Value.Activities is RemoteData<IReadOnlyList<ExplorationActivityView>>.NotAsked)
+        {
+            Dispatcher.Dispatch(new ExplorationActivitiesRequested());
         }
     }
 

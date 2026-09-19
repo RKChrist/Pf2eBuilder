@@ -32,6 +32,16 @@ public static class CampaignEndpoints
             (ISender sender, string code, Guid id, CharacterBuildEdit body, CancellationToken ct) =>
                 sender.Send(new EditCharacter(code, id, body), ct));
 
+        // Not DM-only: a player chooses their own activity at a real table.
+        app.MapPut("/campaigns/{code}/characters/{id:guid}/exploration",
+            (ISender sender, HttpRequest request, string code, Guid id,
+             SetExplorationActivityRequest body, CancellationToken ct) =>
+                sender.Send(new SetExplorationActivity(code, DmKeyOf(request), id, body.Activity), ct));
+
+        app.MapGet("/exploration-activities", () => Results.Ok(
+            Pf2e.Domain.ExplorationActivities.All
+                .Select(a => new ExplorationActivityView(a.Key, a.Name, a.Consequence))));
+
         // One route whether the creature is a character or a monster, because it is one command:
         // the id names a creature and the handler knows which kind it found.
         app.MapPost("/campaigns/{code}/creatures/{id:guid}/hit-points",

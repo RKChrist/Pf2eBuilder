@@ -38,7 +38,8 @@ internal static class SheetViews
             sheet.SpellAttack is { } attack ? Of(attack) : null,
             sheet.SpellDc is { } dc ? Of(dc) : null,
             character.Spellcasting?.Tradition,
-            Edit(character.ToBuild()));
+            Edit(character.ToBuild()),
+            character.ExplorationActivity);
     }
 
     static NamedBreakdownView Of(NamedBreakdown named) => new(named.Name, Of(named.Value), named.Rank?.ToString());
