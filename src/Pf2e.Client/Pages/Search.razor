@@ -1,0 +1,155 @@
+@page "/search"
+@inherits FluxorComponent
+@inject IState<SearchState> Store
+@inject IDispatcher Dispatcher
+@inject NavigationManager Navigation
+
+<PageTitle>@Heading</PageTitle>
+
+<header class="top">
+    <h1 class="heading">@Heading</h1>
+    @if (Counts is { } known && State.HasQuery)
+    {
+        <p class="summary">@Summary(known)</p>
+    }
+</header>
+
+@if (!State.HasQuery)
+{
+    <div class="panel">
+        <Card>
+            <EmptyState Title="Search every rule">
+                <ChildContent>Type a name in the field above: a feat, a spell, a trait, a piece of gear.</ChildContent>
+            </EmptyState>
+        </Card>
+    </div>
+}
+else
+{
+    <div class="found">
+        @if (Counts is { Categories.Count: > 0 } counts)
+        {
+            <nav class="scopes" aria-label="Narrow to one kind of record">
+                <a class="scope" href="@Links.Search(State.Query)" aria-current="@(State.Scope is null ? "page" : null)">
+                    Everything <span class="count">@Numbers.Grouped(counts.Total)</span>
+                </a>
+                @foreach (var category in counts.Categories)
+                {
+                    <a class="scope" href="@Links.Search(State.Query, category.Category)"
+                       aria-current="@(State.Scope == category.Category ? "page" : null)">
+                        @RuleCatalog.LabelOf(category.Category)
+                        <span class="count">@Numbers.Grouped(category.Count)</span>
+                    </a>
+                }
+            </nav>
+        }
+
+        <div class="results">
+            <RemoteView T="RuleSearchResult" Data="State.Results">
+                <NotAsked>@Waiting</NotAsked>
+                <Loading>@Waiting</Loading>
+                <Failed Context="message">
+                    <div class="panel">
+                        <Card>
+                            <ErrorState Title="Search is not answering">
+                                <ChildContent>@message</ChildContent>
+                                <Action>
+                                    <Button Variant="ButtonVariant.Secondary"
+                                            OnClick="@(() => Dispatcher.Dispatch(new SearchRetriedEverywhere()))">
+                                        Try again
+                                    </Button>
+                                </Action>
+                            </ErrorState>
+                        </Card>
+                    </div>
+                </Failed>
+                <Loaded Context="found">
+                    @if (found.Items.Count == 0)
+                    {
+                        <div class="panel">
+                            <Card>
+                                <EmptyState Title="Nothing by that name">
+                                    <ChildContent>No record is called anything like “@State.Query.Trim()”. Fewer letters find more.</ChildContent>
+                                </EmptyState>
+                            </Card>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="panel">
+                            <Card>
+                                <ListContent>
+                                    <ul class="rows">
+                                        @foreach (var item in found.Items)
+                                        {
+                                            <RuleRow Rule="item" ShowCategory="State.Scope is null"
+                                                     OnOpen="() => Navigation.NavigateTo(Navigation.Rule(item.Id))" />
+                                        }
+                                    </ul>
+                                </ListContent>
+                            </Card>
+                        </div>
+
+                        @if (PageCount(found) > 1)
+                        {
+                            <div class="panel">
+                                <Pager Page="found.Page"
+                                       PageCount="PageCount(found)"
+                                       PageChanged="@(page => Navigation.NavigateTo(Links.Search(State.Query, State.Scope, page)))"
+                                       Label="Pages of results" />
+                            </div>
+                        }
+                    }
+                </Loaded>
+            </RemoteView>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, SupplyParameterFromQuery(Name = "q")] public string? Query { get; set; }
+
+    [Parameter, SupplyParameterFromQuery(Name = "in")] public string? Scope { get; set; }
+
+    [Parameter, SupplyParameterFromQuery(Name = "page")] public int? Page { get; set; }
+
+    /// <summary>The address last applied. Opening a record adds ?rule= to this same address, and
+    /// that must not replay the query over whatever has been typed since.</summary>
+    (string?, string?, int?)? _applied;
+
+    SearchState State => Store.Value;
+
+    RuleCounts? Counts => State.Counts is RemoteData<RuleCounts>.Loaded loaded ? loaded.Value : null;
+
+    string Heading => State.HasQuery ? $"Results for “{State.Query.Trim()}”" : "Search";
+
+    RenderFragment Waiting => @<div class="pending"><Spinner ShowLabel="true" Label="Searching" /></div>;
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        var address = (Query, Scope, Page);
+        if (_applied == address)
+        {
+            return;
+        }
+
+        _applied = address;
+        var query = Query ?? string.Empty;
+        if (query != State.Query || Scope != State.Scope || (Page ?? 1) != State.Page
+            || State.Results is RemoteData<RuleSearchResult>.NotAsked)
+        {
+            Dispatcher.Dispatch(new SearchOpened(query, Scope, Page ?? 1));
+        }
+    }
+
+    string Summary(RuleCounts counts) => State.Scope is { } scope
+        ? $"{Numbers.Grouped(counts.Categories.FirstOrDefault(c => c.Category == scope)?.Count ?? 0)} of {Numbers.Grouped(counts.Total)} matches are {RuleCatalog.LabelOf(scope).ToLowerInvariant()}"
+        : counts.Categories.Count == 1
+            ? $"{Numbers.Grouped(counts.Total)} {(counts.Total == 1 ? "match" : "matches")}, all {RuleCatalog.LabelOf(counts.Categories[0].Category).ToLowerInvariant()}"
+            : $"{Numbers.Grouped(counts.Total)} matches across {counts.Categories.Count} kinds of record";
+
+    static int PageCount(RuleSearchResult found) =>
+        Math.Max(1, (found.TotalMatching + found.PageSize - 1) / found.PageSize);
+}

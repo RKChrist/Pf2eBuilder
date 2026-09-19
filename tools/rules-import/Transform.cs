@@ -26,10 +26,11 @@ static class Transform
         var seedDir = Reset(Path.Combine(outRoot, "seed"));
         var unmappedDir = Reset(Path.Combine(outRoot, "unmapped"));
         var oversizeDir = Reset(Path.Combine(outRoot, "oversize"));
+        var excludedDir = Reset(Path.Combine(outRoot, "excluded"));
 
         Console.WriteLine($"snapshot {manifest.Index} pulled {manifest.PulledAtUtc}");
 
-        var rows = new List<(string Category, int Emitted, int Unmapped, int Oversize)>();
+        var rows = new List<(string Category, int Emitted, int Excluded, int Unmapped, int Oversize)>();
         foreach (var category in categories)
         {
             if (!manifest.Categories.ContainsKey(category))
@@ -41,14 +42,21 @@ static class Transform
             var seeds = new List<(string Id, JsonObject Node)>();
             var unmapped = new JsonArray();
             var oversize = new JsonArray();
+            var excluded = new JsonArray();
 
             foreach (var record in ReadCategory(dir, category))
             {
                 var id = Str(record, "id");
-                var name = Str(record, "name");
+                var name = Str(record, "name") is { } raw ? Normalise.Text(raw) : null;
                 var url = Str(record, "url");
 
                 AssertNoProse(record, id, category);
+
+                if (FieldPolicy.IsSiteExcluded(record))
+                {
+                    excluded.Add(Excluded(id, name));
+                    continue;
+                }
 
                 if (id is null or "" || name is null or "" || url is null or "")
                 {
@@ -87,7 +95,8 @@ static class Transform
             Write(Path.Combine(seedDir, category + ".json"), seedArray);
             Write(Path.Combine(unmappedDir, category + ".json"), unmapped);
             Write(Path.Combine(oversizeDir, category + ".json"), oversize);
-            rows.Add((category, seedArray.Count, unmapped.Count, oversize.Count));
+            Write(Path.Combine(excludedDir, category + ".json"), excluded);
+            rows.Add((category, seedArray.Count, excluded.Count, unmapped.Count, oversize.Count));
         }
 
         PrintSummary(rows);
@@ -105,9 +114,15 @@ static class Transform
             ["sourceUrl"] = SiteRoot + url,
         };
 
-        foreach (var (key, value) in record.OrderBy(field => field.Key, StringComparer.Ordinal))
+        foreach (var (key, raw) in record.OrderBy(field => field.Key, StringComparer.Ordinal))
         {
-            if (value is null || !FieldPolicy.SeedAllowList.Contains(key) || FieldPolicy.IsEmptyValue(value))
+            if (raw is null || !FieldPolicy.SeedAllowList.Contains(key))
+            {
+                continue;
+            }
+
+            var value = Normalise.Value(key, raw);
+            if (FieldPolicy.IsEmptyValue(value))
             {
                 continue;
             }
@@ -122,7 +137,7 @@ static class Transform
                 }
             }
 
-            seed[key] = value.DeepClone();
+            seed[key] = value;
         }
 
         return seed;
@@ -187,26 +202,28 @@ static class Transform
         }
     }
 
-    static void PrintSummary(IReadOnlyList<(string Category, int Emitted, int Unmapped, int Oversize)> rows)
+    static void PrintSummary(IReadOnlyList<(string Category, int Emitted, int Excluded, int Unmapped, int Oversize)> rows)
     {
-        Console.WriteLine($"{"category",-16}{"seeded",10}{"unmapped",10}{"oversize",10}");
+        Console.WriteLine($"{"category",-16}{"seeded",10}{"excluded",10}{"unmapped",10}{"oversize",10}");
         foreach (var row in rows)
         {
-            Console.WriteLine($"{row.Category,-16}{row.Emitted,10}{row.Unmapped,10}{row.Oversize,10}");
+            Console.WriteLine($"{row.Category,-16}{row.Emitted,10}{row.Excluded,10}{row.Unmapped,10}{row.Oversize,10}");
         }
 
         Console.WriteLine(
-            $"{"TOTAL",-16}{rows.Sum(r => r.Emitted),10}{rows.Sum(r => r.Unmapped),10}{rows.Sum(r => r.Oversize),10}");
+            $"{"TOTAL",-16}{rows.Sum(r => r.Emitted),10}{rows.Sum(r => r.Excluded),10}{rows.Sum(r => r.Unmapped),10}{rows.Sum(r => r.Oversize),10}");
     }
 
+    // Empties the directory instead of deleting it, so an out/seed that is a link to a shared seed
+    // stays a link and the files land where it points.
     static string Reset(string dir)
     {
-        if (Directory.Exists(dir))
+        Directory.CreateDirectory(dir);
+        foreach (var file in Directory.EnumerateFiles(dir))
         {
-            Directory.Delete(dir, recursive: true);
+            File.Delete(file);
         }
 
-        Directory.CreateDirectory(dir);
         return dir;
     }
 
@@ -239,6 +256,12 @@ static class Transform
         ["name"] = name,
         ["field"] = field,
         ["length"] = length,
+    };
+
+    static JsonObject Excluded(string? id, string? name) => new()
+    {
+        ["id"] = JsonValue.Create(id),
+        ["name"] = JsonValue.Create(name),
     };
 
     static JsonObject Unmapped(string? id, string? name, string reason) => new()

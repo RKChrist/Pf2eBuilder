@@ -20,7 +20,9 @@ public sealed class RuleDetailEffects(RulesApi api, IState<RuleDetailState> stat
 
         try
         {
-            dispatcher.Dispatch(new RuleLoaded(await api.GetRuleAsync(id, CancellationToken.None)));
+            dispatcher.Dispatch(await api.GetRuleAsync(id, CancellationToken.None) is { } detail
+                ? (object)new RuleLoaded(detail)
+                : new RuleMissing());
         }
         catch (RulesApiException failure)
         {

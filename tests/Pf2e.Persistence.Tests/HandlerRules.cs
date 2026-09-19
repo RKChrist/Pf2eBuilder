@@ -165,4 +165,269 @@ public class HandlerRules(SeededDatabase database) : IClassFixture<SeededDatabas
         // equipment record has an empty skill_mod on every row in the snapshot.
         Assert.All(bonuses, b => Assert.Contains("item_bonus_value", b.Mechanics));
     }
+
+    static int Rank(string name, string query) =>
+        name.Equals(query, StringComparison.OrdinalIgnoreCase) ? 0
+        : name.StartsWith(query, StringComparison.OrdinalIgnoreCase) ? 1
+        : 2;
+
+    [Fact]
+    public async Task ANameSearchPutsTheExactNameFirstThenPrefixesThenTheRest()
+    {
+        await using var db = database.NewContext();
+
+        var result = await new SearchRulesHandler(db).Handle(new SearchRules(Name: "shield", PageSize: 200), default);
+
+        Assert.Equal("shield", result.Items[0].Name, ignoreCase: true);
+        var ranks = result.Items.Select(item => Rank(item.Name, "shield")).ToList();
+        Assert.Equal(ranks.Order(), ranks);
+        Assert.Contains(1, ranks);
+        Assert.Contains(2, ranks);
+    }
+
+    [Fact]
+    public async Task ATraitFilteredNameSearchRanksTheSameWay()
+    {
+        await using var db = database.NewContext();
+
+        var result = await new SearchRulesHandler(db)
+            .Handle(new SearchRules(Category: "feat", Name: "shield", Trait: "Fighter", PageSize: 200), default);
+
+        Assert.NotEmpty(result.Items);
+        var ranks = result.Items.Select(item => Rank(item.Name, "shield")).ToList();
+        Assert.Equal(ranks.Order(), ranks);
+        Assert.Contains(1, ranks);
+        Assert.All(result.Items, item => Assert.Contains("Fighter", item.Traits, StringComparer.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task AWildcardTypedIntoTheNameIsMatchedLiterally()
+    {
+        await using var db = database.NewContext();
+
+        var result = await new SearchRulesHandler(db).Handle(new SearchRules(Name: "%"), default);
+
+        Assert.Equal(0, result.TotalMatching);
+    }
+
+    [Fact]
+    public async Task UnfilteredCountsAreEveryCategorysSize()
+    {
+        await using var db = database.NewContext();
+
+        var counts = await new CountRulesHandler(db).Handle(new CountRules(), default);
+
+        Assert.Equal(await db.RuleRecords.CountAsync(), counts.Total);
+        Assert.Equal(77, counts.Categories.Count);
+        Assert.Equal(6359, counts.Categories.Single(c => c.Category == "feat").Count);
+        Assert.Equal(counts.Total, counts.Categories.Sum(c => c.Count));
+    }
+
+    [Fact]
+    public async Task ANameCountAgreesWithTheSearchItStandsFor()
+    {
+        await using var db = database.NewContext();
+
+        var counts = await new CountRulesHandler(db).Handle(new CountRules(Name: "shield"), default);
+        var search = new SearchRulesHandler(db);
+
+        Assert.Equal((await search.Handle(new SearchRules(Name: "shield"), default)).TotalMatching, counts.Total);
+        foreach (var category in counts.Categories)
+        {
+            var listed = await search.Handle(new SearchRules(Category: category.Category, Name: "shield"), default);
+            Assert.Equal(listed.TotalMatching, category.Count);
+        }
+    }
+
+    [Fact]
+    public async Task ATraitCountSaysWhereTheTraitIsUsed()
+    {
+        await using var db = database.NewContext();
+
+        var counts = await new CountRulesHandler(db).Handle(new CountRules(Trait: "manipulate"), default);
+        var search = new SearchRulesHandler(db);
+
+        Assert.True(counts.Categories.Count > 1, "manipulate is on more than one kind of record");
+        Assert.All(counts.Categories, c => Assert.True(c.Count > 0));
+        foreach (var category in counts.Categories)
+        {
+            var listed = await search.Handle(new SearchRules(Category: category.Category, Trait: "Manipulate"), default);
+            Assert.Equal(listed.TotalMatching, category.Count);
+        }
+        Assert.Equal(counts.Categories.Sum(c => c.Count), counts.Total);
+    }
+
+    [Fact]
+    public void AnEmptyTraitIsRejectedByTheCount()
+    {
+        var failures = new CountRulesValidator().Validate(new CountRules(Trait: ""));
+
+        Assert.False(failures.IsValid);
+    }
+
+    [Fact]
+    public async Task AWeaponRowCarriesItsDamageCategoryGroupAndHands()
+    {
+        await using var db = database.NewContext();
+
+        var result = await new SearchRulesHandler(db).Handle(new SearchRules(Category: "weapon", Name: "Longsword"), default);
+        var longsword = result.Items[0];
+
+        Assert.Equal("Longsword", longsword.Name);
+        Assert.Equal(
+            ["damage=1d8 S", "weapon_category=Martial", "weapon_group=Sword", "hands=1"],
+            longsword.Highlights.Select(h => $"{h.Key}={string.Join(",", h.Values)}"));
+    }
+
+    [Fact]
+    public async Task AFeatNeverHighlightsItsOwnNameAndNoRowSaysMoreThanFourThings()
+    {
+        await using var db = database.NewContext();
+
+        var feats = await new SearchRulesHandler(db).Handle(new SearchRules(Category: "feat", PageSize: 200), default);
+
+        Assert.All(feats.Items, feat =>
+        {
+            Assert.InRange(feat.Highlights.Count, 0, 4);
+            Assert.DoesNotContain(feat.Highlights, h => h.Key == "feat");
+            Assert.All(feat.Highlights, h => Assert.NotEmpty(h.Values));
+        });
+        Assert.Contains(feats.Items, feat => feat.Highlights.Any(h => h.Key == "prerequisite"));
+    }
+
+    [Fact]
+    public async Task AReactionFeatLeadsWithItsCostAndTrigger()
+    {
+        await using var db = database.NewContext();
+
+        var result = await new SearchRulesHandler(db).Handle(new SearchRules(Category: "feat", Name: "Reactive Shield"), default);
+        var keys = result.Items[0].Highlights.Select(h => h.Key).ToList();
+
+        Assert.Equal(["actions", "archetype", "trigger"], keys);
+        Assert.Equal(["Reaction"], result.Items[0].Highlights[0].Values);
+    }
+
+    [Fact]
+    public async Task ABackgroundKeepsTheFeatItGrants()
+    {
+        await using var db = database.NewContext();
+
+        var backgrounds = await new SearchRulesHandler(db).Handle(new SearchRules(Category: "background", PageSize: 200), default);
+
+        Assert.Contains(backgrounds.Items, b => b.Highlights.Any(h => h.Key == "feat"));
+    }
+
+    [Fact]
+    public async Task ATraitGroupIsListedOnceEvenWhereTheSeedRepeatsIt()
+    {
+        await using var db = database.NewContext();
+
+        var arcane = await new SearchRulesHandler(db).Handle(new SearchRules(Category: "trait", Name: "Arcane"), default);
+        var group = Assert.Single(arcane.Items[0].Highlights);
+
+        Assert.Equal("trait_group", group.Key);
+        Assert.Equal(group.Values.Distinct(StringComparer.OrdinalIgnoreCase), group.Values);
+    }
+
+    [Fact]
+    public async Task CountsCarryTheLevelRangeOfEachCategory()
+    {
+        await using var db = database.NewContext();
+
+        var counts = (await new CountRulesHandler(db).Handle(new CountRules(), default))
+            .Categories.ToDictionary(c => c.Category);
+
+        Assert.Equal((1, 10), (counts["spell"].LowestLevel, counts["spell"].HighestLevel));
+        Assert.Equal((1, 20), (counts["feat"].LowestLevel, counts["feat"].HighestLevel));
+        Assert.Equal(-1, counts["equipment"].LowestLevel);
+        Assert.Null(counts["action"].LowestLevel);
+        Assert.Null(counts["ancestry"].HighestLevel);
+    }
+
+    [Fact]
+    public async Task TheTraitFacetCountsTheWholeCategoryMostCommonFirst()
+    {
+        await using var db = database.NewContext();
+
+        var facet = (await new CountTraitsHandler(db).Handle(new CountTraits("feat"), default)).Traits;
+        var search = new SearchRulesHandler(db);
+
+        Assert.True(facet.Count > 100, $"feats carry hundreds of traits, not {facet.Count}");
+        Assert.Equal(facet.OrderByDescending(t => t.Count).Select(t => t.Count), facet.Select(t => t.Count));
+        Assert.Equal(facet.Count, facet.Select(t => t.Trait.ToLowerInvariant()).Distinct().Count());
+        foreach (var trait in new[] { "Fighter", "Elf", "General", "Skill", "Archetype" })
+        {
+            var counted = Assert.Single(facet, t => t.Trait == trait);
+            var listed = await search.Handle(new SearchRules(Category: "feat", Trait: trait, PageSize: 1), default);
+            Assert.Equal(listed.TotalMatching, counted.Count);
+        }
+
+        Assert.Equal("Class", facet.Single(t => t.Trait == "Fighter").Group);
+        Assert.Equal("Ancestry", facet.Single(t => t.Trait == "Elf").Group);
+        Assert.Equal("Feat", facet.Single(t => t.Trait == "General").Group);
+    }
+
+    [Fact]
+    public async Task TheTraitFacetFollowsTheNameAndLevelFilters()
+    {
+        await using var db = database.NewContext();
+
+        var facet = (await new CountTraitsHandler(db).Handle(new CountTraits("feat", "shield", 1, 4), default)).Traits;
+        var whole = (await new CountTraitsHandler(db).Handle(new CountTraits("feat"), default)).Traits;
+        var search = new SearchRulesHandler(db);
+
+        Assert.NotEmpty(facet);
+        Assert.True(facet.Count < whole.Count, "a name and level filter narrows the traits on offer");
+        foreach (var trait in facet)
+        {
+            var listed = await search.Handle(
+                new SearchRules(Category: "feat", Name: "shield", MinLevel: 1, MaxLevel: 4, Trait: trait.Trait, PageSize: 1), default);
+            Assert.Equal(listed.TotalMatching, trait.Count);
+        }
+    }
+
+    [Fact]
+    public void TheTraitFacetNeedsACategory()
+    {
+        Assert.False(new CountTraitsValidator().Validate(new CountTraits("")).IsValid);
+        Assert.False(new CountTraitsValidator().Validate(new CountTraits("feat", MinLevel: 5, MaxLevel: 2)).IsValid);
+    }
+
+    [Fact]
+    public async Task ASheetLinksOnlyTheValuesThatNameARecord()
+    {
+        await using var db = database.NewContext();
+        var get = new GetRuleHandler(db);
+
+        var scion = (await get.Handle(new GetRule("background-491"), default))!;
+        var skills = scion.Mechanics.Single(m => m.Key == "skill").Values;
+        Assert.Contains("Academia Lore or a Lore skill associated with your school", skills);
+        var link = Assert.Single(scion.Links, l => l.Field == "skill");
+        Assert.Equal("Arcana", link.Value);
+        Assert.Equal("Arcana", (await get.Handle(new GetRule(link.Id), default))!.Summary.Name);
+
+        var reactive = (await new SearchRulesHandler(db).Handle(new SearchRules(Category: "feat", Name: "Reactive Shield"), default)).Items[0];
+        var archetype = Assert.Single((await get.Handle(new GetRule(reactive.Id), default))!.Links, l => l.Field == "archetype");
+        Assert.StartsWith("archetype-", archetype.Id);
+    }
+
+    [Fact]
+    public async Task ASpeedReadsInFeetWithEveryMovementNamed()
+    {
+        await using var db = database.NewContext();
+
+        var companion = (await new GetRuleHandler(db).Handle(new GetRule("animal-companion-11"), default))!;
+
+        Assert.Equal(["10 feet", "fly 45 feet"], companion.Mechanics.Single(m => m.Key == "speed").Values);
+    }
+
+    [Fact]
+    public async Task ACategoryWithNothingWorthAGlanceHighlightsNothing()
+    {
+        await using var db = database.NewContext();
+
+        var conditions = await new SearchRulesHandler(db).Handle(new SearchRules(Category: "condition"), default);
+
+        Assert.All(conditions.Items, c => Assert.Empty(c.Highlights));
+    }
 }

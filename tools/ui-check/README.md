@@ -7,9 +7,23 @@ Node 24 ships a WebSocket client, so it needs no Puppeteer, no Playwright and no
     dotnet run --project src/Pf2e.Client --launch-profile http
     node tools/ui-check/measure.mjs http://localhost:5173/ 320 740
 
-It reports the viewport, every navigation item's box, whether any sits offscreen, whether the
-page scrolls sideways, and the smallest tap target on the page. The exit code is the number of
-problems, so it works as a check.
+It reports the viewport, every item of the app's own bar and whether any sits offscreen, whether
+the page scrolls sideways, and the smallest tap target on the page, naming the element when it is
+under the floor. The exit code is the number of
+problems, so it works as a check. A strip that scrolls sideways on purpose, such as the trait
+filter, may hold content past the edge; anything else past it is a problem.
+
+It opens a tab of its own and closes it afterwards, so two runs against one Chrome never drive
+each other's page. It waits a second after the client renders, `SETTLE_MS` to change, because
+counts and lists land after the navigation does and move the layout being measured.
+
+A state no URL reaches, such as a category's records or the search dropdown open, is reached with
+`ACT`, page script run before measuring. It may await, and `wait(ms)` is in scope:
+
+    ACT="document.querySelector('.pf-bottomnav__item:nth-child(2)').click(); await wait(500);
+         document.querySelector('.categories .category').click(); await wait(1500);"       node tools/ui-check/measure.mjs http://localhost:5173/ 320 740
+
+`SCHEME=dark` emulates the dark colour scheme for the run.
 
 ## Why it exists
 
@@ -48,14 +62,33 @@ promise, which is the half `measure.mjs` cannot see:
 
     dotnet run --project src/Pf2e.Api
     dotnet run --project src/Pf2e.Client --launch-profile http
-    node tools/ui-check/verify-client.mjs
+    node tools/ui-check/verify-client.mjs [client url] [api url]
 
-31 assertions covering the search debounce (six keystrokes, one request, carrying the last one),
-paging, the dual-thumb level range and that every row it returns is inside it, the detail sheet
+It launches its own headless Chrome on port 9333, or `CDP_LAUNCH_PORT` when another checkout is
+running the same check at once.
+
+154 assertions. The header search: six keystrokes make one search and one count carrying the
+last one, results open under the field with the exact name first and per-category counts, arrows
+and Enter pick a match, Escape closes the list and keeps the words, Enter reaches `/search`, and
+`/` focuses the field. The browse screens: the board's blurb, counts and section headings, a
+category's total, glance lines on its rows, no COMMON badge, and filters folded behind their
+toggle on a phone. Traits: a chip opens the trait sheet without opening its row, the sheet counts
+where the trait is found, a place opens that category filtered by it, back closes it, and no
+control sits inside another. The record sheet: its kind and level, its gates, its source, a named
+record that opens from it with back returning. And the older ones: the category filter's
+debounce, paging, the dual-thumb level range and that every row it returns is inside it, the detail sheet
 and its title, the deep link that restores a record, back and Escape both closing the sheet
 rather than leaving the app, the conditions screen, and a failure whose retry recovers. The
 failing service is simulated by blocking the API through the protocol, so nothing has to be
-stopped and restarted. It also measures the records screen at 320px under touch emulation, which
+stopped and restarted. The rest were added with the full-width layout of design/004: a list's
+own address, which refresh restores and back leaves for the board; a level filter bounded by the
+category, called Rank for spells, absent where nothing has a level, with no tick marks; the trait
+facet, counted across the whole category and most common first, with any other trait found by
+typing; badges for yes-or-no fields and nothing for no; links only for values that name a
+record, decided without a request of the sheet's own; speed in feet; heightening in words; an
+unknown record that offers Close and a failed one that offers Try again; conditions under the
+same heading as every list; and on a laptop, the filter column held in view beside a list that
+reads each record on one line, and board columns at 1024, 1440 and 1920. It also measures the records screen at 320px under touch emulation, which
 `measure.mjs` cannot reach because that screen is three taps in rather than a URL.
 
 ## Slider and gesture checks

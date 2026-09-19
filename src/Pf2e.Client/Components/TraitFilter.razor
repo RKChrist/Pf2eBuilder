@@ -1,0 +1,80 @@
+@* The traits in a whole category under the other filters, most common first. A handful show as
+   chips; any other is a few letters away in the field above them. *@
+<div class="trait-filter">
+@switch (Traits)
+{
+    case RemoteData<TraitCounts>.Loaded { Value.Traits: var all } when all.Count > 0 || Active is not null:
+        <p class="refine-label" id="trait-filter-label">Only records with the trait</p>
+
+        @if (all.Count > Shown)
+        {
+            <SearchField Class="trait-find"
+                         Value="@_find"
+                         ValueChanged="@(text => _find = text ?? string.Empty)"
+                         Placeholder="@($"Find one of {Numbers.Grouped(all.Count)} traits")"
+                         Label="Find a trait"
+                         ClearLabel="Clear the trait search" />
+        }
+
+        <div class="trait-scroller" role="group" aria-labelledby="trait-filter-label">
+            @foreach (var trait in Chips(all))
+            {
+                var on = string.Equals(trait.Trait, Active, StringComparison.OrdinalIgnoreCase);
+                <button type="button"
+                        class="trait-chip @(on ? "on" : null)"
+                        aria-pressed="@(on ? "true" : "false")"
+                        @onclick="() => Pick(on ? null : trait.Trait)">
+                    @trait.Trait
+                    @if (trait.Count > 0)
+                    {
+                        <span class="trait-count">@Numbers.Grouped(trait.Count)</span>
+                    }
+                </button>
+            }
+        </div>
+
+        @if (_find.Trim().Length > 0 && !Matching(all).Any())
+        {
+            <p class="trait-none">No trait here is called anything like “@_find.Trim()”.</p>
+        }
+        break;
+
+    case RemoteData<TraitCounts>.Failed:
+        <p class="trait-none">The traits here could not be counted.</p>
+        break;
+}
+</div>
+
+@code {
+    const int Shown = 8;
+
+    [Parameter, EditorRequired] public RemoteData<TraitCounts> Traits { get; set; } = new RemoteData<TraitCounts>.NotAsked();
+
+    [Parameter] public string? Active { get; set; }
+
+    [Parameter] public EventCallback<string?> ActiveChanged { get; set; }
+
+    string _find = string.Empty;
+
+    IEnumerable<TraitCount> Matching(IReadOnlyList<TraitCount> all) =>
+        all.Where(trait => trait.Trait.Contains(_find.Trim(), StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>The one in force leads, even where the other filters leave no record carrying it,
+    /// so it can always be seen and switched off.</summary>
+    IEnumerable<TraitCount> Chips(IReadOnlyList<TraitCount> all)
+    {
+        var active = Active is null
+            ? null
+            : all.FirstOrDefault(trait => string.Equals(trait.Trait, Active, StringComparison.OrdinalIgnoreCase))
+              ?? new TraitCount(Active, 0, null);
+
+        var rest = Matching(all).Where(trait => trait != active).Take(active is null ? Shown : Shown - 1);
+        return active is null ? rest : rest.Prepend(active);
+    }
+
+    async Task Pick(string? trait)
+    {
+        _find = string.Empty;
+        await ActiveChanged.InvokeAsync(trait);
+    }
+}

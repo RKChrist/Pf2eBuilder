@@ -1,0 +1,157 @@
+.rule {
+    position: relative;
+    border-bottom: var(--border-hair) solid var(--line-subtle);
+    background: var(--surface-raised);
+    transition: background-color var(--motion-duration-quick) var(--motion-easing-exit);
+}
+
+.rule:last-child {
+    border-bottom: none;
+}
+
+.rule:active {
+    background: var(--surface-sunken);
+}
+
+.rule:has(.open:focus-visible) {
+    outline: var(--border-focus) solid var(--line-focus);
+    outline-offset: calc(var(--border-focus) * -1);
+}
+
+.open {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    width: 100%;
+    min-height: var(--tap-default);
+    padding: var(--space-3) var(--space-4);
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    text-align: left;
+}
+
+.open:focus-visible {
+    outline: none;
+}
+
+/* The whole row is the target, not only the text inside the button. */
+.open::after {
+    content: '';
+    position: absolute;
+    inset: var(--space-0);
+}
+
+.top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.name {
+    min-width: var(--space-0);
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--font-leading-snug);
+    overflow-wrap: anywhere;
+}
+
+.level {
+    flex: none;
+    color: var(--text-secondary);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--font-tracking-wide);
+    white-space: nowrap;
+}
+
+.kind {
+    color: var(--accent-base);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--font-tracking-wide);
+    text-transform: uppercase;
+}
+
+.marks {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-0) var(--space-2);
+    margin-top: calc(var(--space-3) * -1);
+    padding: var(--space-0) var(--space-4) var(--space-1);
+    pointer-events: none;
+}
+
+/* Only the traits answer inside the marks; the gaps between them still open the row. */
+.marks ::deep .trait-link {
+    pointer-events: auto;
+}
+
+.more {
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+}
+
+@media (hover: hover) {
+    .rule:hover {
+        background: var(--surface-sunken);
+    }
+}
+
+/* A list given the width of a tablet or more reads each record on one line: name, level and
+   glance side by side, then the traits beside them once there is room for those too. Sized by
+   the list's own width rather than the viewport, so a list squeezed by a docked record reflows
+   with it. A phone never reaches either width. */
+@container (min-width: 720px) {
+    .open {
+        display: grid;
+        grid-template-columns: minmax(12rem, 18rem) 5rem minmax(0, 1fr);
+        align-items: baseline;
+        column-gap: var(--space-4);
+    }
+
+    .open:has(.kind) {
+        grid-template-columns: minmax(12rem, 18rem) 8rem 5rem minmax(0, 1fr);
+    }
+
+    .top {
+        display: contents;
+    }
+
+    .level {
+        grid-column: -3;
+        grid-row: 1;
+    }
+
+    .kind {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .open ::deep .glance {
+        grid-column: -2;
+        grid-row: 1;
+        -webkit-line-clamp: 1;
+        line-clamp: 1;
+    }
+}
+
+@container (min-width: 1040px) {
+    .rule {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+    }
+
+    .marks {
+        flex-wrap: nowrap;
+        justify-content: flex-end;
+        margin-top: var(--space-0);
+        padding: var(--space-0) var(--space-4) var(--space-0) var(--space-0);
+    }
+}

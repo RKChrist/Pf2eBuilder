@@ -1,0 +1,277 @@
+@page "/browse/{Key}"
+@inherits FluxorComponent
+@inject IState<RulesBrowserState> Browser
+@inject IState<CatalogSizeState> Sizes
+@inject IDispatcher Dispatcher
+@inject NavigationManager Navigation
+
+@if (RuleCatalog.Of(Key) is not { } category)
+{
+    <PageTitle>No such list</PageTitle>
+    <PageHead Heading="No such list"
+              Back="@(new PageHead.BackLink(Links.Board(RuleGroups.All[0].Key), RuleGroups.All[0].Heading))"
+              Blurb="@($"Nothing in the ruleset is filed as “{Key}”. The board lists every kind of record there is.")" />
+}
+else
+{
+    <PageTitle>@category.Label</PageTitle>
+
+    <PageHead Heading="@category.Label"
+              Back="@(new PageHead.BackLink(Links.Board(category.Group), RuleGroups.Of(category.Group).Heading))"
+              Blurb="@CategoryNotes.Of(category.Key)?.Blurb"
+              Detail="@Total(category)" />
+
+    <div class="browse">
+        <aside class="side" aria-label="@($"Filter {category.Label.ToLowerInvariant()}")">
+            <div class="filters">
+                <SearchField Class="name"
+                             Value="@(_typed ?? Address.Query)"
+                             ValueChanged="OnQuery"
+                             Placeholder="@($"Filter {category.Label.ToLowerInvariant()} by name")"
+                             Label="Filter by name" />
+
+                <Button Class="refine-toggle"
+                        Variant="ButtonVariant.Secondary"
+                        aria-expanded="@(_refining ? "true" : "false")"
+                        aria-controls="refine"
+                        OnClick="@(() => _refining = !_refining)">
+                    Filters@(Address.FiltersSet > 0 ? $" ({Address.FiltersSet})" : null)
+                </Button>
+
+                @if (Address.Trait is { } activeTrait)
+                {
+                    <button type="button" class="active-trait" @onclick="@(() => Go(Address with { Trait = null, Page = 1 }))">
+                        @activeTrait
+                        <span class="dismiss" aria-hidden="true">×</span>
+                        <span class="visually-hidden">Remove this trait filter</span>
+                    </button>
+                }
+            </div>
+
+            @* Folded away on a phone and a tablet, where it would push the list below the fold; a
+               standing column beside the list once there is room for one. *@
+            <div class="refine" id="refine" data-open="@(_refining ? "true" : "false")">
+                @* Bounded by the levels the category actually has, and absent where it has none.
+                   No tick marks: the readouts name both ends, and thirty ticks in a phone's
+                   width are a comb rather than information. *@
+                @if (Sizes.Value.LevelsOf(category.Key) is { } bounds && bounds.Low < bounds.High)
+                {
+                    <div class="levels">
+                        <RangeSlider Label="@category.LevelWord"
+                                     LowLabel="@($"Lowest {category.LevelWord.ToLowerInvariant()}")"
+                                     HighLabel="@($"Highest {category.LevelWord.ToLowerInvariant()}")"
+                                     Min="bounds.Low"
+                                     Max="bounds.High"
+                                     ShowEnds="true"
+                                     Value="@(new IntRange(Math.Clamp(Address.MinLevel ?? bounds.Low, bounds.Low, bounds.High), Math.Clamp(Address.MaxLevel ?? bounds.High, bounds.Low, bounds.High)))"
+                                     ValueChanged="@(levels => OnLevels(levels, bounds))" />
+                    </div>
+                }
+
+                <TraitFilter Traits="State.Traits"
+                             Active="@Address.Trait"
+                             ActiveChanged="@(trait => Go(Address with { Trait = trait, Page = 1 }))" />
+            </div>
+        </aside>
+
+        <div class="results">
+            <RemoteView T="RuleSearchResult" Data="State.Results">
+                <NotAsked>@Waiting(category)</NotAsked>
+                <Loading>@Waiting(category)</Loading>
+                <Failed Context="message">
+                    <div class="panel">
+                        <Card>
+                            <ErrorState Title="@($"Could not load {category.Label.ToLowerInvariant()}")">
+                                <ChildContent>@message</ChildContent>
+                                <Action>
+                                    <Button Variant="ButtonVariant.Secondary"
+                                            OnClick="@(() => Dispatcher.Dispatch(new SearchRetried()))">
+                                        Try again
+                                    </Button>
+                                </Action>
+                            </ErrorState>
+                        </Card>
+                    </div>
+                </Failed>
+                <Loaded Context="found">
+                    @if (found.Items.Count == 0)
+                    {
+                        <div class="panel">
+                            <Card>
+                                <EmptyState Title="@($"No {category.Label.ToLowerInvariant()} match")">
+                                    <ChildContent>@EmptyBody</ChildContent>
+                                    <Action>
+                                        <div class="pf-cluster">
+                                            @if (Address.Query.Length > 0)
+                                            {
+                                                <Button Variant="ButtonVariant.Secondary" OnClick="ClearName">
+                                                    Clear the name filter
+                                                </Button>
+                                            }
+                                            @if (Address.MinLevel is not null || Address.MaxLevel is not null)
+                                            {
+                                                <Button Variant="ButtonVariant.Secondary"
+                                                        OnClick="@(() => Go(Address with { MinLevel = null, MaxLevel = null, Page = 1 }))">
+                                                    Widen to every @category.LevelWord.ToLowerInvariant()
+                                                </Button>
+                                            }
+                                            @if (Address.Trait is not null)
+                                            {
+                                                <Button Variant="ButtonVariant.Secondary"
+                                                        OnClick="@(() => Go(Address with { Trait = null, Page = 1 }))">
+                                                    Drop the trait filter
+                                                </Button>
+                                            }
+                                        </div>
+                                    </Action>
+                                </EmptyState>
+                            </Card>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="panel">
+                            <Card>
+                                <ListContent>
+                                    <ul class="rows">
+                                        @foreach (var item in found.Items)
+                                        {
+                                            <RuleRow Rule="item" OnOpen="() => Navigation.NavigateTo(Navigation.Rule(item.Id))" />
+                                        }
+                                    </ul>
+                                </ListContent>
+                            </Card>
+                        </div>
+
+                        @if (PageCount(found) > 1)
+                        {
+                            <div class="panel">
+                                <Pager Page="found.Page"
+                                       PageCount="PageCount(found)"
+                                       PageChanged="@(page => Go(Address with { Page = page }))"
+                                       Label="Pages" />
+                            </div>
+                        }
+                    }
+                </Loaded>
+            </RemoteView>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string Key { get; set; } = string.Empty;
+
+    // Read as text and parsed here: a hand-edited ?min=abc is an address to tidy, not a crash.
+    [Parameter, SupplyParameterFromQuery(Name = "q")] public string? Query { get; set; }
+
+    [Parameter, SupplyParameterFromQuery(Name = "min")] public string? Min { get; set; }
+
+    [Parameter, SupplyParameterFromQuery(Name = "max")] public string? Max { get; set; }
+
+    [Parameter, SupplyParameterFromQuery(Name = "with")] public string? With { get; set; }
+
+    [Parameter, SupplyParameterFromQuery(Name = "page")] public string? PageNumber { get; set; }
+
+    bool _refining;
+
+    /// <summary>What is in the name field ahead of the address catching up with it, so a fast
+    /// typist's letters are never overwritten by the address one keystroke behind.</summary>
+    string? _typed;
+
+    RulesBrowserState State => Browser.Value;
+
+    CategoryAddress Address => State.Address ?? new CategoryAddress(Key);
+
+    RenderFragment Waiting(RuleCategory category) => @<div class="pending">
+        <Spinner ShowLabel="true" Label="@($"Loading {category.Label.ToLowerInvariant()}")" />
+    </div>;
+
+    string EmptyBody => Address.Query.Length > 0
+        ? $"Nothing here matches “{Address.Query}”."
+        : "Nothing here matches these filters.";
+
+    string? Total(RuleCategory category)
+    {
+        if (State.Results is not RemoteData<RuleSearchResult>.Loaded counted)
+        {
+            return null;
+        }
+
+        var matching = counted.Value.TotalMatching;
+        var of = Sizes.Value.Of(category.Key) is int all && all != matching ? $" of {Numbers.Grouped(all)}" : null;
+        var noun = matching == 1 && of is null ? category.One : category.Label;
+        return $"{Numbers.Grouped(matching)}{of} {noun.ToLowerInvariant()}";
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        CatalogSizeState.Ensure(Sizes, Dispatcher);
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        if (RuleCatalog.Of(Key) is not { } category)
+        {
+            return;
+        }
+
+        if (category.OwnRoute is { } own)
+        {
+            Navigation.NavigateTo(own, replace: true);
+            return;
+        }
+
+        var (low, high) = (Number(Min), Number(Max));
+        var address = new CategoryAddress(
+            category.Key,
+            Query ?? string.Empty,
+            low is int a && high is int b ? Math.Min(a, b) : low,
+            low is int c && high is int d ? Math.Max(c, d) : high,
+            With is { Length: > 0 } with ? with : null,
+            Math.Max(1, Number(PageNumber) ?? 1));
+
+        if (address != State.Address)
+        {
+            Dispatcher.Dispatch(new CategoryAddressed(address));
+        }
+
+        if (_typed == address.Query)
+        {
+            _typed = null;
+        }
+    }
+
+    static int? Number(string? text) => int.TryParse(text, out var number) ? number : null;
+
+    static int PageCount(RuleSearchResult found) =>
+        Math.Max(1, (found.TotalMatching + found.PageSize - 1) / found.PageSize);
+
+    /// <summary>Replaces rather than pushes, so back from any filtered list returns to the board
+    /// the reader came from instead of stepping through every keystroke.</summary>
+    void Go(CategoryAddress next) => Navigation.NavigateTo(Navigation.Category(next), replace: true);
+
+    void OnQuery(string? query)
+    {
+        _typed = query ?? string.Empty;
+        Go(Address with { Query = _typed, Page = 1 });
+    }
+
+    void ClearName()
+    {
+        _typed = null;
+        Go(Address with { Query = string.Empty, Page = 1 });
+    }
+
+    /// <summary>An end on the category's own end is no bound at all, so records without a level
+    /// stay listed until the reader actually narrows the range.</summary>
+    void OnLevels(IntRange levels, IntRange bounds) => Go(Address with
+    {
+        MinLevel = levels.Low == bounds.Low ? null : levels.Low,
+        MaxLevel = levels.High == bounds.High ? null : levels.High,
+        Page = 1,
+    });
+}

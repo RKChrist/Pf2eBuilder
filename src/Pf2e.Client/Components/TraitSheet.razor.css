@@ -1,0 +1,98 @@
+.kind {
+    color: var(--accent-base);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: var(--font-tracking-wide);
+    text-transform: uppercase;
+}
+
+.gloss {
+    max-width: var(--layout-content-max);
+    color: var(--text-primary);
+    font-size: var(--font-size-body);
+    line-height: var(--font-leading-normal);
+}
+
+.quiet {
+    color: var(--text-muted);
+    font-size: var(--font-size-data);
+}
+
+.facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-5);
+    margin: var(--space-0);
+}
+
+.fact dt {
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--font-tracking-wide);
+    text-transform: uppercase;
+}
+
+.fact dd {
+    margin: var(--space-1) var(--space-0) var(--space-0);
+    font-size: var(--font-size-data);
+}
+
+.found {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.found-title {
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-semibold);
+}
+
+.places {
+    flex: none;
+    margin: var(--space-0);
+    padding: var(--space-0);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-radius: var(--radius-card);
+    list-style: none;
+    overflow: hidden;
+}
+
+.places li + li {
+    border-top: var(--border-hair) solid var(--line-subtle);
+}
+
+.place {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    width: 100%;
+    min-height: var(--tap-min);
+    padding: var(--space-2) var(--space-4);
+    border: none;
+    background: var(--surface-raised);
+    color: var(--text-primary);
+    text-align: left;
+}
+
+.place:active {
+    background: var(--surface-sunken);
+}
+
+.place-label {
+    font-weight: var(--font-weight-semibold);
+}
+
+.place-count {
+    color: var(--text-secondary);
+    font-size: var(--font-size-data);
+    font-variant-numeric: tabular-nums;
+}
+
+@media (hover: hover) {
+    .place:hover {
+        background: var(--surface-sunken);
+    }
+}

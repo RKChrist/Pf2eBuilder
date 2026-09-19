@@ -1,0 +1,116 @@
+@inherits FluxorComponent
+@inject IState<TraitSheetState> Sheet
+@inject IDispatcher Dispatcher
+@inject NavigationManager Navigation
+@inject IJSRuntime Js
+
+<BottomSheet Open="@(Sheet.Value.Name is not null)" Title="@(Sheet.Value.Name ?? "Trait")" OnClose="Close"
+             Class="pf-sheet--dock trait-sheet">
+    @if (Sheet.Value.Name is { } name)
+    {
+        <p class="kind">Trait</p>
+
+        @if (TraitGlossary.Of(name) is { } gloss)
+        {
+            <p class="gloss">@gloss</p>
+        }
+        else
+        {
+            <p class="gloss quiet">No summary yet. The full wording is on Archives of Nethys.</p>
+        }
+
+        <RemoteView T="TraitFacts" Data="Sheet.Value.Facts">
+            <Loading>
+                <div class="pending"><Spinner ShowLabel="true" Label="Finding where it is used" /></div>
+            </Loading>
+            <Failed Context="message">
+                <ErrorState Title="Could not look this trait up">
+                    <ChildContent>@message</ChildContent>
+                    <Action>
+                        <Button Variant="ButtonVariant.Secondary" OnClick="@(() => Dispatcher.Dispatch(new TraitRetried()))">
+                            Try again
+                        </Button>
+                    </Action>
+                </ErrorState>
+            </Failed>
+            <Loaded Context="facts">
+                @if (facts.Record is { } record)
+                {
+                    <dl class="facts">
+                        @foreach (var fact in record.Highlights)
+                        {
+                            <div class="fact">
+                                <dt>@MechanicsDisplay.LabelOf(fact.Key)</dt>
+                                <dd>@string.Join(", ", fact.Values)</dd>
+                            </div>
+                        }
+                        @if (record.PrimarySource is { } source)
+                        {
+                            <div class="fact">
+                                <dt>Source</dt>
+                                <dd>@source</dd>
+                            </div>
+                        }
+                    </dl>
+                }
+
+                <section class="found" aria-labelledby="found-on">
+                    <h3 class="found-title" id="found-on">Found on</h3>
+                    @if (FoundOn(facts.Usage) is { Count: > 0 } places)
+                    {
+                        <ul class="places">
+                            @foreach (var place in places)
+                            {
+                                <li>
+                                    <button type="button" class="place" @onclick="() => Browse(place.Category, name)">
+                                        <span class="place-label">@RuleCatalog.LabelOf(place.Category)</span>
+                                        <span class="place-count">@Numbers.Grouped(place.Count)</span>
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="quiet">No record in the ruleset carries this trait.</p>
+                    }
+                </section>
+
+                <a class="pf-btn pf-btn--secondary pf-btn--full archives"
+                   href="@(facts.Record?.SourceUrl ?? AllTraits)" target="_blank" rel="noopener">
+                    Full rules text on Archives of Nethys
+                </a>
+            </Loaded>
+        </RemoteView>
+    }
+</BottomSheet>
+
+@code {
+    const string AllTraits = "https://2e.aonprd.com/Traits.aspx";
+
+    /// <summary>Owned by the query string, like the record sheet, so back closes it and a trait
+    /// opened from a record's sheet closes back onto that record.</summary>
+    [Parameter, SupplyParameterFromQuery(Name = "trait")] public string? TraitName { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        if (TraitName != Sheet.Value.Name)
+        {
+            Dispatcher.Dispatch(TraitName is null ? new TraitClosed() : (object)new TraitOpened(TraitName));
+        }
+    }
+
+    /// <summary>The trait's own record carries the trait, and saying it is found on one trait
+    /// is noise.</summary>
+    static IReadOnlyList<CategoryCount> FoundOn(RuleCounts usage) =>
+        [.. usage.Categories.Where(place => place.Category != "trait")];
+
+    void Browse(string category, string trait)
+    {
+        Navigation.NavigateTo(RuleCatalog.Of(category)?.OwnRoute ?? Links.Category(new CategoryAddress(category, Trait: trait)));
+    }
+
+    async Task Close() => await Js.InvokeVoidAsync("history.back");
+}

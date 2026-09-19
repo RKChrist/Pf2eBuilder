@@ -22,6 +22,8 @@ public sealed record RuleLoaded(RuleDetail Detail);
 
 public sealed record RuleFailed(string Message);
 
+public sealed record RuleMissing;
+
 public static class RuleDetailReducers
 {
     [ReducerMethod]
@@ -39,6 +41,10 @@ public static class RuleDetailReducers
     [ReducerMethod]
     public static RuleDetailState On(RuleDetailState state, RuleLoaded action) =>
         state with { Detail = new RemoteData<RuleDetail>.Loaded(action.Detail) };
+
+    [ReducerMethod]
+    public static RuleDetailState On(RuleDetailState state, RuleMissing _) =>
+        state with { Detail = new RemoteData<RuleDetail>.Missing() };
 
     [ReducerMethod]
     public static RuleDetailState On(RuleDetailState state, RuleFailed action) =>
