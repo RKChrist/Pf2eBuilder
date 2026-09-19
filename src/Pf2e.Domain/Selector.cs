@@ -1,0 +1,50 @@
+namespace Pf2e.Domain;
+
+/// <summary>
+/// What a modifier applies to. Pathfinder writes these as categories rather than as lists, so
+/// the model does too. "Clumsy is a status penalty to Dex-based statistics" is one selector,
+/// and it keeps being right when a new Dex-based skill is printed.
+/// </summary>
+public abstract record Selector
+{
+    public abstract bool Matches(StatTarget target);
+
+    /// <summary>One named statistic. A skill selector with no name means every skill.</summary>
+    public static Selector Exactly(StatKind kind, string? skillName = null) => new ExactSelector(kind, skillName);
+
+    /// <summary>Every statistic governed by one attribute, including attack rolls and damage.</summary>
+    public static Selector Governed(AttributeKind attribute) => new AttributeSelector(attribute);
+
+    /// <summary>The wording "all your checks and DCs", used by frightened and sickened.</summary>
+    public static Selector AllChecksAndDcs { get; } = new AllChecksAndDcsSelector();
+
+    public static Selector SavingThrows { get; } = new SavingThrowSelector();
+
+    public static Selector Speeds { get; } = new SpeedSelector();
+
+    sealed record ExactSelector(StatKind Kind, string? SkillName) : Selector
+    {
+        public override bool Matches(StatTarget target) =>
+            Kind == target.Kind && (SkillName is null || SkillName.Equals(target.SkillName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    sealed record AttributeSelector(AttributeKind Attribute) : Selector
+    {
+        public override bool Matches(StatTarget target) => target.GovernedBy == Attribute;
+    }
+
+    sealed record AllChecksAndDcsSelector : Selector
+    {
+        public override bool Matches(StatTarget target) => target.IsCheck || target.IsDc;
+    }
+
+    sealed record SavingThrowSelector : Selector
+    {
+        public override bool Matches(StatTarget target) => target.IsSavingThrow;
+    }
+
+    sealed record SpeedSelector : Selector
+    {
+        public override bool Matches(StatTarget target) => target.Kind is StatKind.Speed;
+    }
+}

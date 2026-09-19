@@ -7,7 +7,7 @@ public class StackingTests
     private static readonly StatTarget Will = new(StatKind.Will);
 
     private static Modifier Mod(string source, ModifierType type, int value) =>
-        new(source, type, value, [Will]);
+        new(source, type, value, [Selector.Exactly(StatKind.Will)]);
 
     [Fact]
     public void NoModifiersLeavesBaseUnchanged()

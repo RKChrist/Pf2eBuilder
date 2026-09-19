@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-
 namespace Pf2e.Domain;
 
 public enum StatKind
@@ -19,27 +17,48 @@ public enum StatKind
 }
 
 /// <summary>
-/// The statistic a modifier applies to. A <see cref="StatKind.Skill"/> target with a null
-/// <see cref="SkillName"/> means every skill.
+/// One statistic being computed. It carries the attribute that governs it, because Pathfinder
+/// writes conditions in terms of derived categories: clumsy is every Dex-based statistic, not a
+/// list of five. A list goes stale the moment a new Dex-based skill appears. A category does not.
 /// </summary>
-public readonly record struct StatTarget(StatKind Kind, string? SkillName = null)
+public readonly record struct StatTarget(
+    StatKind Kind,
+    string? SkillName = null,
+    AttributeKind? GovernedBy = null)
 {
-    public static StatTarget Skill(string skillName) => new(StatKind.Skill, skillName);
+    public static StatTarget ArmorClass => new(StatKind.ArmorClass, GovernedBy: AttributeKind.Dexterity);
+    public static StatTarget Fortitude => new(StatKind.Fortitude, GovernedBy: AttributeKind.Constitution);
+    public static StatTarget Reflex => new(StatKind.Reflex, GovernedBy: AttributeKind.Dexterity);
+    public static StatTarget Will => new(StatKind.Will, GovernedBy: AttributeKind.Wisdom);
+    public static StatTarget Perception => new(StatKind.Perception, GovernedBy: AttributeKind.Wisdom);
+    public static StatTarget Speed => new(StatKind.Speed);
 
-    /// <summary>The kinds a condition means when its text says "all checks and DCs".</summary>
-    public static ImmutableArray<StatTarget> AllChecks { get; } =
-    [
-        new(StatKind.Fortitude),
-        new(StatKind.Reflex),
-        new(StatKind.Will),
-        new(StatKind.Perception),
-        new(StatKind.Attack),
-        new(StatKind.Skill),
-        new(StatKind.SpellAttack),
-        new(StatKind.ClassDc),
-        new(StatKind.SpellDc),
-    ];
+    public static StatTarget Skill(string skillName) =>
+        new(StatKind.Skill, skillName, Skills.For(skillName));
 
-    public bool Matches(StatTarget queried) =>
-        Kind == queried.Kind && (SkillName is null || SkillName == queried.SkillName);
+    /// <summary>An attack roll, governed by whichever attribute the weapon uses.</summary>
+    public static StatTarget Attack(AttributeKind governedBy) =>
+        new(StatKind.Attack, GovernedBy: governedBy);
+
+    /// <summary>Damage. Only Strength-based damage is Strength-governed.</summary>
+    public static StatTarget Damage(AttributeKind? governedBy = null) =>
+        new(StatKind.Damage, GovernedBy: governedBy);
+
+    public static StatTarget SpellAttack(AttributeKind castingAttribute) =>
+        new(StatKind.SpellAttack, GovernedBy: castingAttribute);
+
+    public static StatTarget SpellDc(AttributeKind castingAttribute) =>
+        new(StatKind.SpellDc, GovernedBy: castingAttribute);
+
+    public static StatTarget ClassDc(AttributeKind keyAttribute) =>
+        new(StatKind.ClassDc, GovernedBy: keyAttribute);
+
+    /// <summary>A roll you make. Armour class, damage and speed are not.</summary>
+    public bool IsCheck => Kind
+        is StatKind.Fortitude or StatKind.Reflex or StatKind.Will or StatKind.Perception
+        or StatKind.Attack or StatKind.Skill or StatKind.SpellAttack;
+
+    public bool IsDc => Kind is StatKind.ClassDc or StatKind.SpellDc;
+
+    public bool IsSavingThrow => Kind is StatKind.Fortitude or StatKind.Reflex or StatKind.Will;
 }

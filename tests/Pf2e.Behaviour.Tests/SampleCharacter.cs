@@ -29,7 +29,7 @@ public class SampleCharacter
     {
         // A potency rune raises the armour's own item bonus, so +1 studded leather is one +3 item
         // bonus, not a +2 and a +1 that the stacking rule would then refuse to combine.
-        var armor = new Modifier("+1 studded leather", ModifierType.Item, 3, [ArmorClass.Target]);
+        var armor = new Modifier("+1 studded leather", ModifierType.Item, 3, [Selector.Exactly(StatKind.ArmorClass)]);
 
         var ac = ArmorClass.Compute(
             level: Level,

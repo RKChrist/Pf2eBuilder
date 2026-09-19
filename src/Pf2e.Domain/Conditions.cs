@@ -2,138 +2,130 @@ using System.Collections.Immutable;
 
 namespace Pf2e.Domain;
 
-/// <summary>
-/// A condition that imposes a modifier. <see cref="Verified"/> defaults to false because the
-/// values were transcribed from a brief its own author called a draft written from memory.
-/// </summary>
-public abstract record ConditionDefinition(
-    string Key,
-    string Name,
-    ModifierType Type,
-    ImmutableArray<StatTarget> Targets,
-    string SourceRef,
-    bool Verified = false);
-
-/// <summary>A condition with a value, such as clumsy 2, whose penalty equals that value.</summary>
-public sealed record ValuedCondition(
-    string Key,
-    string Name,
-    ModifierType Type,
-    ImmutableArray<StatTarget> Targets,
-    string SourceRef,
-    bool Verified = false)
-    : ConditionDefinition(Key, Name, Type, Targets, SourceRef, Verified)
+/// <summary>One modifier a condition imposes. Conditions can impose more than one.</summary>
+public abstract record ModifierTemplate(ModifierType Type, ImmutableArray<Selector> Applies)
 {
-    public Modifier AtValue(int value) => new($"{Name} {value}", Type, -value, Targets);
+    public abstract Modifier For(string conditionName, int conditionValue);
+
+    /// <summary>A penalty equal to the condition's value, such as clumsy 2 giving -2.</summary>
+    public sealed record Scaling(ModifierType Type, ImmutableArray<Selector> Applies)
+        : ModifierTemplate(Type, Applies)
+    {
+        public override Modifier For(string name, int value) =>
+            new($"{name} {value}", Type, -value, Applies);
+    }
+
+    /// <summary>A penalty that does not vary, such as prone's -2 to attack rolls.</summary>
+    public sealed record Flat(ModifierType Type, int Penalty, ImmutableArray<Selector> Applies)
+        : ModifierTemplate(Type, Applies)
+    {
+        public override Modifier For(string name, int value) => new(name, Type, -Penalty, Applies);
+    }
 }
 
-/// <summary>A condition without a value, such as prone, whose penalty is fixed.</summary>
-public sealed record FixedCondition(
+/// <summary>
+/// <see cref="Verified"/> defaults to false because the first draft of this table was
+/// transcribed from a brief its own author called a draft written from memory.
+/// </summary>
+public sealed record ConditionDefinition(
     string Key,
     string Name,
-    ModifierType Type,
-    int Penalty,
-    ImmutableArray<StatTarget> Targets,
+    bool HasValue,
+    ImmutableArray<ModifierTemplate> Templates,
     string SourceRef,
     bool Verified = false)
-    : ConditionDefinition(Key, Name, Type, Targets, SourceRef, Verified)
 {
-    public Modifier Modifier => new(Name, Type, -Penalty, Targets);
+    public ImmutableArray<Modifier> ModifiersAt(int value = 0)
+    {
+        if (HasValue && value < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(value), $"{Name} always carries a value of 1 or more.");
+        }
+
+        if (!HasValue && value != 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(value), $"{Name} does not carry a value.");
+        }
+
+        return [.. Templates.Select(t => t.For(Name, value))];
+    }
 }
 
 public static class Conditions
 {
-    private const string PlayerCoreConditions = "Player Core, Conditions Appendix";
+    const string Ref = "Player Core, Conditions Appendix";
 
-    private static readonly ImmutableArray<StatTarget> ClumsyTargets =
-    [
-        new(StatKind.ArmorClass),
-        new(StatKind.Reflex),
-        StatTarget.Skill("Acrobatics"),
-        StatTarget.Skill("Stealth"),
-        StatTarget.Skill("Thievery"),
-    ];
+    static ConditionDefinition Scaling(string key, string name, params Selector[] applies) =>
+        new(key, name, HasValue: true,
+            [new ModifierTemplate.Scaling(ModifierType.Status, [.. applies])], Ref);
 
-    public static ValuedCondition Clumsy { get; } =
-        new("clumsy", "Clumsy", ModifierType.Status, ClumsyTargets, PlayerCoreConditions);
+    static ConditionDefinition Flat(string key, string name, ModifierType type, int penalty, params Selector[] applies) =>
+        new(key, name, HasValue: false,
+            [new ModifierTemplate.Flat(type, penalty, [.. applies])], Ref);
 
-    public static ValuedCondition Drained { get; } =
-        new("drained", "Drained", ModifierType.Status, [new(StatKind.Fortitude)], PlayerCoreConditions);
+    // Every scaling condition below names a derived category rather than a list of statistics,
+    // which is how the printed rules are written. Clumsy is "Dex-based", and that phrase covers
+    // Dex-based attack rolls, which an enumeration of AC, Reflex and three skills silently drops.
+    public static ConditionDefinition Clumsy { get; } =
+        Scaling("clumsy", "Clumsy", Selector.Governed(AttributeKind.Dexterity));
 
-    public static ValuedCondition Enfeebled { get; } = new(
-        "enfeebled",
-        "Enfeebled",
-        ModifierType.Status,
-        [new(StatKind.Attack), new(StatKind.Damage), StatTarget.Skill("Athletics")],
-        PlayerCoreConditions);
+    public static ConditionDefinition Drained { get; } =
+        Scaling("drained", "Drained", Selector.Governed(AttributeKind.Constitution));
 
-    public static ValuedCondition Frightened { get; } =
-        new("frightened", "Frightened", ModifierType.Status, StatTarget.AllChecks, PlayerCoreConditions);
+    public static ConditionDefinition Enfeebled { get; } =
+        Scaling("enfeebled", "Enfeebled", Selector.Governed(AttributeKind.Strength));
 
-    public static ValuedCondition Sickened { get; } =
-        new("sickened", "Sickened", ModifierType.Status, StatTarget.AllChecks, PlayerCoreConditions);
+    public static ConditionDefinition Stupefied { get; } =
+        Scaling("stupefied", "Stupefied",
+            Selector.Governed(AttributeKind.Intelligence),
+            Selector.Governed(AttributeKind.Wisdom),
+            Selector.Governed(AttributeKind.Charisma));
 
-    public static ValuedCondition Stupefied { get; } = new(
-        "stupefied",
-        "Stupefied",
-        ModifierType.Status,
-        [new(StatKind.Will), new(StatKind.Perception), new(StatKind.SpellAttack), new(StatKind.SpellDc)],
-        PlayerCoreConditions);
+    public static ConditionDefinition Frightened { get; } =
+        Scaling("frightened", "Frightened", Selector.AllChecksAndDcs);
 
-    public static FixedCondition Fascinated { get; } = new(
-        "fascinated",
-        "Fascinated",
-        ModifierType.Status,
-        2,
-        [new(StatKind.Perception), new(StatKind.Skill)],
-        PlayerCoreConditions);
+    public static ConditionDefinition Sickened { get; } =
+        Scaling("sickened", "Sickened", Selector.AllChecksAndDcs);
 
-    public static FixedCondition Fatigued { get; } = new(
-        "fatigued",
-        "Fatigued",
-        ModifierType.Status,
-        1,
-        [new(StatKind.ArmorClass), new(StatKind.Fortitude), new(StatKind.Reflex), new(StatKind.Will)],
-        PlayerCoreConditions);
+    public static ConditionDefinition Fascinated { get; } =
+        Flat("fascinated", "Fascinated", ModifierType.Status, 2,
+            Selector.Exactly(StatKind.Perception), Selector.Exactly(StatKind.Skill));
 
-    public static FixedCondition Deafened { get; } =
-        new("deafened", "Deafened", ModifierType.Status, 2, [new(StatKind.Perception)], PlayerCoreConditions);
+    public static ConditionDefinition Fatigued { get; } =
+        Flat("fatigued", "Fatigued", ModifierType.Status, 1,
+            Selector.Exactly(StatKind.ArmorClass), Selector.SavingThrows);
 
-    public static FixedCondition Blinded { get; } =
-        new("blinded", "Blinded", ModifierType.Status, 4, [new(StatKind.Perception)], PlayerCoreConditions);
+    // UNVERIFIED against the printed rule: deafened's penalty should be predicated on the
+    // auditory trait, which this engine cannot express yet, so it applies to all Perception.
+    public static ConditionDefinition Deafened { get; } =
+        Flat("deafened", "Deafened", ModifierType.Status, 2, Selector.Exactly(StatKind.Perception));
 
-    public static FixedCondition Unconscious { get; } = new(
-        "unconscious",
-        "Unconscious",
-        ModifierType.Status,
-        4,
-        [new(StatKind.ArmorClass), new(StatKind.Perception), new(StatKind.Reflex)],
-        PlayerCoreConditions);
+    public static ConditionDefinition Blinded { get; } =
+        Flat("blinded", "Blinded", ModifierType.Status, 4, Selector.Exactly(StatKind.Perception));
 
-    public static FixedCondition OffGuard { get; } =
-        new("off-guard", "Off-Guard", ModifierType.Circumstance, 2, [new(StatKind.ArmorClass)], PlayerCoreConditions);
+    public static ConditionDefinition Unconscious { get; } =
+        Flat("unconscious", "Unconscious", ModifierType.Status, 4,
+            Selector.Exactly(StatKind.ArmorClass),
+            Selector.Exactly(StatKind.Perception),
+            Selector.Exactly(StatKind.Reflex));
 
-    public static FixedCondition Prone { get; } =
-        new("prone", "Prone", ModifierType.Circumstance, 2, [new(StatKind.Attack)], PlayerCoreConditions);
+    public static ConditionDefinition OffGuard { get; } =
+        Flat("off-guard", "Off-Guard", ModifierType.Circumstance, 2, Selector.Exactly(StatKind.ArmorClass));
 
-    public static FixedCondition Encumbered { get; } =
-        new("encumbered", "Encumbered", ModifierType.Status, 1, ClumsyTargets, PlayerCoreConditions);
+    public static ConditionDefinition Prone { get; } =
+        Flat("prone", "Prone", ModifierType.Circumstance, 2, Selector.Exactly(StatKind.Attack));
+
+    /// <summary>Clumsy 1 and a speed penalty, which is two modifiers of different types.</summary>
+    public static ConditionDefinition Encumbered { get; } =
+        new("encumbered", "Encumbered", HasValue: false,
+        [
+            new ModifierTemplate.Flat(ModifierType.Status, 1, [Selector.Governed(AttributeKind.Dexterity)]),
+            new ModifierTemplate.Flat(ModifierType.Untyped, 10, [Selector.Speeds]),
+        ], Ref);
 
     public static ImmutableArray<ConditionDefinition> All { get; } =
     [
-        Clumsy,
-        Drained,
-        Enfeebled,
-        Frightened,
-        Sickened,
-        Stupefied,
-        Fascinated,
-        Fatigued,
-        Deafened,
-        Blinded,
-        Unconscious,
-        OffGuard,
-        Prone,
-        Encumbered,
+        Clumsy, Drained, Enfeebled, Stupefied, Frightened, Sickened,
+        Fascinated, Fatigued, Deafened, Blinded, Unconscious, OffGuard, Prone, Encumbered,
     ];
 }

@@ -4,10 +4,10 @@ namespace Pf2e.Behaviour.Tests;
 
 public class StackingRules
 {
-    private static readonly StatTarget Attack = new(StatKind.Attack);
+    private static readonly StatTarget Attack = StatTarget.Attack(AttributeKind.Strength);
 
     private static Modifier Mod(string source, ModifierType type, int value) =>
-        new(source, type, value, [Attack]);
+        new(source, type, value, [Selector.Exactly(StatKind.Attack)]);
 
     [Fact]
     public void SameTypeBonusesDoNotStack_HighestWins()
@@ -116,7 +116,7 @@ public class StackingRules
     [Fact]
     public void ModifierTargetingAnotherStatisticIsIgnored()
     {
-        var acOnly = new Modifier("Shield raised", ModifierType.Circumstance, 2, [new(StatKind.ArmorClass)]);
+        var acOnly = new Modifier("Shield raised", ModifierType.Circumstance, 2, [Selector.Exactly(StatKind.ArmorClass)]);
 
         var result = Stacking.Resolve(0, Attack, [acOnly]);
 
