@@ -2,7 +2,6 @@
 @inject IState<RuleDetailState> Detail
 @inject IDispatcher Dispatcher
 @inject NavigationManager Navigation
-@inject RulesApi Api
 @inject IJSRuntime Js
 
 <BottomSheet Open="@(Detail.Value.Id is not null)" Title="@Title" OnClose="Close" Class="pf-sheet--dock rule-sheet">
@@ -23,12 +22,27 @@
                 </Action>
             </ErrorState>
         </Failed>
+        <Missing>
+            <EmptyState Title="Nothing by that address">
+                <ChildContent>
+                    No record in the ruleset has the id “@Detail.Value.Id”. The link may be mistyped, or
+                    from before a record was retired. Asking again will not change the answer.
+                </ChildContent>
+                <Action>
+                    <Button Variant="ButtonVariant.Secondary" OnClick="Dismiss">Close</Button>
+                </Action>
+            </EmptyState>
+        </Missing>
         <Loaded Context="rule">
             <div class="head">
-                <p class="kind">@Kind(rule.Summary)</p>
+                <p class="kind">@RuleCatalog.KindAndLevel(rule.Summary.Category, rule.Summary.Level)</p>
                 @if (RuleDisplay.RarityOf(rule.Summary.Rarity) is var rarity && rarity != Rarity.Common)
                 {
                     <RarityBadge Value="rarity" />
+                }
+                @foreach (var flag in MechanicsDisplay.FlagsOf(rule))
+                {
+                    <span class="flag">@flag</span>
                 }
             </div>
 
@@ -51,7 +65,7 @@
                     {
                         <div class="stat @(MechanicsDisplay.IsGate(row.Key) ? "gate" : null)">
                             <dt>@row.Label</dt>
-                            <dd>@Value(row)</dd>
+                            <dd>@Value(rule, row)</dd>
                         </div>
                     }
                 </dl>
@@ -63,7 +77,7 @@
                     @foreach (var row in after)
                     {
                         <dt>@row.Label</dt>
-                        <dd>@Value(row)</dd>
+                        <dd>@Value(rule, row)</dd>
                     }
                 </dl>
             }
@@ -80,54 +94,50 @@
     /// screen: the sheet lives in the layout.</summary>
     [Parameter, SupplyParameterFromQuery(Name = "rule")] public string? RuleId { get; set; }
 
-    string Title => Detail.Value.Detail is RemoteData<RuleDetail>.Loaded loaded
-        ? loaded.Value.Summary.Name
-        : "Rule";
-
-    static string Kind(RuleSummary summary) => summary.Level is int level
-        ? $"{RuleCatalog.OneOf(summary.Category)} {level}"
-        : RuleCatalog.OneOf(summary.Category);
-
-    RenderFragment Value(MechanicRow row) => row.Key switch
+    string Title => Detail.Value.Detail switch
     {
-        "actions" => @<span class="cost">
-            @if (Glance.Part(new MechanicField(row.Key, row.Values)) is { Cost: { } cost })
-            {
-                <ActionCost Cost="cost" />
-            }
-            <span>@string.Join(", ", row.Values)</span>
-        </span>,
-        _ when References.CategoryFor(row.Key) is not null => @<span class="refs">
-            @foreach (var value in row.Values)
-            {
-                <button type="button" class="ref" @onclick="() => Follow(row.Key, value)">@value</button>
-            }
-        </span>,
-        _ => @<text>@string.Join(", ", row.Values)</text>,
+        RemoteData<RuleDetail>.Loaded loaded => loaded.Value.Summary.Name,
+        RemoteData<RuleDetail>.Missing => "No such record",
+        _ => "Rule",
     };
 
-    /// <summary>A named record opens in this sheet, with back returning to the one it was named
-    /// in. A name the ruleset has no record for, such as a Lore skill, becomes a search.</summary>
-    async Task Follow(string field, string name)
+    /// <summary>A value is a link only where the server found a record of exactly that name, so a
+    /// phrase such as "a Lore skill associated with your school" stays words.</summary>
+    RenderFragment Value(RuleDetail rule, MechanicRow row)
     {
-        var category = References.CategoryFor(field)!;
-        if (category == References.TraitCategory)
+        if (row.Key == "actions")
         {
-            Navigation.NavigateTo(Navigation.Trait(name));
-            return;
+            return @<span class="cost">
+                @if (Glance.Part(new MechanicField(row.Key, row.Values)) is { Cost: { } cost })
+                {
+                    <ActionCost Cost="cost" />
+                }
+                <span>@string.Join(", ", row.Values)</span>
+            </span>;
         }
 
-        RuleSummary? found = null;
-        try
+        var targets = rule.Links.Where(link => link.Field == row.Key)
+            .DistinctBy(link => link.Value, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(link => link.Value, link => link.Id, StringComparer.OrdinalIgnoreCase);
+
+        if (targets.Count == 0)
         {
-            found = await Api.FindAsync(category, name, CancellationToken.None);
-        }
-        catch (RulesApiException)
-        {
-            // The search this falls back to meets the same outage and says so on its own screen.
+            return @<text>@string.Join(", ", row.Values)</text>;
         }
 
-        Navigation.NavigateTo(found is null ? Links.Search(name) : Navigation.Rule(found.Id));
+        return @<span class="refs">
+            @foreach (var value in row.Values)
+            {
+                @if (targets.TryGetValue(value, out var id))
+                {
+                    <a class="ref" href="@Navigation.Rule(id)">@value</a>
+                }
+                else
+                {
+                    <span class="plain">@value</span>
+                }
+            }
+        </span>;
     }
 
     protected override void OnParametersSet()
@@ -140,5 +150,19 @@
         }
     }
 
-    async Task Close() => await Js.InvokeVoidAsync("history.back");
+    /// <summary>Back, so the phone's back button and this close the same way. A missing record is
+    /// the exception: it is usually reached by a link from outside, with nothing of this app behind
+    /// it in history, so it closes by address instead.</summary>
+    async Task Close()
+    {
+        if (Detail.Value.Detail is RemoteData<RuleDetail>.Missing)
+        {
+            Dismiss();
+            return;
+        }
+
+        await Js.InvokeVoidAsync("history.back");
+    }
+
+    void Dismiss() => Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("rule", (string?)null), replace: true);
 }

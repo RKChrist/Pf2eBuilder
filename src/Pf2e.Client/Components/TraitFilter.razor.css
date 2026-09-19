@@ -1,0 +1,74 @@
+.trait-filter {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.refine-label {
+    padding-inline: var(--layout-gutter);
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--font-tracking-wide);
+    text-transform: uppercase;
+}
+
+.trait-filter ::deep .trait-find {
+    margin-inline: var(--layout-gutter);
+}
+
+/* A strip a thumb flicks sideways on a phone; it wraps where the filters have a column. */
+.trait-scroller {
+    display: flex;
+    gap: var(--tap-separation);
+    overflow-x: auto;
+    padding: var(--space-0) var(--layout-gutter) var(--space-2);
+    scrollbar-width: none;
+}
+
+.trait-chip {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--tap-min);
+    padding-inline: var(--space-3);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-radius: var(--radius-chip);
+    background: var(--surface-raised);
+    color: var(--text-secondary);
+    font-size: var(--font-size-chip);
+    white-space: nowrap;
+}
+
+.trait-chip.on {
+    border-color: var(--accent-base);
+    background: var(--accent-wash);
+    color: var(--accent-press);
+    font-weight: var(--font-weight-bold);
+}
+
+.trait-count {
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.trait-none {
+    padding-inline: var(--layout-gutter);
+    color: var(--text-muted);
+    font-size: var(--font-size-data);
+}
+
+@media (hover: hover) {
+    .trait-chip:hover {
+        border-color: var(--line-strong);
+    }
+}
+
+/* 1024px is layout.viewport-desk, where the filters stand as a column beside the list. */
+@media (min-width: 1024px) {
+    .trait-scroller {
+        flex-wrap: wrap;
+        overflow-x: visible;
+    }
+}

@@ -36,13 +36,27 @@ public sealed class RulesApi(HttpClient http)
         return found.Items.FirstOrDefault(item => item.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
     }
 
-    public Task<RuleDetail> GetRuleAsync(string id, CancellationToken ct) =>
-        GetAsync<RuleDetail>(new UrlBuilder($"rules/{Uri.EscapeDataString(id)}").ToString(), ct);
+    public Task<TraitCounts> CountTraitsAsync(string category, string? name, int? minLevel, int? maxLevel, CancellationToken ct) =>
+        GetAsync<TraitCounts>(new UrlBuilder("rules/traits")
+            .Add("Category", category)
+            .Add("Name", name)
+            .Add("MinLevel", minLevel?.ToString())
+            .Add("MaxLevel", maxLevel?.ToString())
+            .ToString(), ct);
+
+    /// <summary>Null when the ruleset has no record by that id, which is an answer and not a failure:
+    /// trying again will not change it.</summary>
+    public async Task<RuleDetail?> GetRuleAsync(string id, CancellationToken ct) =>
+        await GetAsync<RuleDetail>(new UrlBuilder($"rules/{Uri.EscapeDataString(id)}").ToString(), ct, missingIsNull: true);
 
     public Task<IReadOnlyList<ConditionSummary>> GetConditionsAsync(CancellationToken ct) =>
         GetAsync<IReadOnlyList<ConditionSummary>>("conditions", ct);
 
-    async Task<T> GetAsync<T>(string url, CancellationToken ct)
+    async Task<T> GetAsync<T>(string url, CancellationToken ct) where T : class =>
+        await GetAsync<T>(url, ct, missingIsNull: false)
+        ?? throw new RulesApiException("The rules service sent an empty answer.");
+
+    async Task<T?> GetAsync<T>(string url, CancellationToken ct, bool missingIsNull) where T : class
     {
         HttpResponseMessage response;
         try
@@ -54,9 +68,9 @@ public sealed class RulesApi(HttpClient http)
             throw new RulesApiException("The rules service is not reachable.");
         }
 
-        if (response.StatusCode is HttpStatusCode.NotFound)
+        if (response.StatusCode is HttpStatusCode.NotFound && missingIsNull)
         {
-            throw new RulesApiException("That rule is no longer in the ruleset.");
+            return null;
         }
 
         if (!response.IsSuccessStatusCode)

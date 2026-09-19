@@ -60,9 +60,7 @@ public static class MechanicsDisplay
         ("item_subcategory", "Item Subcategory"),
         ("item_bonus_value", "Item Bonus"),
         ("item_bonus_note", "Item Bonus Note"),
-        ("item_bonus_consumable", "Consumable"),
         ("heighten", "Heightened"),
-        ("heighten_level", "Heightened Levels"),
         ("tradition", "Traditions"),
         ("school", "School"),
         ("spell_type", "Spell Type"),
@@ -91,7 +89,6 @@ public static class MechanicsDisplay
         ("element", "Elements"),
         ("language", "Languages"),
         ("vision", "Vision"),
-        ("is_general_background", "General Background"),
         ("attack_proficiency", "Attack Proficiency"),
         ("defense_proficiency", "Defense Proficiency"),
         ("fortitude_proficiency", "Fortitude Proficiency"),
@@ -116,7 +113,30 @@ public static class MechanicsDisplay
         "source_category",
         "primary_source_category",
         "actions_number",
+        // Every rank from the spell's own to 10th as a list of numbers; the heighten row already
+        // says the same thing in words.
+        "heighten_level",
     };
+
+    /// <summary>A yes-or-no field is a badge when it is yes and nothing when it is no, because
+    /// "Consumable: false" tells a reader nothing they would ask.</summary>
+    static readonly (string Key, string Label)[] Flags =
+    [
+        ("is_general_background", "General background"),
+        ("item_bonus_consumable", "Consumable"),
+    ];
+
+    public static IReadOnlyList<string> FlagsOf(RuleDetail rule) =>
+        [.. Flags.Where(flag => rule.Mechanics.Any(field => field.Key == flag.Key && field.Values is ["true"]))
+                 .Select(flag => flag.Label)];
+
+    /// <summary>A field whose printed form needs the record around it to read well. Keyed by field,
+    /// like everything else here.</summary>
+    static readonly Dictionary<string, Func<IReadOnlyList<string>, RuleSummary, IReadOnlyList<string>>> Readings =
+        new(StringComparer.Ordinal)
+        {
+            ["heighten"] = Heightening.Read,
+        };
 
     /// <summary>What a player has to check before they may act at all, so it is never buried
     /// under the facts about the thing.</summary>
@@ -174,13 +194,14 @@ public static class MechanicsDisplay
         return
         [
             .. populated.Values
-                .Where(field => !Hidden.Contains(field.Key))
+                .Where(field => !Hidden.Contains(field.Key) && !Flags.Any(flag => flag.Key == field.Key))
                 // The seed carries a numeric field beside its printed form, such as 14000 beside
                 // "140 gp". Only the printed form means anything to a player.
                 .Where(field => !populated.ContainsKey(field.Key + "_raw"))
                 .Where(field => !Echoes(field, populated))
                 .OrderBy(field => Order.GetValueOrDefault(field.Key, int.MaxValue))
-                .Select(field => new MechanicRow(field.Key, LabelOf(field.Key), field.Values)),
+                .Select(field => new MechanicRow(field.Key, LabelOf(field.Key),
+                    Readings.TryGetValue(field.Key, out var read) ? read(field.Values, rule.Summary) : field.Values)),
         ];
     }
 

@@ -1,0 +1,32 @@
+.top {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--layout-gutter) var(--space-2);
+}
+
+.heading {
+    font-size: var(--font-size-hero);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Prose keeps its measure at any width; layout.content-max is that measure. */
+.blurb {
+    max-width: var(--layout-content-max);
+    color: var(--text-secondary);
+    font-size: var(--font-size-body);
+    line-height: var(--font-leading-normal);
+}
+
+.total {
+    color: var(--text-muted);
+    font-size: var(--font-size-data);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Pulled back by the quiet button's own inset so its label starts on the heading's line. */
+.back {
+    margin-inline-start: calc(var(--space-3) * -1);
+    text-decoration: none;
+}

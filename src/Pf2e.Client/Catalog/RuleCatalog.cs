@@ -2,10 +2,16 @@ using Pf2e.Client.State;
 
 namespace Pf2e.Client.Catalog;
 
-/// <summary><paramref name="Route"/> is how a category gets a screen of its own without any
-/// renderer learning a category name.</summary>
+/// <summary><paramref name="OwnRoute"/> is how a category gets a screen of its own without any
+/// renderer learning a category name; without one it is a list at /browse/{key}.
+/// <paramref name="LevelWord"/> is what its levels are called: spells and rituals have ranks.</summary>
 public sealed record RuleCategory(
-    string Key, string Label, GroupKey Group, string Route = RuleCatalog.BrowseRoute, string? Singular = null)
+    string Key,
+    string Label,
+    GroupKey Group,
+    string? OwnRoute = null,
+    string? Singular = null,
+    string LevelWord = "Level")
 {
     /// <summary>"Feat 10" in a record's header. Derived from the plural, which is right for all
     /// but the two rows that say otherwise.</summary>
@@ -20,8 +26,6 @@ public sealed record RuleCategory(
 
 public static class RuleCatalog
 {
-    public const string BrowseRoute = "/";
-
     public const string ConditionsRoute = "/conditions";
 
     public const int CategoryCount = 74;
@@ -67,8 +71,8 @@ public static class RuleCatalog
         new("feat", "Feats", GroupKey.Feats),
         new("archetype", "Archetypes", GroupKey.Feats),
 
-        new("spell", "Spells", GroupKey.Spells),
-        new("ritual", "Rituals", GroupKey.Spells),
+        new("spell", "Spells", GroupKey.Spells, LevelWord: "Rank"),
+        new("ritual", "Rituals", GroupKey.Spells, LevelWord: "Rank"),
         new("tradition", "Traditions", GroupKey.Spells),
 
         new("equipment", "Equipment", GroupKey.Gear),
@@ -119,6 +123,16 @@ public static class RuleCatalog
     public static string LabelOf(string key) => Of(key)?.Label ?? key;
 
     public static string OneOf(string key) => Of(key)?.One ?? key;
+
+    public static string LevelWordOf(string key) => Of(key)?.LevelWord ?? "Level";
+
+    /// <summary>"Feat 4", or "Spell, rank 3" where a level is called something else.</summary>
+    public static string KindAndLevel(string key, int? level) => level switch
+    {
+        null => OneOf(key),
+        int at when LevelWordOf(key) == "Level" => $"{OneOf(key)} {at}",
+        int at => $"{OneOf(key)}, {LevelWordOf(key).ToLowerInvariant()} {at}",
+    };
 
     public static void EnsureComplete()
     {

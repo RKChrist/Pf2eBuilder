@@ -1,0 +1,73 @@
+@page "/"
+@inherits FluxorComponent
+@inject IState<RulesBrowserState> Browser
+@inject IState<CatalogSizeState> Sizes
+@inject IDispatcher Dispatcher
+
+<PageTitle>@Group.Heading</PageTitle>
+
+<PageHead Heading="@Group.Heading" Blurb="@GroupNotes.Of(Group.Key)" />
+
+<div class="board">
+    @foreach (var section in Sections)
+    {
+        <section class="section" aria-label="@section.Name">
+            @if (Sections.Count > 1)
+            {
+                <h2 class="section-title">@section.Name</h2>
+            }
+            <div class="categories">
+                @foreach (var category in section.Categories)
+                {
+                    <a class="category" href="@Links.Category(category)">
+                        <span class="face">
+                            <span class="label">@category.Label</span>
+                            @if (Sizes.Value.Of(category.Key) is int size)
+                            {
+                                <span class="size">@Numbers.Grouped(size)</span>
+                            }
+                        </span>
+                        @if (CategoryNotes.Of(category.Key) is { } note)
+                        {
+                            <span class="note">@note.Blurb</span>
+                        }
+                    </a>
+                }
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    /// <summary>/?group=spells. The first group has no parameter, being the app's front door.</summary>
+    [Parameter, SupplyParameterFromQuery(Name = "group")] public string? GroupName { get; set; }
+
+    RuleGroup Group => RuleGroups.Of(Browser.Value.ActiveGroup);
+
+    sealed record Section(string Name, IReadOnlyList<RuleCategory> Categories);
+
+    IReadOnlyList<Section> Sections =>
+    [
+        .. CategoryNotes.SectionOrder(Group.Key)
+            .Select(name => new Section(name, [.. RuleCatalog.InGroup(Group.Key)
+                .Where(category => CategoryNotes.Of(category.Key)?.Section == name)]))
+            .Where(section => section.Categories.Count > 0),
+    ];
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        CatalogSizeState.Ensure(Sizes, Dispatcher);
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        var group = Links.GroupNamed(GroupName) ?? RuleGroups.All[0].Key;
+        if (Browser.Value.Address is not null || Browser.Value.ActiveGroup != group)
+        {
+            Dispatcher.Dispatch(new BoardOpened(group));
+        }
+    }
+}

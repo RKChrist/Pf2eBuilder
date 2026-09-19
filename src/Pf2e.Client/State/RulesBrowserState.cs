@@ -1,46 +1,50 @@
 using Fluxor;
-using Pf2e.Components;
 using Pf2e.Contracts.Rules;
 
 namespace Pf2e.Client.State;
 
-/// <summary>A null <see cref="ActiveCategory"/> is the browse screen's only mode switch: the
-/// group's category list rather than any records.</summary>
+/// <summary>
+/// Where the reader is in one category: everything a list screen's address says. The address
+/// is the source and this is what it parses to, so refresh, back and a shared link all land
+/// on the same list.
+/// </summary>
+public sealed record CategoryAddress(
+    string Category,
+    string Query = "",
+    int? MinLevel = null,
+    int? MaxLevel = null,
+    string? Trait = null,
+    int Page = 1)
+{
+    /// <summary>What the trait counts depend on. A trait or a page does not change them.</summary>
+    public (string, string, int?, int?) FacetKey => (Category, Query, MinLevel, MaxLevel);
+
+    public int FiltersSet => (MinLevel is null && MaxLevel is null ? 0 : 1) + (Trait is null ? 0 : 1);
+}
+
+/// <summary>A null <see cref="Address"/> is the board of <see cref="ActiveGroup"/>'s categories;
+/// otherwise the screen is that category's records.</summary>
 [FeatureState]
 public sealed record RulesBrowserState
 {
     public GroupKey ActiveGroup { get; init; } = GroupKey.Build;
 
-    public string? ActiveCategory { get; init; }
-
-    public string Query { get; init; } = string.Empty;
-
-    /// <summary>Whole scale means unfiltered. The two bounds cannot cross, so there is no
-    /// arrangement of this filter that matches nothing.</summary>
-    public IntRange Levels { get; init; } = LevelScale.Whole;
-
-    public string? Trait { get; init; }
-
-    public int Page { get; init; } = 1;
+    public CategoryAddress? Address { get; init; }
 
     public RemoteData<RuleSearchResult> Results { get; init; } = new RemoteData<RuleSearchResult>.NotAsked();
+
+    public RemoteData<TraitCounts> Traits { get; init; } = new RemoteData<TraitCounts>.NotAsked();
 }
 
-public sealed record GroupSelected(GroupKey Group);
+/// <summary>The board's address was opened, such as / or /?group=feats.</summary>
+public sealed record BoardOpened(GroupKey Group);
 
-/// <summary>Opens a category, optionally already narrowed to one trait, from wherever the reader
-/// is: the group follows the category.</summary>
-public sealed record CategorySelected(string Category, string? Trait = null);
+/// <summary>A screen of its own inside a group, such as conditions, marks that group current
+/// without opening its board.</summary>
+public sealed record GroupEntered(GroupKey Group);
 
-public sealed record CategoryCleared;
-
-public sealed record QueryChanged(string Query);
-
-public sealed record LevelRangeChanged(IntRange Levels);
-
-public sealed record TraitSelected(string? Trait);
-
-public sealed record PageSelected(int Page);
+/// <summary>A category's address was opened or changed, such as /browse/feat?with=Fighter.</summary>
+public sealed record CategoryAddressed(CategoryAddress Address);
 
 public sealed record SearchRetried;
 
@@ -49,3 +53,9 @@ public sealed record SearchStarted;
 public sealed record SearchSucceeded(RuleSearchResult Result);
 
 public sealed record SearchFailed(string Message);
+
+public sealed record TraitCountsStarted;
+
+public sealed record TraitCountsLoaded(TraitCounts Traits);
+
+public sealed record TraitCountsFailed(string Message);

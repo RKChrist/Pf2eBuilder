@@ -4,11 +4,11 @@
 @inject IState<RulesBrowserState> Browser
 @inject IDispatcher Dispatcher
 
-<PageTitle>Conditions</PageTitle>
+<PageTitle>@Category.Label</PageTitle>
 
-<header class="top">
-    <h1 class="heading">Conditions</h1>
-</header>
+<PageHead Heading="@Category.Label"
+          Back="@(new PageHead.BackLink(Links.Board(Category.Group), RuleGroups.Of(Category.Group).Heading))"
+          Blurb="@CategoryNotes.Of(Category.Key)?.Blurb" />
 
 <RemoteView T="IReadOnlyList<ConditionSummary>" Data="Store.Value.Conditions">
     <Loading>
@@ -82,14 +82,15 @@
 </RemoteView>
 
 @code {
+    static readonly RuleCategory Category = RuleCatalog.All.First(category => category.OwnRoute == RuleCatalog.ConditionsRoute);
+
     protected override void OnInitialized()
     {
         base.OnInitialized();
 
-        var owner = RuleCatalog.All.First(category => category.Route == RuleCatalog.ConditionsRoute).Group;
-        if (Browser.Value.ActiveGroup != owner)
+        if (Browser.Value.ActiveGroup != Category.Group)
         {
-            Dispatcher.Dispatch(new GroupSelected(owner));
+            Dispatcher.Dispatch(new GroupEntered(Category.Group));
         }
 
         if (Store.Value.Conditions is RemoteData<IReadOnlyList<ConditionSummary>>.NotAsked)

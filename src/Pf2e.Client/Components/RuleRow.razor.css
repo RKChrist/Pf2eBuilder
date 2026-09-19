@@ -102,3 +102,56 @@
         background: var(--surface-sunken);
     }
 }
+
+/* A list given the width of a tablet or more reads each record on one line: name, level and
+   glance side by side, then the traits beside them once there is room for those too. Sized by
+   the list's own width rather than the viewport, so a list squeezed by a docked record reflows
+   with it. A phone never reaches either width. */
+@container (min-width: 720px) {
+    .open {
+        display: grid;
+        grid-template-columns: minmax(12rem, 18rem) 5rem minmax(0, 1fr);
+        align-items: baseline;
+        column-gap: var(--space-4);
+    }
+
+    .open:has(.kind) {
+        grid-template-columns: minmax(12rem, 18rem) 8rem 5rem minmax(0, 1fr);
+    }
+
+    .top {
+        display: contents;
+    }
+
+    .level {
+        grid-column: -3;
+        grid-row: 1;
+    }
+
+    .kind {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .open ::deep .glance {
+        grid-column: -2;
+        grid-row: 1;
+        -webkit-line-clamp: 1;
+        line-clamp: 1;
+    }
+}
+
+@container (min-width: 1040px) {
+    .rule {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+    }
+
+    .marks {
+        flex-wrap: nowrap;
+        justify-content: flex-end;
+        margin-top: var(--space-0);
+        padding: var(--space-0) var(--space-4) var(--space-0) var(--space-0);
+    }
+}

@@ -78,6 +78,17 @@
     font-weight: var(--font-weight-semibold);
 }
 
+/* A yes-or-no fact that is yes, such as a general background. A no is not shown at all. */
+.flag {
+    padding: var(--space-1) var(--space-2);
+    border: var(--border-hair) solid var(--line-strong);
+    border-radius: var(--radius-chip);
+    color: var(--text-secondary);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
+}
+
 .cost {
     display: inline-flex;
     align-items: center;
@@ -114,8 +125,9 @@
     overflow-wrap: anywhere;
 }
 
-/* A name that opens its own record. Each is a real button at the tap floor, set flush with the
-   text around it by pulling back its own inset. */
+/* A name that opens its own record, a real link at the tap floor, and beside it any name the
+   ruleset has no record of, as plain words at the same inset. Set flush with the text around it
+   by pulling back that inset. */
 .refs {
     display: flex;
     flex-wrap: wrap;
@@ -123,9 +135,17 @@
     margin-inline-start: calc(var(--space-2) * -1);
 }
 
-.ref {
+.ref,
+.plain {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--tap-min);
     min-height: var(--tap-min);
     padding: var(--space-0) var(--space-2);
+}
+
+.ref {
     border: none;
     border-radius: var(--radius-chip);
     background: transparent;

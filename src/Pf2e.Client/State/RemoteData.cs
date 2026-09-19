@@ -12,4 +12,7 @@ public abstract record RemoteData<T>
     public sealed record Loaded(T Value) : RemoteData<T>;
 
     public sealed record Failed(string Message) : RemoteData<T>;
+
+    /// <summary>Asked for something that does not exist. Unlike a failure, asking again cannot help.</summary>
+    public sealed record Missing : RemoteData<T>;
 }

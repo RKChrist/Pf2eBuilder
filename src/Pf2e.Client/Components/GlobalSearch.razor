@@ -102,8 +102,7 @@
 
     static string OptionId(int index) => $"site-search-option-{index}";
 
-    static string Kind(RuleSummary item) =>
-        item.Level is int level ? $"{RuleCatalog.OneOf(item.Category)} {level}" : RuleCatalog.OneOf(item.Category);
+    static string Kind(RuleSummary item) => RuleCatalog.KindAndLevel(item.Category, item.Level);
 
     IReadOnlyDictionary<string, object> InputAttributes
     {

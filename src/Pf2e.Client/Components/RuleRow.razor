@@ -7,7 +7,7 @@
             <span class="name">@Rule.Name</span>
             @if (Rule.Level is int level)
             {
-                <span class="level">Level @level</span>
+                <span class="level">@RuleCatalog.LevelWordOf(Rule.Category) @level</span>
             }
         </span>
         @if (ShowCategory)

@@ -7,37 +7,31 @@ namespace Pf2e.Client.State;
 public static class RulesBrowserReducers
 {
     [ReducerMethod]
-    public static RulesBrowserState On(RulesBrowserState state, GroupSelected action) =>
-        Unfiltered(state) with { ActiveGroup = action.Group, ActiveCategory = null };
+    public static RulesBrowserState On(RulesBrowserState state, BoardOpened action) => state with
+    {
+        ActiveGroup = action.Group,
+        Address = null,
+        Results = new RemoteData<RuleSearchResult>.NotAsked(),
+        Traits = new RemoteData<TraitCounts>.NotAsked(),
+    };
 
     [ReducerMethod]
-    public static RulesBrowserState On(RulesBrowserState state, CategorySelected action) =>
-        Unfiltered(state) with
-        {
-            ActiveGroup = RuleCatalog.Of(action.Category)?.Group ?? state.ActiveGroup,
-            ActiveCategory = action.Category,
-            Trait = action.Trait,
-        };
+    public static RulesBrowserState On(RulesBrowserState state, GroupEntered action) =>
+        state with { ActiveGroup = action.Group };
 
+    /// <summary>Another category forgets the last one's list and traits, so feats never show
+    /// under a spells heading while the spells load.</summary>
     [ReducerMethod]
-    public static RulesBrowserState On(RulesBrowserState state, CategoryCleared _) =>
-        Unfiltered(state) with { ActiveCategory = null };
-
-    [ReducerMethod]
-    public static RulesBrowserState On(RulesBrowserState state, QueryChanged action) =>
-        state with { Query = action.Query, Page = 1 };
-
-    [ReducerMethod]
-    public static RulesBrowserState On(RulesBrowserState state, LevelRangeChanged action) =>
-        state with { Levels = action.Levels, Page = 1 };
-
-    [ReducerMethod]
-    public static RulesBrowserState On(RulesBrowserState state, TraitSelected action) =>
-        state with { Trait = action.Trait, Page = 1 };
-
-    [ReducerMethod]
-    public static RulesBrowserState On(RulesBrowserState state, PageSelected action) =>
-        state with { Page = action.Page };
+    public static RulesBrowserState On(RulesBrowserState state, CategoryAddressed action) =>
+        state.Address?.Category == action.Address.Category
+            ? state with { Address = action.Address }
+            : state with
+            {
+                ActiveGroup = RuleCatalog.Of(action.Address.Category)?.Group ?? state.ActiveGroup,
+                Address = action.Address,
+                Results = new RemoteData<RuleSearchResult>.NotAsked(),
+                Traits = new RemoteData<TraitCounts>.NotAsked(),
+            };
 
     [ReducerMethod]
     public static RulesBrowserState On(RulesBrowserState state, SearchStarted _) =>
@@ -51,13 +45,17 @@ public static class RulesBrowserReducers
     public static RulesBrowserState On(RulesBrowserState state, SearchFailed action) =>
         state with { Results = new RemoteData<RuleSearchResult>.Failed(action.Message) };
 
-    /// <summary>Carrying a trait from feats into spells shows an empty list and no reason for it.</summary>
-    static RulesBrowserState Unfiltered(RulesBrowserState state) => state with
-    {
-        Query = string.Empty,
-        Levels = LevelScale.Whole,
-        Trait = null,
-        Page = 1,
-        Results = new RemoteData<RuleSearchResult>.NotAsked(),
-    };
+    /// <summary>The traits already shown stay while new counts load, so the chips a reader is
+    /// choosing between do not blink out under the finger.</summary>
+    [ReducerMethod]
+    public static RulesBrowserState On(RulesBrowserState state, TraitCountsStarted _) =>
+        state.Traits is RemoteData<TraitCounts>.Loaded ? state : state with { Traits = new RemoteData<TraitCounts>.Loading() };
+
+    [ReducerMethod]
+    public static RulesBrowserState On(RulesBrowserState state, TraitCountsLoaded action) =>
+        state with { Traits = new RemoteData<TraitCounts>.Loaded(action.Traits) };
+
+    [ReducerMethod]
+    public static RulesBrowserState On(RulesBrowserState state, TraitCountsFailed action) =>
+        state with { Traits = new RemoteData<TraitCounts>.Failed(action.Message) };
 }

@@ -130,3 +130,21 @@
         background: var(--surface-sunken);
     }
 }
+
+/* On a laptop the field keeps a field's length, but the matches under it spread across the
+   header in two columns, so eight of them fit without a scroll. */
+@media (min-width: 1024px) {
+    .panel {
+        inset-inline-end: auto;
+        width: min(64rem, calc(100cqi - var(--layout-gutter) * 2));
+    }
+
+    .options {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .option:nth-child(odd) {
+        border-inline-end: var(--border-hair) solid var(--line-subtle);
+    }
+}

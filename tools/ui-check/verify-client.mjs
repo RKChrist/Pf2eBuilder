@@ -1,8 +1,11 @@
 // Drives the running client in a real Chrome and asserts the behaviour the screens promise:
 // the header search and its results page, the explained browse screens, trait sheets, the
 // record sheet and the records it names, the search debounce, the deep link, back and Escape
-// closing a sheet, paging, the level range, and a failure with a retry that recovers. Requests are blocked through the protocol
-// rather than by stopping the API, so the failure arm is exercised without a second terminal.
+// closing a sheet, paging, the level range bounded by the category, the trait facet, a list's own
+// address surviving refresh and back, badges for yes-or-no fields, links only to real records,
+// heightening in words, a missing record told apart from a failed one, the desktop filter column,
+// and a failure with a retry that recovers. Requests are blocked through the protocol rather than
+// by stopping the API, so the failure arm is exercised without a second terminal.
 //
 //   dotnet run --project src/Pf2e.Api
 //   dotnet run --project src/Pf2e.Client --launch-profile http
@@ -294,7 +297,8 @@ await sleep(400);
 await page.eval('history.back()');
 await sleep(800);
 check.eq('back closes the sheet', await count('.pf-sheet__panel'), 0);
-check('back stays in the app', (await page.eval('location.pathname')) === '/');
+check('back stays in the app', (await page.eval('location.pathname')) === '/browse/feat',
+  await page.eval('location.pathname'));
 
 await page.goto(deepLink);
 check('a deep link restores the record', await waitFor('.pf-sheet__panel'));
@@ -344,6 +348,137 @@ check('the conditions screen loads', await waitFor('.pf-card'));
 check('a condition states its modifiers', await count('.pf-mod') > 0);
 check('a penalty is drawn as one', await page.eval(
   `[...document.querySelectorAll('.pf-mod')].some(m => m.classList.contains('pf-mod--penalty'))`));
+check.eq('conditions wear the same heading as every list', await text('.top .heading'), 'Conditions');
+check('conditions say what they are for', (await text('.top .blurb'))?.length > 20, await text('.top .blurb'));
+check('conditions lead back to their group', (await text('.top .back'))?.includes('At the table'), await text('.top .back'));
+
+const requested = (part) => page.eval(
+  `performance.getEntriesByType('resource').filter(e => e.name.includes(${JSON.stringify(part)})).map(e => decodeURIComponent(e.name))`);
+const openSheet = async (id) => {
+  await page.goto(`${client}conditions?rule=${id}`);
+  await waitFor('.rule-sheet .pf-sheet__body > *:not(.pending)');
+  await sleep(400);
+};
+const rows = () => page.eval(`[...document.querySelectorAll('.rule-sheet dt')].map(dt => [dt.textContent.trim(), dt.nextElementSibling?.textContent.trim().replace(/\\s+/g, ' ')])`);
+
+await openSheet('background-51');
+check.eq('a yes-or-no field that is yes is a badge', await text('.rule-sheet .flag'), 'General background');
+check('and never the word true', !(await text('.pf-sheet__body')).match(/\btrue\b/i));
+await openSheet('background-491');
+check.eq('a yes-or-no field that is no shows nothing', await count('.rule-sheet .flag'), 0);
+check('and never the word false', !(await text('.pf-sheet__body')).match(/\bfalse\b/i));
+const lore = 'Academia Lore or a Lore skill associated with your school';
+check('a phrase that names no record stays words', (await text('.pf-sheet__body')).includes(lore)
+  && !(await page.eval(`[...document.querySelectorAll('.rule-sheet .ref')].some(a => a.textContent.includes('Academia'))`)));
+check('a value that names a record is a link to it', await page.eval(
+  `[...document.querySelectorAll('.rule-sheet a.ref')].some(a => a.textContent.trim() === 'Arcana' && a.href.includes('rule=skill-'))`));
+check.eq('the sheet asks nothing to decide its links', (await requested('/rules?')).length, 0);
+
+await openSheet('ancestry-59');
+const speed = (await rows()).find(([label]) => label === 'Speed');
+check.eq('a speed reads in feet', speed?.[1], '20 feet');
+check('and never as JSON', !(await text('.pf-sheet__body')).includes('max'));
+
+await openSheet('spell-1530');
+check.eq('a spell is headed with its rank', await text('.rule-sheet .kind'), 'Spell, rank 3');
+check.eq('a heightening step counts from the next rank', (await rows()).find(([label]) => label === 'Heightened')?.[1], 'Every rank from 4th');
+await openSheet('spell-38');
+check.eq('listed heightenings name their ranks', (await rows()).find(([label]) => label === 'Heightened')?.[1], 'At 4th');
+
+await page.goto(`${client}browse/feat?rule=no-such-record`);
+check('an unknown record says so', await waitFor('.rule-sheet .pf-state'));
+await sleep(300);
+check.eq('it is titled as missing', await text('.pf-sheet__title'), 'No such record');
+check('it offers Close', await page.eval(`[...document.querySelectorAll('.rule-sheet .pf-state .pf-btn')].map(b => b.textContent.trim()).join() === 'Close'`));
+check.eq('and not Try again', await count('.rule-sheet .pf-state--error'), 0);
+await click('.rule-sheet .pf-state .pf-btn');
+await sleep(600);
+check.eq('Close shuts it', await count('.pf-sheet__panel'), 0);
+check('and stays on the list', (await page.eval('location.href')).endsWith('/browse/feat'), await page.eval('location.href'));
+
+await page.send('Network.setBlockedURLs', { urls: [`${api}/rules/feat-*`] });
+await page.goto(`${client}browse/feat?rule=feat-4776`);
+check('a record the service cannot reach fails', await waitFor('.rule-sheet .pf-state--error'));
+check('and offers Try again', (await text('.rule-sheet .pf-state--error .pf-btn')) === 'Try again');
+await page.send('Network.setBlockedURLs', { urls: [] });
+await click('.rule-sheet .pf-state--error .pf-btn');
+check('which recovers', await waitFor('.rule-sheet .stats'));
+
+await page.goto(`${client}browse/spell`);
+await waitFor('.rule .name');
+check('a spell row says rank, not level', /^Rank \d+$/.test(await text('.rule .level')), await text('.rule .level'));
+await click('.refine-toggle');
+await sleep(200);
+check.eq('the spell filter is by rank', await text('.pf-slider__label'), 'Rank');
+check.eq('bounded by the ranks spells have', await page.eval(
+  `[...document.querySelectorAll('.pf-slider__end')].map(e => e.textContent.trim()).join('..')`), '1..10');
+check.eq('with no row of tick marks', await count('.pf-slider__tick'), 0);
+
+await page.goto(`${client}browse/action`);
+await waitFor('.rule .name');
+await click('.refine-toggle');
+await sleep(300);
+check.eq('a category without levels has no level filter', await count('.pf-slider'), 0);
+
+await page.goto(`${client}browse/feat`);
+await waitFor('.trait-chip .trait-count');
+const facet = await requested('/rules/traits?');
+check('the trait filter is counted across the whole category', facet.some(url => url.includes('Category=feat')), facet.join());
+const chips = await page.eval(`[...document.querySelectorAll('.trait-chip')].map(c => ({
+  name: c.firstChild.textContent.trim(), count: Number(c.querySelector('.trait-count').textContent.replace(/,/g, '')) }))`);
+check('a handful of traits, not all of them', chips.length > 3 && chips.length <= 8, chips.length);
+check('most common first', chips.every((chip, i) => i === 0 || chips[i - 1].count >= chip.count), JSON.stringify(chips));
+check('counted past one page of rows', chips[0].count > 50, chips[0].count);
+await page.eval(`(() => {
+  const field = document.querySelector('.trait-find .pf-search__input');
+  field.value = 'Fighte';
+  field.dispatchEvent(new Event('input', { bubbles: true }));
+})()`);
+await sleep(300);
+check('any other trait is found by typing', await page.eval(
+  `[...document.querySelectorAll('.trait-chip')].some(c => c.firstChild.textContent.trim() === 'Fighter')`));
+await page.eval(`[...document.querySelectorAll('.trait-chip')].find(c => c.firstChild.textContent.trim() === 'Fighter').click()`);
+await sleep(1200);
+check('picking it filters the list', (await searches()).at(-1).includes('Trait=Fighter'), (await searches()).at(-1));
+check('and puts it in the address', (await page.eval('location.search')).includes('with=Fighter'), await page.eval('location.search'));
+check.eq('the chosen trait leads, pressed', await page.eval(
+  `document.querySelector('.trait-chip')?.getAttribute('aria-pressed')`), 'true');
+await page.eval(`(() => {
+  const field = document.querySelector('.filters .pf-search__input');
+  field.value = 'shield';
+  field.dispatchEvent(new Event('input', { bubbles: true }));
+})()`);
+await sleep(1500);
+check('typing a name puts it in the address', (await page.eval('location.search')).includes('q=shield'), await page.eval('location.search'));
+const facetAfter = await requested('/rules/traits?');
+check('the trait counts follow the name filter', facetAfter.at(-1)?.includes('Name=shield'), facetAfter.at(-1));
+
+const listed = await page.eval(`[...document.querySelectorAll('.rule .name')].map(n => n.textContent.trim()).join('|')`);
+const address = await page.eval('location.href');
+await page.goto(address);
+await waitFor('.rule .name');
+await sleep(800);
+check.eq('refresh keeps the category', await text('.top .heading'), 'Feats');
+check.eq('refresh keeps the name filter', await page.eval(`document.querySelector('.filters .pf-search__input').value`), 'shield');
+check('refresh keeps the trait filter', (await text('.active-trait'))?.startsWith('Fighter'), await text('.active-trait'));
+check.eq('refresh lists the same records', await page.eval(`[...document.querySelectorAll('.rule .name')].map(n => n.textContent.trim()).join('|')`), listed);
+
+await page.goto(`${client}?group=feats`);
+await waitFor('.categories .category');
+await click('.categories .category');
+await waitFor('.rule .name');
+await page.eval(`(() => {
+  const field = document.querySelector('.filters .pf-search__input');
+  field.value = 'rage';
+  field.dispatchEvent(new Event('input', { bubbles: true }));
+})()`);
+await sleep(1200);
+check.eq('a list has an address of its own', await page.eval('location.pathname'), '/browse/feat');
+check.eq('its back link names its group', (await text('.top .back'))?.replace('←', '').trim(), 'Feats');
+await page.eval('history.back()');
+await sleep(800);
+check.eq('back returns to the board', await page.eval('location.pathname + location.search'), '/?group=feats');
+check('the board is showing', await count('.categories .category') > 0);
 
 await page.send('Network.setBlockedURLs', { urls: [`${api}/*`] });
 await page.goto(client);
@@ -393,9 +528,13 @@ await sleep(400);
 check.eq('two columns of categories on a tablet', await columns(), 2);
 check('the bar is still a bar on a tablet', (await frame()).navWidth > 600);
 
+await page.viewport(1024, 800, false);
+await sleep(400);
+check.eq('three columns of categories on a small laptop', await columns(), 3);
+
 await page.viewport(1440, 900, false);
 await sleep(400);
-check.eq('three columns of categories on a laptop', await columns(), 3);
+check.eq('four columns of categories on a laptop', await columns(), 4);
 const rail = await frame();
 check('the navigation stands up as a rail', rail.navWidth <= 80 && rail.navHeight > 600,
   `${rail.navWidth}x${rail.navHeight}`);
@@ -419,11 +558,61 @@ check('prose keeps its measure', await page.eval(`(() => {
 await page.key('Escape', 'Escape', 27);
 await sleep(500);
 check.eq('Escape closes a docked record too', await count('.pf-sheet__panel'), 0);
+
+await page.goto(`${client}browse/feat`);
+await waitFor('.trait-chip');
+await sleep(600);
+const laptop = await page.eval(`(() => {
+  const side = document.querySelector('.side').getBoundingClientRect();
+  const list = document.querySelector('.results').getBoundingClientRect();
+  return {
+    sideRight: Math.round(side.right),
+    listLeft: Math.round(list.left),
+    listWidth: Math.round(list.width),
+    refine: getComputedStyle(document.querySelector('.refine')).display,
+    toggle: getComputedStyle(document.querySelector('.refine-toggle')).display,
+  };
+})()`);
+check('the filters stand in a column beside the list', laptop.sideRight <= laptop.listLeft, JSON.stringify(laptop));
+check('open, with no toggle to find them behind', laptop.refine !== 'none' && laptop.toggle === 'none', JSON.stringify(laptop));
+check('the list spends the width beside them', laptop.listWidth > 900, laptop.listWidth);
+check('a row reads name, level and glance on one line', await page.eval(`(() => {
+  const row = [...document.querySelectorAll('.rule')].find(r => r.querySelector('.glance'));
+  const top = el => Math.round(row.querySelector(el).getBoundingClientRect().top);
+  return Math.abs(top('.name') - top('.level')) < 8 && Math.abs(top('.name') - top('.glance')) < 8;
+})()`));
+await page.eval('window.scrollTo(0, 3000)');
+await sleep(400);
+const held = await page.eval(`({
+  side: Math.round(document.querySelector('.side').getBoundingClientRect().top),
+  head: Math.round(document.querySelector('.site-head').getBoundingClientRect().bottom),
+  scrolled: Math.round(window.scrollY),
+})`);
+check('the filters stay in view below the header while the list scrolls',
+  held.scrolled > 1000 && Math.abs(held.side - held.head) <= 1, JSON.stringify(held));
+
+await page.goto(`${client}search?q=shield`);
+await waitFor('.rule .name');
+await sleep(600);
+check('search results stand beside their kinds too', await page.eval(`(() => {
+  const scopes = document.querySelector('.scopes').getBoundingClientRect();
+  const list = document.querySelector('.results').getBoundingClientRect();
+  return scopes.right <= list.left && list.width > 900;
+})()`));
+
+await page.viewport(1920, 1080, false);
+await page.goto(client);
+await waitFor('.categories .category');
+await sleep(400);
+check.eq('five columns of categories on a wide screen', await columns(), 5);
 await page.viewport(390, 844, true);
 await sleep(300);
 
-const errors = page.consoleErrors().filter(entry => !entry.includes('ERR_BLOCKED_BY_CLIENT'));
-check.eq('no console errors', errors.length, 0, errors.join(' | '));
+// Chrome logs the unknown record's 404 itself; that answer is the point of the check that asked.
+const notFound = page.consoleErrors().filter(entry => entry.includes('status of 404'));
+check.eq('the only 404 is the record asked for on purpose', notFound.length, 1);
+const errors = page.consoleErrors().filter(entry => !entry.includes('ERR_BLOCKED_BY_CLIENT') && !entry.includes('status of 404'));
+check('no console errors', errors.length === 0, errors.join(' | '));
 
 await browser.close();
 process.exit(check.done());

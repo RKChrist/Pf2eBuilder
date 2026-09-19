@@ -53,7 +53,9 @@
     font-variant-numeric: tabular-nums;
 }
 
+/* The rows lay themselves out by this width, not the viewport's. */
 .rows {
+    container-type: inline-size;
     margin: var(--space-0);
     padding: var(--space-0);
     list-style: none;
@@ -69,5 +71,34 @@
     .scopes {
         flex-wrap: wrap;
         overflow-x: visible;
+    }
+}
+
+/* A laptop stands the kinds of record up as a column beside the results, the way a category's
+   filters stand beside its list. 1024px is layout.viewport-desk. */
+@media (min-width: 1024px) {
+    .found {
+        display: grid;
+        grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
+        align-items: start;
+    }
+
+    .scopes {
+        position: sticky;
+        top: var(--site-head-block);
+        flex-direction: column;
+        flex-wrap: nowrap;
+        max-height: calc(100dvh - var(--site-head-block));
+        overflow-y: auto;
+        padding-block: var(--space-3);
+    }
+
+    .scope {
+        justify-content: space-between;
+    }
+
+    .results {
+        grid-column: 2;
+        min-width: var(--space-0);
     }
 }

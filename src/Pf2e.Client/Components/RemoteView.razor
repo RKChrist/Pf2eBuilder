@@ -6,11 +6,12 @@
     RemoteData<T>.Loading => Loading,
     RemoteData<T>.Loaded loaded => Loaded(loaded.Value),
     RemoteData<T>.Failed failed => Failed(failed.Message),
+    RemoteData<T>.Missing => Missing,
     _ => null,
 })
 
 @code {
-    // RemoteData's constructor is private, so the four arms above are the whole set and the
+    // RemoteData's constructor is private, so the five arms above are the whole set and the
     // discard is unreachable. The compiler cannot see that, which is the only reason it is here.
     [Parameter, EditorRequired] public RemoteData<T> Data { get; set; } = new RemoteData<T>.NotAsked();
 
@@ -21,4 +22,7 @@
     [Parameter, EditorRequired] public RenderFragment<T> Loaded { get; set; } = default!;
 
     [Parameter, EditorRequired] public RenderFragment<string> Failed { get; set; } = default!;
+
+    /// <summary>Only data fetched by an identity can be missing; a list or a count never is.</summary>
+    [Parameter] public RenderFragment? Missing { get; set; }
 }
