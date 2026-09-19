@@ -1,15 +1,27 @@
 .top {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    padding: var(--space-3) var(--layout-gutter);
-    background: var(--surface-page);
-    border-bottom: var(--border-hair) solid var(--line-subtle);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--layout-gutter) var(--space-2);
 }
 
 .heading {
-    font-size: var(--font-size-subhead);
+    font-size: var(--font-size-hero);
     font-weight: var(--font-weight-semibold);
+}
+
+.blurb {
+    max-width: var(--layout-content-max);
+    color: var(--text-secondary);
+    font-size: var(--font-size-body);
+    line-height: var(--font-leading-normal);
+}
+
+.total {
+    color: var(--text-muted);
+    font-size: var(--font-size-data);
+    font-variant-numeric: tabular-nums;
 }
 
 /* Pulled back by the quiet button's own inset so its label starts on the heading's line. */
@@ -17,12 +29,88 @@
     margin-inline-start: calc(var(--space-3) * -1);
 }
 
+/* ---------------------------------------------------------------- the board */
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.section + .section {
+    margin-top: var(--space-5);
+}
+
+.section-title {
+    color: var(--text-muted);
+    font-family: var(--font-family-data);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: var(--font-tracking-wide);
+    text-transform: uppercase;
+}
+
+.categories {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+}
+
+.category {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-height: var(--tap-default);
+    padding: var(--space-3) var(--space-4);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-radius: var(--radius-card);
+    background: var(--surface-raised);
+    color: var(--text-primary);
+    text-align: left;
+    text-decoration: none;
+    transition: background-color var(--motion-duration-quick) var(--motion-easing-exit),
+                border-color var(--motion-duration-quick) var(--motion-easing-exit);
+}
+
+.category:active {
+    background: var(--surface-sunken);
+}
+
+.face {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.label {
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--font-leading-snug);
+}
+
+.size {
+    flex: none;
+    color: var(--text-muted);
+    font-size: var(--font-size-data);
+    font-variant-numeric: tabular-nums;
+}
+
+.note {
+    color: var(--text-secondary);
+    font-size: var(--font-size-data);
+    line-height: var(--font-leading-snug);
+}
+
+/* ---------------------------------------------------------------- a category's records */
+
 .filters {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--tap-separation);
-    padding: var(--space-3) var(--layout-gutter);
+    padding: var(--space-2) var(--layout-gutter) var(--space-3);
 }
 
 .filters ::deep .name {
@@ -49,15 +137,31 @@
     line-height: var(--font-leading-tight);
 }
 
+.refine {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding-bottom: var(--space-2);
+}
+
 .levels {
-    padding: var(--space-0) var(--layout-gutter) var(--space-3);
+    padding: var(--space-0) var(--layout-gutter) var(--space-2);
+}
+
+.refine-label {
+    padding-inline: var(--layout-gutter);
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--font-tracking-wide);
+    text-transform: uppercase;
 }
 
 .trait-scroller {
     display: flex;
     gap: var(--tap-separation);
     overflow-x: auto;
-    padding: var(--space-0) var(--layout-gutter) var(--space-3);
+    padding: var(--space-0) var(--layout-gutter) var(--space-2);
     scrollbar-width: none;
 }
 
@@ -80,25 +184,41 @@
     font-weight: var(--font-weight-bold);
 }
 
-.level {
-    letter-spacing: var(--font-tracking-wide);
-    white-space: nowrap;
+.rows {
+    margin: var(--space-0);
+    padding: var(--space-0);
+    list-style: none;
+}
+
+@media (hover: hover) {
+    .category:hover {
+        border-color: var(--line-strong);
+        background: var(--surface-sunken);
+    }
+
+    .trait-chip:hover {
+        border-color: var(--line-strong);
+    }
 }
 
 /* 600px and 1024px are layout.viewport-wide and layout.viewport-desk; a media query cannot read
-   a custom property. */
+   a custom property. Below a laptop the filters fold away behind their toggle. */
+@media (max-width: 1023px) {
+    .refine[data-open='false'] {
+        display: none;
+    }
+}
+
 @media (min-width: 600px) {
-    /* Seventy-four category names are short labels, so they take the width as more columns. */
+    /* Category names are short labels, so they take the width as more columns. */
     .categories {
-        display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     /* The records are one column at any width: the row is already as wide as it reads, and at a
        laptop width the space beside it is where the record itself opens. */
     .filters,
-    .levels,
-    .trait-scroller {
+    .refine {
         max-width: var(--layout-content-max);
     }
 }
@@ -106,5 +226,9 @@
 @media (min-width: 1024px) {
     .categories {
         grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .filters ::deep .refine-toggle {
+        display: none;
     }
 }

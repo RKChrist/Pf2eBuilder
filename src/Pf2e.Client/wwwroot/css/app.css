@@ -168,3 +168,29 @@ a {
     color: var(--text-on-accent);
     margin-inline-start: var(--space-3);
 }
+
+/* ---------------------------------------------------------------- the header
+
+   Search sits at the top of every screen, because "what is this thing called Magical" is asked
+   from anywhere. It is the one sticky band, so a screen's own heading scrolls away beneath it
+   rather than stacking a second sticky header under the first. */
+
+.site-head {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    padding: var(--space-3) var(--layout-gutter);
+    background: var(--surface-page);
+    border-bottom: var(--border-hair) solid var(--line-subtle);
+}
+
+/* The same measure as the list under it, so the field and the rows share both edges. */
+.site-search {
+    max-width: calc(var(--layout-content-max) - var(--layout-gutter) * 2);
+}
+
+/* FocusOnNavigate moves focus to the heading so a screen reader announces the new screen. The
+   heading is not a control, so it draws no ring. */
+h1:focus {
+    outline: none;
+}

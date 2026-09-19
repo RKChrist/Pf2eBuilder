@@ -1,4 +1,5 @@
 using Fluxor;
+using Pf2e.Client.Catalog;
 using Pf2e.Contracts.Rules;
 
 namespace Pf2e.Client.State;
@@ -11,7 +12,12 @@ public static class RulesBrowserReducers
 
     [ReducerMethod]
     public static RulesBrowserState On(RulesBrowserState state, CategorySelected action) =>
-        Unfiltered(state) with { ActiveCategory = action.Category };
+        Unfiltered(state) with
+        {
+            ActiveGroup = RuleCatalog.Of(action.Category)?.Group ?? state.ActiveGroup,
+            ActiveCategory = action.Category,
+            Trait = action.Trait,
+        };
 
     [ReducerMethod]
     public static RulesBrowserState On(RulesBrowserState state, CategoryCleared _) =>

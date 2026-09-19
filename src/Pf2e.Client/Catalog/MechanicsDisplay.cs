@@ -2,7 +2,7 @@ using Pf2e.Contracts.Rules;
 
 namespace Pf2e.Client.Catalog;
 
-public sealed record MechanicRow(string Label, IReadOnlyList<string> Values);
+public sealed record MechanicRow(string Key, string Label, IReadOnlyList<string> Values);
 
 /// <summary>Tables, not a branch on category. Adding a per-category case here is the mistake.</summary>
 public static class MechanicsDisplay
@@ -118,6 +118,27 @@ public static class MechanicsDisplay
         "actions_number",
     };
 
+    /// <summary>What a player has to check before they may act at all, so it is never buried
+    /// under the facts about the thing.</summary>
+    static readonly HashSet<string> Gates = new(StringComparer.Ordinal)
+    {
+        "prerequisite",
+        "trigger",
+        "requirement",
+    };
+
+    public static bool IsGate(string key) => Gates.Contains(key);
+
+    /// <summary>The record's highlights and its gates lead as a stat block; everything else
+    /// follows. Both halves keep the reading order.</summary>
+    public static (IReadOnlyList<MechanicRow> Lead, IReadOnlyList<MechanicRow> After) Split(RuleDetail rule)
+    {
+        var leading = rule.Summary.Highlights.Select(field => field.Key).Concat(Gates).ToHashSet(StringComparer.Ordinal);
+        var rows = Rows(rule);
+
+        return ([.. rows.Where(row => leading.Contains(row.Key))], [.. rows.Where(row => !leading.Contains(row.Key))]);
+    }
+
     /// <summary>Keys under which the seed reprints a fact it has already stated elsewhere.</summary>
     static readonly (string Key, string Echoes)[] Repeats =
     [
@@ -159,7 +180,7 @@ public static class MechanicsDisplay
                 .Where(field => !populated.ContainsKey(field.Key + "_raw"))
                 .Where(field => !Echoes(field, populated))
                 .OrderBy(field => Order.GetValueOrDefault(field.Key, int.MaxValue))
-                .Select(field => new MechanicRow(LabelOf(field.Key), field.Values)),
+                .Select(field => new MechanicRow(field.Key, LabelOf(field.Key), field.Values)),
         ];
     }
 
@@ -168,7 +189,7 @@ public static class MechanicsDisplay
                               && present.TryGetValue(repeat.Echoes, out var original)
                               && original.Values.SequenceEqual(field.Values, StringComparer.Ordinal));
 
-    static string LabelOf(string key) =>
+    public static string LabelOf(string key) =>
         Labels.TryGetValue(key, out var label) ? label : Humanised(key);
 
     static string Humanised(string key) =>

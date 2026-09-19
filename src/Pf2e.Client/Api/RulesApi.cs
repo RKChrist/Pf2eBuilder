@@ -9,7 +9,8 @@ public sealed class RulesApiException(string message) : Exception(message);
 public sealed class RulesApi(HttpClient http)
 {
     public Task<RuleSearchResult> SearchAsync(
-        string? category, string query, int? minLevel, int? maxLevel, string? trait, int page, CancellationToken ct)
+        string? category, string query, int? minLevel, int? maxLevel, string? trait, int page, CancellationToken ct,
+        int? pageSize = null)
     {
         var url = new UrlBuilder("rules")
             .Add("Category", category)
@@ -18,9 +19,21 @@ public sealed class RulesApi(HttpClient http)
             .Add("MaxLevel", maxLevel?.ToString())
             .Add("Trait", trait)
             .Add("Page", page.ToString())
+            .Add("PageSize", pageSize?.ToString())
             .ToString();
 
         return GetAsync<RuleSearchResult>(url, ct);
+    }
+
+    public Task<RuleCounts> CountAsync(string? name, string? trait, CancellationToken ct) =>
+        GetAsync<RuleCounts>(new UrlBuilder("rules/counts").Add("Name", name).Add("Trait", trait).ToString(), ct);
+
+    /// <summary>The record in <paramref name="category"/> named exactly <paramref name="name"/>,
+    /// which a ranked search puts first when there is one.</summary>
+    public async Task<RuleSummary?> FindAsync(string category, string name, CancellationToken ct)
+    {
+        var found = await SearchAsync(category, name, null, null, null, 1, ct, pageSize: 5);
+        return found.Items.FirstOrDefault(item => item.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
     }
 
     public Task<RuleDetail> GetRuleAsync(string id, CancellationToken ct) =>

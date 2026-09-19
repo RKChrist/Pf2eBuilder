@@ -1,6 +1,7 @@
 // Drives the running client in a real Chrome and asserts the behaviour the screens promise:
-// the search debounce, the deep link, back and Escape closing the sheet, paging, the level
-// range, and a failure with a retry that recovers. Requests are blocked through the protocol
+// the header search and its results page, the explained browse screens, trait sheets, the
+// record sheet and the records it names, the search debounce, the deep link, back and Escape
+// closing a sheet, paging, the level range, and a failure with a retry that recovers. Requests are blocked through the protocol
 // rather than by stopping the API, so the failure arm is exercised without a second terminal.
 //
 //   dotnet run --project src/Pf2e.Api
@@ -40,25 +41,159 @@ async function waitFor(selector, timeout = 15000) {
 
 async function openFeats() {
   await click('.pf-bottomnav__item:nth-child(2)');
-  await waitFor('.pf-row');
-  await click('.pf-row');
-  await waitFor('.pf-row__title');
+  await waitFor('.categories .category');
+  await click('.categories .category');
+  await waitFor('.rule .name');
 }
 
 await page.goto(client);
 await waitFor('.pf-bottomnav__item');
 
 check.eq('six navigation items', await count('.pf-bottomnav__item'), 6);
-check('the group opens its category list', await waitFor('.pf-row'));
+check('the group opens its category list', await waitFor('.categories .category'));
+await waitFor('.category .size');
+check('the board says what the group is for', (await text('.top .blurb'))?.length > 20, await text('.top .blurb'));
+check('the board counts every category', await page.eval(`[...document.querySelectorAll('.categories .category')]
+  .every(card => /^\\d{1,3}(,\\d{3})*$/.test(card.querySelector('.size')?.textContent.trim() ?? ''))`));
+check('a category card explains itself', await count('.category .note') > 0);
+check('the board groups categories under headings', await count('.section-title') > 1);
+
+const topSearch = '[data-site-search]';
+const typeTop = (typed) => page.eval(`(() => {
+  const field = document.querySelector(${JSON.stringify(topSearch)});
+  field.focus();
+  field.value = ${JSON.stringify(typed)};
+  field.dispatchEvent(new Event('input', { bubbles: true }));
+  return true;
+})()`);
+const counted = () => page.eval(
+  `performance.getEntriesByType('resource').filter(e => e.name.includes('/rules/counts?')).length`);
+
+check('the search field is at the top of the screen', await page.eval(`(() => {
+  const box = document.querySelector(${JSON.stringify(topSearch)}).getBoundingClientRect();
+  return box.top >= 0 && box.top < 40;
+})()`));
+
+const topBefore = { searched: (await searches()).length, counted: await counted() };
+for (const typed of ['s', 'sh', 'shi', 'shie', 'shiel', 'shield']) {
+  await typeTop(typed);
+  await sleep(50);
+}
+check('typing in the top search shows results underneath it', await waitFor('.site-search .option'));
+await sleep(300);
+const topAfter = await searches();
+check.eq('six keystrokes at the top make one search', topAfter.length - topBefore.searched, 1);
+check.eq('and one count', (await counted()) - topBefore.counted, 1);
+check('the top search asked for the last keystroke', topAfter.at(-1).includes('Name=shield'), topAfter.at(-1));
+check('the dropdown opens below the field, not over it', await page.eval(`(() => {
+  const field = document.querySelector('.site-search .pf-search').getBoundingClientRect();
+  const panel = document.querySelector('.site-search .panel').getBoundingClientRect();
+  return panel.top >= field.bottom - 1 && panel.height > 100;
+})()`));
+check.eq('the exact name is the best match', await text('.site-search .option .name'), 'Shield');
+check('each match says what kind of record it is', (await text('.site-search .option .kind'))?.length > 0);
+check('matches are counted by category', await page.eval(
+  `[...document.querySelectorAll('.site-search .chip')].some(chip => /\\d/.test(chip.textContent))`));
+
+await page.key('Escape', 'Escape', 27);
+await sleep(200);
+check.eq('Escape closes the dropdown', await count('.site-search .panel'), 0);
+check.eq('and keeps what was typed', await page.eval(`document.querySelector(${JSON.stringify(topSearch)}).value`), 'shield');
+
+await page.key('Enter', 'Enter', 13);
+await sleep(300);
+check('Enter goes to the full results', (await page.eval('location.pathname')) === '/search'
+  && (await page.eval('location.search')).includes('q=shield'), await page.eval('location.href'));
+check('the full results are grouped by kind', await waitFor('.scopes .scope') && await count('.scopes .scope') > 2);
+check('the full results list records', await waitFor('.rule'));
+check('the full results label each record', (await text('.rule .kind'))?.length > 0);
+
+await typeTop('longsword');
+await waitFor('.site-search .option');
+await page.eval(`document.activeElement.blur()`);
+await sleep(100);
+await page.key('/', 'Slash', 191);
+check('/ focuses the search on a pointer device', await page.eval(
+  `document.activeElement === document.querySelector(${JSON.stringify(topSearch)})`));
+await typeTop('longsword');
+await waitFor('.site-search .option');
+await sleep(600);
+check.eq('on the results page the dropdown stays shut', await count('.site-search .panel'), 0);
+await page.goto(client);
+await waitFor('.pf-bottomnav__item');
+await typeTop('longsword');
+await waitFor('.site-search .option');
+await sleep(300);
+await page.key('ArrowDown', 'ArrowDown', 40);
+await sleep(100);
+check('ArrowDown marks the first match', await count('.site-search .option.active') === 1);
+await page.key('Enter', 'Enter', 13);
+check('Enter on a match opens that record', await waitFor('.pf-sheet__panel'));
+await sleep(500);
+check.eq('the opened record is the match', await text('.pf-sheet__title'), 'Longsword');
+await page.eval('history.back()');
+await sleep(600);
+await typeTop('');
+await sleep(300);
 
 await openFeats();
-check('a category lists its records', await count('.pf-row') > 1);
+check('a category lists its records', await count('.rule') > 1);
+check('the list says how many records the category holds',
+  /^\d{1,3}(,\d{3})* feats$/.test(await text('.top .total')), await text('.top .total'));
+check('list rows show a glance line', await count('.rule .glance') > 0);
+check('a glance line reads as facts', await page.eval(
+  `[...document.querySelectorAll('.rule .glance')].some(line => line.textContent.includes('Prerequisites: '))`));
+check.eq('a common record wears no rarity badge', await count('.rule .pf-rarity--common'), 0);
+check('a row shows at most four traits', await page.eval(
+  `[...document.querySelectorAll('.rule .marks')].every(marks => marks.querySelectorAll('.pf-trait').length <= 4)`));
+check('filters are folded away on a phone', await page.eval(
+  `getComputedStyle(document.querySelector('.refine')).display === 'none'`));
+await click('.refine-toggle');
+await sleep(200);
+check('the Filters toggle opens them', await page.eval(
+  `getComputedStyle(document.querySelector('.refine')).display !== 'none'
+    && document.querySelector('.refine-toggle').getAttribute('aria-expanded') === 'true'`));
+
+check.eq('no control sits inside another', await count('button button, button a, a button, a a'), 0);
+const traitName = await text('.rule .trait-link');
+await click('.rule .trait-link');
+check('a trait chip opens the trait sheet', await waitFor('.trait-sheet .pf-sheet__panel'));
+await sleep(300);
+check('the trait is in the address bar', decodeURIComponent(await page.eval('location.search')).toLowerCase()
+  .includes(`trait=${traitName.toLowerCase()}`), await page.eval('location.search'));
+check.eq('the chip does not also open its row', await count('.pf-sheet:not(.trait-sheet) .pf-sheet__panel'), 0);
+check.eq('the trait sheet is titled with the trait', (await text('.trait-sheet .pf-sheet__title')).toLowerCase(), traitName.toLowerCase());
+check('the trait sheet explains it or says it cannot yet',
+  (await text('.trait-sheet .gloss'))?.length > 10, await text('.trait-sheet .gloss'));
+check('the trait sheet says where it is found', await waitFor('.trait-sheet .place'));
+check('each place is counted', await page.eval(
+  `[...document.querySelectorAll('.trait-sheet .place-count')].every(c => /^\\d{1,3}(,\\d{3})*$/.test(c.textContent.trim()))`));
+check('the sheet links the full text', (await page.eval(
+  `document.querySelector('.trait-sheet a.archives')?.href ?? ''`)).startsWith('https://2e.aonprd.com/'));
+await page.eval('history.back()');
+await sleep(600);
+check.eq('back closes the trait sheet', await count('.trait-sheet .pf-sheet__panel'), 0);
+check('back leaves the list where it was', await count('.rule') > 1);
+
+await click('.rule .trait-link');
+await waitFor('.trait-sheet .place');
+await sleep(300);
+const place = await text('.trait-sheet .place-label');
+await click('.trait-sheet .place');
+await sleep(1200);
+check.eq('a place opens that category', await text('.top .heading'), place);
+check.eq('filtered by the trait', (await text('.active-trait'))?.split('\n')[0].trim().toLowerCase(), traitName.toLowerCase());
+check('and the list is only records with it', (await searches()).at(-1).toLowerCase().includes(`trait=${encodeURIComponent(traitName).toLowerCase()}`),
+  (await searches()).at(-1));
+await openFeats();
+await click('.refine-toggle');
+await sleep(200);
 check('the level filter is one dual-thumb range', await count('.pf-slider--range') === 1);
 
 const before = (await searches()).length;
 for (const typed of ['s', 'sh', 'shi', 'shie', 'shiel', 'shield']) {
   await page.eval(`(() => {
-    const field = document.querySelector('.pf-search__input');
+    const field = document.querySelector('.filters .pf-search__input');
     field.value = ${JSON.stringify(typed)};
     field.dispatchEvent(new Event('input', { bubbles: true }));
     return true;
@@ -70,10 +205,10 @@ const after = await searches();
 check.eq('six keystrokes make one search', after.length - before, 1);
 check('the last keystroke is the one searched', after.at(-1).includes('Name=shield'), after.at(-1));
 check('the results are the searched ones',
-  (await text('.pf-row__title')).toLowerCase().includes('shield'), await text('.pf-row__title'));
+  (await text('.rule .name')).toLowerCase().includes('shield'), await text('.rule .name'));
 
 await page.eval(`(() => {
-  const field = document.querySelector('.pf-search__input');
+  const field = document.querySelector('.filters .pf-search__input');
   field.value = '';
   field.dispatchEvent(new Event('input', { bubbles: true }));
   return true;
@@ -97,7 +232,7 @@ await sleep(1200);
 check('the range slider filters by level', levelled && (await searches()).at(-1).includes('MinLevel=5'),
   (await searches()).at(-1));
 check('every listed record is inside the range', await page.eval(`
-  [...document.querySelectorAll('.pf-row__meta')].every(meta => {
+  [...document.querySelectorAll('.rule .level')].every(meta => {
     const level = meta.textContent.match(/Level (-?\\d+)/);
     return !level || Number(level[1]) >= 5;
   })`));
@@ -138,8 +273,8 @@ await page.viewport(390, 844, true);
 await page.coarse(false);
 await sleep(300);
 
-const rowName = await text('.pf-row__title');
-await click('.pf-row');
+const rowName = await text('.rule .name');
+await click('.rule .open');
 check('a record opens the sheet', await waitFor('.pf-sheet__panel'));
 await sleep(500);
 check.eq('the sheet is titled with the record', await text('.pf-sheet__title'), rowName);
@@ -151,9 +286,9 @@ const deepLink = await page.eval('location.href');
 await page.key('Escape', 'Escape', 27);
 await sleep(600);
 check.eq('Escape closes the sheet', await count('.pf-sheet__panel'), 0);
-check('Escape leaves the list behind it', await count('.pf-row') > 1);
+check('Escape leaves the list behind it', await count('.rule') > 1);
 
-await click('.pf-row');
+await click('.rule .open');
 await waitFor('.pf-sheet__panel');
 await sleep(400);
 await page.eval('history.back()');
@@ -167,6 +302,42 @@ await sleep(600);
 check.eq('the deep-linked record is the right one', await text('.pf-sheet__title'), rowName);
 check('the sheet names where the rule is printed',
   (await text('.pf-sheet__body')).includes('Archives of Nethys'));
+
+await typeTop('Reactive Shield');
+await waitFor('.site-search .option');
+await sleep(300);
+await page.key('ArrowDown', 'ArrowDown', 40);
+await page.key('Enter', 'Enter', 13);
+await waitFor('.rule-sheet .stats');
+await sleep(500);
+check.eq('the record is headed with its kind and level', await text('.rule-sheet .kind'), 'Feat 1');
+check('its traits can be opened from the sheet', await count('.rule-sheet .trait-link') > 0);
+check('its key facts lead as a stat block', (await text('.rule-sheet .stats'))?.includes('Reaction'),
+  await text('.rule-sheet .stats'));
+check('a trigger or requirement is marked as a gate', await page.eval(
+  `[...document.querySelectorAll('.rule-sheet .stat.gate dt')].map(dt => dt.textContent.trim()).join()`) === 'Trigger,Requirements',
+  await page.eval(`[...document.querySelectorAll('.rule-sheet .stat.gate dt')].map(dt => dt.textContent.trim()).join()`));
+check('the source is stated', await page.eval(
+  `[...document.querySelectorAll('.rule-sheet dt')].some(dt => dt.textContent.trim() === 'Source')`));
+check.eq('the full text is one clear button', await text('.rule-sheet a.pf-btn.archives'), 'Full rules text on Archives of Nethys');
+const referenced = await text('.rule-sheet .ref');
+await click('.rule-sheet .ref');
+await sleep(1500);
+check.eq('a named record opens from the sheet', await text('.pf-sheet__title'), referenced);
+check('and it is in the address bar', (await page.eval('location.search')).includes('rule=archetype-'),
+  await page.eval('location.search'));
+await page.eval('history.back()');
+await sleep(800);
+check.eq('back returns to the record that named it', await text('.pf-sheet__title'), 'Reactive Shield');
+await click('.rule-sheet .trait-link');
+check('a trait opens over the record', await waitFor('.trait-sheet .pf-sheet__panel'));
+await page.eval('history.back()');
+await sleep(800);
+check.eq('and back closes it onto the record', await text('.rule-sheet .pf-sheet__title'), 'Reactive Shield');
+await page.eval('history.back()');
+await sleep(600);
+await typeTop('');
+await sleep(300);
 
 await page.goto(`${client}conditions`);
 check('the conditions screen loads', await waitFor('.pf-card'));
@@ -184,19 +355,21 @@ check('the failure says what went wrong',
 
 await page.send('Network.setBlockedURLs', { urls: [] });
 await click('.pf-state--error .pf-btn');
-check('retry recovers', await waitFor('.pf-row__title'));
+check('retry recovers', await waitFor('.rule .name'));
 
 // The three bands of design/003. Widths are measured, not assumed: a screenshot of a wide layout
 // has twice fooled a reader of this repo.
 const columns = () => page.eval(`(() => {
-  const tops = [...document.querySelectorAll('.categories .pf-row')]
+  const fullest = [...document.querySelectorAll('.categories')]
+    .sort((a, b) => b.children.length - a.children.length)[0];
+  const tops = [...fullest.querySelectorAll('.category')]
     .slice(0, 6).map(row => Math.round(row.getBoundingClientRect().top));
   return tops.filter(top => top === tops[0]).length;
 })()`);
 
 const frame = () => page.eval(`(() => {
   const nav = document.querySelector('.pf-bottomnav').getBoundingClientRect();
-  const row = document.querySelector('.pf-row')?.getBoundingClientRect();
+  const row = document.querySelector('.rule')?.getBoundingClientRect();
   const panel = document.querySelector('.pf-sheet__panel')?.getBoundingClientRect();
   const scrim = document.querySelector('.pf-sheet__scrim');
   return {
@@ -228,7 +401,7 @@ check('the navigation stands up as a rail', rail.navWidth <= 80 && rail.navHeigh
   `${rail.navWidth}x${rail.navHeight}`);
 
 await openFeats();
-await click('.pf-row');
+await click('.rule .open');
 await waitFor('.pf-sheet__panel');
 await sleep(600);
 const docked = await frame();

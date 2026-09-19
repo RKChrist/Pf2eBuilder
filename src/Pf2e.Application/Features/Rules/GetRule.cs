@@ -1,4 +1,3 @@
-using System.Text.Json.Nodes;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -22,28 +21,12 @@ public sealed class GetRuleHandler(IRulesDbContext db) : IRequestHandler<GetRule
     public async Task<RuleDetail?> Handle(GetRule query, CancellationToken ct)
     {
         var record = await db.RuleRecords.AsNoTracking().SingleOrDefaultAsync(r => r.Id == query.Id, ct);
+        if (record is null)
+        {
+            return null;
+        }
 
-        return record is null ? null : new RuleDetail(RuleSummaries.Of(record), Mechanics(record.Mechanics));
+        var mechanics = RuleMechanics.Fields(record.Mechanics);
+        return new RuleDetail(RuleSummaries.Of(record, mechanics), mechanics);
     }
-
-    /// <summary>Key order is the seed's own, which is the only ordering a field this server has
-    /// never heard of can be given.</summary>
-    static IReadOnlyList<MechanicField> Mechanics(string json) =>
-        JsonNode.Parse(json) is JsonObject fields
-            ? [.. fields.Select(field => new MechanicField(field.Key, Flatten(field.Value)))]
-            : [];
-
-    static IReadOnlyList<string> Flatten(JsonNode? node) => node switch
-    {
-        JsonArray array => [.. array.Select(Render)],
-        null => [],
-        _ => [Render(node)],
-    };
-
-    static string Render(JsonNode? node) => node switch
-    {
-        null => string.Empty,
-        JsonValue value when value.TryGetValue(out string? text) => text,
-        _ => node.ToJsonString(),
-    };
 }

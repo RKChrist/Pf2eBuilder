@@ -1,0 +1,20 @@
+.glance {
+    color: var(--text-secondary);
+    font-size: var(--font-size-data);
+    line-height: var(--font-leading-snug);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow-wrap: anywhere;
+}
+
+.glance ::deep .pf-cost {
+    color: var(--text-primary);
+    font-size: var(--font-size-chip);
+}
+
+.dot {
+    color: var(--text-muted);
+}

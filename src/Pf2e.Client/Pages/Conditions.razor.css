@@ -1,7 +1,4 @@
 .top {
-    position: sticky;
-    top: 0;
-    z-index: 2;
     padding: var(--space-3) var(--layout-gutter);
     background: var(--surface-page);
     border-bottom: var(--border-hair) solid var(--line-subtle);

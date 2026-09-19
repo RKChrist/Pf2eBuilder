@@ -29,7 +29,6 @@
 :is(
   .pf-btn,
   .pf-input,
-  .pf-search__input,
   .pf-search__clear,
   .pf-stepper__btn,
   .pf-select__native,
@@ -48,8 +47,16 @@
 }
 
 .pf-check__input:focus-visible,
-.pf-switch__input:focus-visible {
+.pf-switch__input:focus-visible,
+.pf-search__input:focus-visible {
   outline: none;
+}
+
+/* The ring goes round the whole search field, icon and clear button included, rather than
+   round the bare input inside its border. */
+.pf-search:has(.pf-search__input:focus-visible) {
+  outline: var(--border-focus) solid var(--line-focus);
+  outline-offset: var(--space-1);
 }
 
 .pf-check__input:focus-visible ~ .pf-check__box,

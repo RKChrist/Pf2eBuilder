@@ -4,7 +4,19 @@ namespace Pf2e.Client.Catalog;
 
 /// <summary><paramref name="Route"/> is how a category gets a screen of its own without any
 /// renderer learning a category name.</summary>
-public sealed record RuleCategory(string Key, string Label, GroupKey Group, string Route = RuleCatalog.BrowseRoute);
+public sealed record RuleCategory(
+    string Key, string Label, GroupKey Group, string Route = RuleCatalog.BrowseRoute, string? Singular = null)
+{
+    /// <summary>"Feat 10" in a record's header. Derived from the plural, which is right for all
+    /// but the two rows that say otherwise.</summary>
+    public string One => Singular ?? (Label switch
+    {
+        _ when Label.EndsWith("ies", StringComparison.Ordinal) => Label[..^3] + "y",
+        _ when Label.EndsWith("sses", StringComparison.Ordinal) => Label[..^2],
+        _ when Label.EndsWith('s') => Label[..^1],
+        _ => Label,
+    });
+}
 
 public static class RuleCatalog
 {
@@ -23,7 +35,7 @@ public static class RuleCatalog
         new("class-feature", "Class Features", GroupKey.Build),
         new("apparition", "Apparitions", GroupKey.Build),
         new("arcane-school", "Arcane Schools", GroupKey.Build),
-        new("arcane-thesis", "Arcane Theses", GroupKey.Build),
+        new("arcane-thesis", "Arcane Theses", GroupKey.Build, Singular: "Arcane Thesis"),
         new("bloodline", "Bloodlines", GroupKey.Build),
         new("cause", "Causes", GroupKey.Build),
         new("conscious-mind", "Conscious Minds", GroupKey.Build),
@@ -63,7 +75,7 @@ public static class RuleCatalog
         new("weapon", "Weapons", GroupKey.Gear),
         new("armor", "Armor", GroupKey.Gear),
         new("shield", "Shields", GroupKey.Gear),
-        new("item-bonus", "Item Bonuses", GroupKey.Gear),
+        new("item-bonus", "Item Bonuses", GroupKey.Gear, Singular: "Item Bonus"),
         new("relic", "Relics", GroupKey.Gear),
         new("set-relic", "Set Relics", GroupKey.Gear),
         new("curse", "Curses", GroupKey.Gear),
@@ -100,8 +112,13 @@ public static class RuleCatalog
     public static IReadOnlyList<RuleCategory> InGroup(GroupKey group) =>
         [.. All.Where(category => category.Group == group)];
 
-    public static string LabelOf(string key) =>
-        All.FirstOrDefault(category => category.Key == key)?.Label ?? key;
+    static readonly Dictionary<string, RuleCategory> ByKey = All.ToDictionary(category => category.Key, StringComparer.Ordinal);
+
+    public static RuleCategory? Of(string key) => ByKey.GetValueOrDefault(key);
+
+    public static string LabelOf(string key) => Of(key)?.Label ?? key;
+
+    public static string OneOf(string key) => Of(key)?.One ?? key;
 
     public static void EnsureComplete()
     {

@@ -1,9 +1,90 @@
-.level {
+.head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+}
+
+.kind {
+    color: var(--accent-base);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: var(--font-tracking-wide);
+    text-transform: uppercase;
+}
+
+.traits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-0) var(--space-2);
+    margin-block: calc(var(--space-2) * -1);
+}
+
+/* ---------------------------------------------------------------- the stat block */
+
+/* flex: none, because the sheet body is a scrolling flex column and a clipped box in one is
+   otherwise squeezed to nothing when the record is long. */
+.stats {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    margin: var(--space-0);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-radius: var(--radius-card);
+    background: var(--surface-raised);
+    overflow: hidden;
+}
+
+.stat {
+    display: grid;
+    grid-template-columns: minmax(0, 7.5em) minmax(0, 1fr);
+    align-items: baseline;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+}
+
+.stat + .stat {
+    border-top: var(--border-hair) solid var(--line-subtle);
+}
+
+.stat dt {
+    color: var(--text-muted);
     font-size: var(--font-size-chip);
     font-weight: var(--font-weight-semibold);
     letter-spacing: var(--font-tracking-wide);
-    color: var(--text-secondary);
+    text-transform: uppercase;
 }
+
+.stat dd {
+    margin: var(--space-0);
+    color: var(--text-primary);
+    font-size: var(--font-size-data);
+    line-height: var(--font-leading-snug);
+    overflow-wrap: anywhere;
+}
+
+/* A prerequisite, trigger or requirement decides whether the thing can be used at all, so it
+   is marked by weight and a rule, not by colour alone. */
+.stat.gate {
+    box-shadow: inset var(--border-focus) 0 0 0 var(--accent-base);
+}
+
+.stat.gate dt {
+    color: var(--accent-press);
+    font-weight: var(--font-weight-bold);
+}
+
+.stat.gate dd {
+    font-weight: var(--font-weight-semibold);
+}
+
+.cost {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* ---------------------------------------------------------------- everything else */
 
 .mechanics {
     display: grid;
@@ -21,6 +102,10 @@
     text-transform: uppercase;
 }
 
+.mechanics dt:first-child {
+    margin-top: var(--space-0);
+}
+
 .mechanics dd {
     margin: var(--space-1) var(--space-0) var(--space-0);
     color: var(--text-primary);
@@ -29,10 +114,41 @@
     overflow-wrap: anywhere;
 }
 
-.archives {
-    display: block;
+/* A name that opens its own record. Each is a real button at the tap floor, set flush with the
+   text around it by pulling back its own inset. */
+.refs {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: var(--space-1);
+    margin-inline-start: calc(var(--space-2) * -1);
+}
+
+.ref {
     min-height: var(--tap-min);
-    padding: var(--space-3) var(--space-0);
+    padding: var(--space-0) var(--space-2);
+    border: none;
+    border-radius: var(--radius-chip);
+    background: transparent;
     color: var(--accent-base);
+    font-size: var(--font-size-data);
     font-weight: var(--font-weight-semibold);
+    text-align: left;
+    text-decoration: underline;
+    text-decoration-thickness: var(--border-hair);
+    text-underline-offset: 0.2em;
+}
+
+.ref:active {
+    background: var(--accent-wash);
+}
+
+.archives {
+    margin-top: var(--space-2);
+}
+
+@media (hover: hover) {
+    .ref:hover {
+        background: var(--surface-sunken);
+        color: var(--accent-press);
+    }
 }
