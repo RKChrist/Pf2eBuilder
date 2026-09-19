@@ -1,28 +1,12 @@
-using System.Security.Cryptography;
-
 namespace Pf2e.Client.State;
 
 /// <summary>
-/// A campaign code is made up here and the server accepts any valid code, which is why there is no
-/// operation that creates one.
+/// What this screen accepts in the join field, so a mistyped code is refused before a round
+/// trip. Drawing a code is not here: a campaign is created by an operation on the server, which
+/// is what makes the DM key reach exactly one person.
 /// </summary>
 public static class CampaignCodes
 {
-    public const int Length = 6;
-
-    /// <summary>I, O, 0 and 1 are missing because a code is read out across a table and those
-    /// four are the ones people write down as each other.</summary>
-    const string Alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-
-    public static string Draw() =>
-        string.Create(Length, 0, (span, _) =>
-        {
-            for (var i = 0; i < span.Length; i++)
-            {
-                span[i] = Alphabet[RandomNumberGenerator.GetInt32(Alphabet.Length)];
-            }
-        });
-
     public static string Normalize(string code) => code.Trim().ToUpperInvariant();
 
     public static bool IsValid(string code)

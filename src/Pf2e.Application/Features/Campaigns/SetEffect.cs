@@ -6,7 +6,7 @@ using Pf2e.Contracts.Tracker;
 using Pf2e.Domain;
 using Pf2e.Domain.Tracking;
 
-namespace Pf2e.Application.Features.Tracker;
+namespace Pf2e.Application.Features.Campaigns;
 
 /// <summary>
 /// One operation applies, updates and removes, and it is idempotent: the client names the slot

@@ -3,7 +3,7 @@ using Pf2e.Contracts.Tracker;
 using Pf2e.Domain;
 using Pf2e.Domain.Tracking;
 
-namespace Pf2e.Application.Features.Tracker;
+namespace Pf2e.Application.Features.Campaigns;
 
 /// <summary>
 /// The one crossing between the domain and the wire, used by all four tracker handlers, so a

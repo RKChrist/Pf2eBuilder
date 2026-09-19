@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Pf2e.Domain;
 
-namespace Pf2e.Application.Features.Tracker;
+namespace Pf2e.Application.Features.Campaigns;
 
 /// <summary>A payload that is not a Pathbuilder export at all. The API turns it into a 400,
 /// which is why it is public.</summary>

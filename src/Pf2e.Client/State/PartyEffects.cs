@@ -32,6 +32,7 @@ public sealed class PartyEffects
         _debounce = TimeSpan.FromMilliseconds(options.Value.SearchDebounceMilliseconds);
 
         hub.CharacterChanged += sheet => dispatcher.Dispatch(new CharacterUpdated(sheet));
+        hub.ModeChanged += mode => dispatcher.Dispatch(new ModeChanged(mode));
     }
 
     [EffectMethod]
@@ -50,30 +51,25 @@ public sealed class PartyEffects
     [EffectMethod]
     public async Task Handle(CampaignCreationRequested _, IDispatcher dispatcher)
     {
-        const int draws = 5;
-
-        for (var draw = 0; draw < draws; draw++)
+        try
         {
-            CampaignView table;
-            try
-            {
-                table = await _tracker.GetCampaignAsync(CampaignCodes.Draw(), CancellationToken.None);
-            }
-            catch (CampaignApiException failure)
-            {
-                dispatcher.Dispatch(new CampaignFailed(failure.Message));
-                return;
-            }
-
-            if (!table.Exists)
-            {
-                dispatcher.Dispatch(new CampaignOpened(table));
-                return;
-            }
+            var created = await _tracker.CreateCampaignAsync(CancellationToken.None);
+            dispatcher.Dispatch(new CampaignCreated(created));
         }
+        catch (CampaignApiException failure)
+        {
+            dispatcher.Dispatch(new CampaignFailed(failure.Message));
+        }
+    }
 
-        dispatcher.Dispatch(new CampaignFailed(
-            $"Every one of {draws} codes this app drew is already a table. Try again."));
+    /// <summary>The DM key arrives once, with the campaign that was just created, and is held
+    /// for the rest of the session. Reloading the page makes this browser a player, which is the
+    /// honest consequence of a secret nobody wrote down.</summary>
+    [EffectMethod]
+    public async Task Handle(CampaignCreated action, IDispatcher dispatcher)
+    {
+        _tracker.UseDmKey(action.Created.DmKey);
+        await OpenAsync(action.Created.Code, dispatcher);
     }
 
     /// <summary>
@@ -86,7 +82,7 @@ public sealed class PartyEffects
     {
         try
         {
-            await _hub.JoinAsync(action.Campaign.Code, CancellationToken.None);
+            await _hub.JoinAsync(action.Campaign.Code, _state.Value.DmKey, CancellationToken.None);
             dispatcher.Dispatch(new LiveJoined());
         }
         catch (Exception failure) when (failure is not OperationCanceledException)
@@ -109,6 +105,22 @@ public sealed class PartyEffects
         catch (CampaignApiException failure)
         {
             dispatcher.Dispatch(new ImportFailed(failure.Message));
+        }
+    }
+
+    [EffectMethod]
+    public async Task Handle(ModeChangeRequested action, IDispatcher dispatcher)
+    {
+        try
+        {
+            // The answer is dispatched as well as pushed, so the DM's own screen moves on the
+            // tap rather than on the round trip back through the hub.
+            dispatcher.Dispatch(new ModeChanged(
+                await _tracker.SetModeAsync(_state.Value.Code, action.Mode, CancellationToken.None)));
+        }
+        catch (CampaignApiException failure)
+        {
+            dispatcher.Dispatch(new ActionFailed(failure.Message));
         }
     }
 

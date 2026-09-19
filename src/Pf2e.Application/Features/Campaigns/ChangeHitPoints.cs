@@ -6,7 +6,7 @@ using Pf2e.Contracts.Tracker;
 using Pf2e.Domain;
 using Pf2e.Domain.Tracking;
 
-namespace Pf2e.Application.Features.Tracker;
+namespace Pf2e.Application.Features.Campaigns;
 
 /// <summary>A signed delta and never an absolute. Two people applying damage at once must sum,
 /// and last-write-wins on an absolute silently loses one of them.</summary>

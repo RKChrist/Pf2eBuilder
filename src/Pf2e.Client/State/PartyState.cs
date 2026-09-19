@@ -36,6 +36,10 @@ public sealed record PartyState
 
     public string CodeDraft { get; init; } = string.Empty;
 
+    /// <summary>Held for this browser session only. It arrives once, with the campaign this
+    /// browser created, and a reload makes this browser a player again.</summary>
+    public string? DmKey { get; init; }
+
     public RemoteData<CampaignView> Campaign { get; init; } = new RemoteData<CampaignView>.NotAsked();
 
     public string PasteDraft { get; init; } = string.Empty;
@@ -65,7 +69,13 @@ public sealed record CampaignCreationRequested;
 
 public sealed record CampaignOpened(CampaignView Campaign);
 
+public sealed record CampaignCreated(CreatedCampaignView Created);
+
 public sealed record CampaignFailed(string Message);
+
+public sealed record ModeChangeRequested(string Mode);
+
+public sealed record ModeChanged(CampaignModeView Mode);
 
 public sealed record PasteDraftChanged(string Draft);
 
@@ -150,6 +160,10 @@ public static class PartyReducers
         state with { Campaign = new RemoteData<CampaignView>.Failed(action.Message) };
 
     [ReducerMethod]
+    public static PartyState On(PartyState state, CampaignCreated action) =>
+        state with { DmKey = action.Created.DmKey };
+
+    [ReducerMethod]
     public static PartyState On(PartyState state, PasteDraftChanged action) =>
         state with { PasteDraft = action.Draft };
 
@@ -183,9 +197,21 @@ public static class PartyReducers
         return state with
         {
             Campaign = new RemoteData<CampaignView>.Loaded(
-                loaded.Value with { Exists = true, Characters = replaced }),
+                loaded.Value with { Characters = replaced }),
         };
     }
+
+    /// <summary>The DM's own tap and somebody else's push land here as the same value, which is
+    /// what makes "every screen follows" one code path rather than two.</summary>
+    [ReducerMethod]
+    public static PartyState On(PartyState state, ModeChanged action) =>
+        state.Campaign is RemoteData<CampaignView>.Loaded loaded
+            ? state with
+            {
+                Campaign = new RemoteData<CampaignView>.Loaded(
+                    loaded.Value with { Mode = action.Mode.Mode }),
+            }
+            : state;
 
     [ReducerMethod]
     public static PartyState On(PartyState state, ActionFailed action) =>

@@ -36,6 +36,14 @@
         @Entrance
     </Failed>
     <Loaded Context="table">
+        <p class="shell" role="status">
+            <span class="shell__mode">@table.Mode</span>
+            @if (table.Role == "Dm")
+            {
+                <span class="shell__dm">DM</span>
+            }
+        </p>
+
         @if (!State.Live)
         {
             <p class="offline" role="status">
@@ -52,7 +60,7 @@
         {
             <div class="panel">
                 <Card>
-                    <EmptyState Title="@(table.Exists ? "Nobody is in this campaign yet" : "A campaign waiting for its first character")">
+                    <EmptyState Title="Nobody is in this campaign yet">
                         <ChildContent>
                             Read out the code @State.Code so everyone joins the same campaign, then paste a
                             Pathbuilder export below to put a character on it.

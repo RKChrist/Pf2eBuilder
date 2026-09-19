@@ -3,12 +3,16 @@ using Pf2e.Contracts.Tracker;
 namespace Pf2e.Application.Abstractions;
 
 /// <summary>
-/// How a handler tells the rest of the campaign that a character moved. It is implemented over
-/// SignalR in the API, which is what keeps handlers free of HTTP. The payload is the whole
-/// recomputed sheet, because every viewer is entitled to every player character's numbers and
-/// there is therefore nothing to filter.
+/// How a handler tells the rest of the campaign that something moved. It is implemented over
+/// SignalR in the API, which is what keeps handlers free of HTTP.
+/// <para>A character sheet and a mode go to everyone, because every viewer is entitled to every
+/// player character's numbers and to the mode the group is in. Anything that differs by role
+/// takes a pair of already-projected values and this interface only routes them, so nothing
+/// here ever decides what a player may see.</para>
 /// </summary>
 public interface ICampaignBroadcaster
 {
-    Task CharacterChangedAsync(string tableCode, CharacterSheetView sheet, CancellationToken ct);
+    Task CharacterChangedAsync(string code, CharacterSheetView sheet, CancellationToken ct);
+
+    Task ModeChangedAsync(string code, CampaignModeView mode, CancellationToken ct);
 }

@@ -10,7 +10,7 @@ using Pf2e.Api.Endpoints;
 using Pf2e.Api.Hubs;
 using Pf2e.Application;
 using Pf2e.Application.Abstractions;
-using Pf2e.Application.Features.Tracker;
+using Pf2e.Application.Features.Campaigns;
 using Pf2e.Infrastructure;
 using Pf2e.Infrastructure.Configuration;
 using Pf2e.Infrastructure.Persistence;
@@ -89,6 +89,22 @@ app.UseExceptionHandler(handler => handler.Run(async context =>
         return;
     }
 
+    // A code nobody created is a 404 that says so, rather than a campaign this request starts.
+    if (error is CampaignNotFoundException missing)
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        await context.Response.WriteAsJsonAsync(new { title = missing.Message });
+        return;
+    }
+
+    // Forbidden rather than unauthorized: the campaign is there and this caller is not its DM.
+    if (error is NotTheDmException notTheDm)
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        await context.Response.WriteAsJsonAsync(new { title = notTheDm.Message });
+        return;
+    }
+
     // A body the model binder could not read is the caller's mistake too. Left as a 500 it
     // reads as a server fault, and the caller with a wrong field name goes looking for a bug
     // that is not there. I did exactly that against this endpoint before fixing it.
@@ -154,7 +170,7 @@ if (!string.IsNullOrWhiteSpace(clientRoot))
 }
 
 app.MapRules();
-app.MapTracker();
+app.MapCampaigns();
 app.MapHub<CampaignHub>(app.Services.GetRequiredService<IOptions<RealtimeOptions>>().Value.HubPath);
 
 app.MapGet("/health", async (RulesDbContext db) => Results.Ok(new

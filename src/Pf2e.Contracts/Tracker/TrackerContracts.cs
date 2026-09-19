@@ -46,10 +46,25 @@ public sealed record CharacterSheetView(
     int HeroPoints,
     IReadOnlyList<ActiveEffectView> Effects);
 
-/// <summary>Exists is false for a code nobody has imported into yet. Anyone with a code is at
-/// that campaign, so an unknown code is a campaign waiting to be started rather than an error; the
-/// screen still needs to tell the two apart so a mistyped code does not look like a join.</summary>
-public sealed record CampaignView(string Code, bool Exists, IReadOnlyList<CharacterSheetView> Characters);
+/// <summary>
+/// Mode is "Exploration", "Encounter" or "Downtime"; Role is "Player" or "Dm". Role is here so
+/// the screen can offer the DM's controls, and not so it can decide what to hide: anything a
+/// player may not see has already been left out of this value by the projection.
+/// </summary>
+public sealed record CampaignView(
+    string Code,
+    string Mode,
+    string Role,
+    IReadOnlyList<CharacterSheetView> Characters);
+
+/// <summary>The one payload that ever carries the DM key. Whoever asked for it is the DM, and
+/// no later response repeats it.</summary>
+public sealed record CreatedCampaignView(string Code, string DmKey, string Mode);
+
+public sealed record CampaignModeView(string Code, string Mode);
+
+/// <summary>Mode is "Exploration", "Encounter" or "Downtime".</summary>
+public sealed record SetModeRequest(string Mode);
 
 public sealed record ImportCharacterRequest(string Pathbuilder);
 

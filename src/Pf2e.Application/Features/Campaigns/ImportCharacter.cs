@@ -7,7 +7,7 @@ using Pf2e.Contracts.Tracker;
 using Pf2e.Domain;
 using Pf2e.Domain.Tracking;
 
-namespace Pf2e.Application.Features.Tracker;
+namespace Pf2e.Application.Features.Campaigns;
 
 public sealed record ImportCharacter(string Code, string Pathbuilder) : IRequest<CharacterSheetView>;
 
@@ -38,19 +38,12 @@ public sealed class ImportCharacterHandler(
     {
         var parsed = PathbuilderBuild.Parse(command.Pathbuilder);
         var build = await WithSeededArmor(parsed, ct);
-        var code = CampaignCode.Normalize(command.Code);
 
-        var campaign = await tracker.Campaigns
-            .Include(t => t.Characters).ThenInclude(c => c.Effects)
-            .SingleOrDefaultAsync(t => t.Code == code, ct);
-
-        if (campaign is null)
-        {
-            // A campaign comes into being when its first character arrives, which is why there is
-            // no operation that creates one.
-            campaign = new Campaign { Id = Guid.NewGuid(), Code = code, CreatedAtUtc = DateTimeOffset.UtcNow };
-            tracker.Campaigns.Add(campaign);
-        }
+        // A campaign nobody created is a refusal that names the problem, not a campaign this
+        // handler starts on the way past. One started here would have a DM key that reached
+        // nobody, which is a campaign with no DM.
+        var (campaign, _) = await CampaignAccess.LoadAsync(tracker, command.Code, null, ct);
+        var code = campaign.Code;
 
         // Pathbuilder stores one JSON id per player and overwrites it on each export, so it is a
         // slot and not an identity. Matching on the name is what makes a level-up a re-import.

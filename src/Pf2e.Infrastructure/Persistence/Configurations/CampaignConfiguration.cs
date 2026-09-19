@@ -22,6 +22,12 @@ public sealed class CampaignConfiguration : IEntityTypeConfiguration<Campaign>
         // silently share their characters.
         campaigns.HasIndex(t => t.Code).IsUnique();
 
+        campaigns.Property(t => t.DmKey).HasMaxLength(64).IsRequired();
+
+        // Stored by name. A reordered enum must not silently reinterpret rows written before
+        // the reorder, and "Encounter" in a row a human is reading says what 1 does not.
+        campaigns.Property(t => t.Mode).HasConversion<string>().HasMaxLength(16).IsRequired();
+
         campaigns.HasMany(t => t.Characters)
               .WithOne()
               .HasForeignKey(c => c.CampaignId)

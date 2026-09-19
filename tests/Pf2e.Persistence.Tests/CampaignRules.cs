@@ -1,23 +1,28 @@
 using System.Text.Json.Nodes;
-using Microsoft.EntityFrameworkCore;
 using Pf2e.Application.Abstractions;
+using Pf2e.Application.Features.Campaigns;
 using Pf2e.Application.Features.Rules;
-using Pf2e.Application.Features.Tracker;
-using Pf2e.Contracts.Rules;
 using Pf2e.Contracts.Tracker;
 using Pf2e.Domain.Rules;
-using Pf2e.Infrastructure.Persistence;
 
 namespace Pf2e.Persistence.Tests;
 
-/// <summary>Records what a table would have been told, so a test can assert that it was.</summary>
+/// <summary>Records what a campaign would have been told, so a test can assert that it was.</summary>
 sealed class RecordingBroadcaster : ICampaignBroadcaster
 {
     public List<(string Code, CharacterSheetView Sheet)> Sent { get; } = [];
 
-    public Task CharacterChangedAsync(string tableCode, CharacterSheetView sheet, CancellationToken ct)
+    public List<(string Code, CampaignModeView Mode)> Modes { get; } = [];
+
+    public Task CharacterChangedAsync(string code, CharacterSheetView sheet, CancellationToken ct)
     {
-        Sent.Add((tableCode, sheet));
+        Sent.Add((code, sheet));
+        return Task.CompletedTask;
+    }
+
+    public Task ModeChangedAsync(string code, CampaignModeView mode, CancellationToken ct)
+    {
+        Modes.Add((code, mode));
         return Task.CompletedTask;
     }
 }
@@ -27,12 +32,18 @@ sealed class RecordingBroadcaster : ICampaignBroadcaster
 /// exercised here against a real database rather than against a substitute that would only
 /// prove the test's own idea of the ruleset.
 /// </summary>
-public class TrackerRules(SeededDatabase database) : IClassFixture<SeededDatabase>
+public class CampaignRules(SeededDatabase database) : IClassFixture<SeededDatabase>
 {
     static string Fixture(string name) =>
         File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", name));
 
     RecordingBroadcaster Broadcaster { get; } = new();
+
+    async Task<CreatedCampaignView> NewCampaign()
+    {
+        await using var db = database.NewContext();
+        return await new CreateCampaignHandler(db).Handle(new CreateCampaign(), default);
+    }
 
     async Task<CharacterSheetView> Import(string code, string pathbuilder)
     {
@@ -55,10 +66,16 @@ public class TrackerRules(SeededDatabase database) : IClassFixture<SeededDatabas
             .Handle(new SetEffect(code, characterId, slot, effect), default);
     }
 
-    async Task<CampaignView> Read(string code)
+    async Task<CampaignView> Read(string code, string? dmKey = null)
     {
         await using var db = database.NewContext();
-        return await new GetCampaignHandler(db).Handle(new GetCampaign(code), default);
+        return await new GetCampaignHandler(db).Handle(new GetCampaign(code, dmKey), default);
+    }
+
+    async Task<CampaignModeView> Mode(string code, string? dmKey, string mode)
+    {
+        await using var db = database.NewContext();
+        return await new SetModeHandler(db, Broadcaster).Handle(new SetMode(code, dmKey, mode), default);
     }
 
     static string Shape(CharacterSheetView sheet) =>
@@ -71,7 +88,8 @@ public class TrackerRules(SeededDatabase database) : IClassFixture<SeededDatabas
     [Fact]
     public async Task ImportingTheGoblinBardGivesSeventySixHitPointsAndTwentyFiveArmorClass()
     {
-        var sheet = await Import("GNIB01", Fixture("gnibbo.json"));
+        var campaign = await NewCampaign();
+        var sheet = await Import(campaign.Code, Fixture("gnibbo.json"));
 
         Assert.Equal("Gnibbo", sheet.Name);
         Assert.Equal(76, sheet.MaxHitPoints);
@@ -90,18 +108,19 @@ public class TrackerRules(SeededDatabase database) : IClassFixture<SeededDatabas
         Assert.Equal(3, armor.Value);
         Assert.Equal(22, sheet.ArmorClass.Base);
 
-        Assert.Equal(("GNIB01", sheet), Assert.Single(Broadcaster.Sent));
+        Assert.Equal((campaign.Code, sheet), Assert.Single(Broadcaster.Sent));
     }
 
     [Fact]
     public async Task ReImportingReplacesTheBuildAndLeavesTheSessionWhereItWas()
     {
-        var first = await Import("GNIB02", Fixture("gnibbo.json"));
-        await Damage("GNIB02", first.Id, -30);
+        var campaign = await NewCampaign();
+        var first = await Import(campaign.Code, Fixture("gnibbo.json"));
+        await Damage(campaign.Code, first.Id, -30);
 
         var levelled = JsonNode.Parse(Fixture("gnibbo.json"))!;
         levelled["build"]!["level"] = 8;
-        var second = await Import("GNIB02", levelled.ToJsonString());
+        var second = await Import(campaign.Code, levelled.ToJsonString());
 
         Assert.Equal(first.Id, second.Id);
         Assert.Equal(8, second.Level);
@@ -113,66 +132,71 @@ public class TrackerRules(SeededDatabase database) : IClassFixture<SeededDatabas
     [Fact]
     public async Task TwoHitPointChangesInSequenceSumOnTheStoredValue()
     {
-        var character = await Import("GNIB03", Fixture("gnibbo.json"));
+        var campaign = await NewCampaign();
+        var character = await Import(campaign.Code, Fixture("gnibbo.json"));
 
-        await Damage("GNIB03", character.Id, -10);
-        var after = await Damage("GNIB03", character.Id, -7);
+        await Damage(campaign.Code, character.Id, -10);
+        var after = await Damage(campaign.Code, character.Id, -7);
 
         Assert.Equal(59, after!.CurrentHitPoints);
-        Assert.Equal(59, Assert.Single((await Read("GNIB03")).Characters).CurrentHitPoints);
+        Assert.Equal(59, Assert.Single((await Read(campaign.Code)).Characters).CurrentHitPoints);
     }
 
     [Fact]
     public async Task AnAbsentCharacterIsNullRatherThanAFault()
     {
-        await Import("GNIB04", Fixture("gnibbo.json"));
+        var campaign = await NewCampaign();
+        await Import(campaign.Code, Fixture("gnibbo.json"));
 
-        Assert.Null(await Damage("GNIB04", Guid.NewGuid(), -1));
-        Assert.Null(await Set("GNIB04", Guid.NewGuid(), Guid.NewGuid(), null));
+        Assert.Null(await Damage(campaign.Code, Guid.NewGuid(), -1));
+        Assert.Null(await Set(campaign.Code, Guid.NewGuid(), Guid.NewGuid(), null));
     }
 
     [Fact]
     public async Task EmptyingASlotRemovesItsEffectAndEmptyingAnEmptySlotStillSucceeds()
     {
-        var character = await Import("GNIB05", Fixture("gnibbo.json"));
+        var campaign = await NewCampaign();
+        var character = await Import(campaign.Code, Fixture("gnibbo.json"));
         var slot = Guid.NewGuid();
 
-        var applied = await Set("GNIB05", character.Id, slot,
+        var applied = await Set(campaign.Code, character.Id, slot,
             new EffectSpec("Clumsy", "Seeded", "clumsy", 2, "1 minute", []));
         Assert.Equal(23, applied!.ArmorClass.Total);
 
-        var removed = await Set("GNIB05", character.Id, slot, null);
+        var removed = await Set(campaign.Code, character.Id, slot, null);
         Assert.Empty(removed!.Effects);
         Assert.Equal(25, removed.ArmorClass.Total);
 
-        var again = await Set("GNIB05", character.Id, Guid.NewGuid(), null);
+        var again = await Set(campaign.Code, character.Id, Guid.NewGuid(), null);
         Assert.Empty(again!.Effects);
     }
 
     [Fact]
     public async Task TheSameEffectSentTwiceLeavesOneEffect()
     {
-        var character = await Import("GNIB06", Fixture("gnibbo.json"));
+        var campaign = await NewCampaign();
+        var character = await Import(campaign.Code, Fixture("gnibbo.json"));
         var slot = Guid.NewGuid();
         var spec = new EffectSpec("Clumsy", "Seeded", "clumsy", 2, null, []);
 
-        await Set("GNIB06", character.Id, slot, spec);
-        var second = await Set("GNIB06", character.Id, slot, spec);
+        await Set(campaign.Code, character.Id, slot, spec);
+        var second = await Set(campaign.Code, character.Id, slot, spec);
 
         Assert.Single(second!.Effects);
         Assert.Equal(23, second.ArmorClass.Total);
-        Assert.Single(Assert.Single((await Read("GNIB06")).Characters).Effects);
+        Assert.Single(Assert.Single((await Read(campaign.Code)).Characters).Effects);
     }
 
     [Fact]
     public async Task TwoCustomEffectsInDifferentSlotsBothPersistAndBothReachTheSheet()
     {
-        var character = await Import("GNIB07", Fixture("gnibbo.json"));
+        var campaign = await NewCampaign();
+        var character = await Import(campaign.Code, Fixture("gnibbo.json"));
 
-        await Set("GNIB07", character.Id, Guid.NewGuid(), Custom("Heroism", "Status", 2, "Will"));
-        await Set("GNIB07", character.Id, Guid.NewGuid(), Custom("Resolve", "Circumstance", 1, "Will"));
+        await Set(campaign.Code, character.Id, Guid.NewGuid(), Custom("Heroism", "Status", 2, "Will"));
+        await Set(campaign.Code, character.Id, Guid.NewGuid(), Custom("Resolve", "Circumstance", 1, "Will"));
 
-        var stored = Assert.Single((await Read("GNIB07")).Characters);
+        var stored = Assert.Single((await Read(campaign.Code)).Characters);
 
         Assert.Equal(2, stored.Effects.Count);
         Assert.Equal(15, stored.Will.Total);
@@ -182,25 +206,28 @@ public class TrackerRules(SeededDatabase database) : IClassFixture<SeededDatabas
     }
 
     [Fact]
-    public async Task TwoCharactersOnOneTableBothPersist()
+    public async Task TwoCharactersInOneCampaignBothPersist()
     {
-        await Import("GNIB08", Fixture("gnibbo.json"));
+        var campaign = await NewCampaign();
+        await Import(campaign.Code, Fixture("gnibbo.json"));
 
         var second = JsonNode.Parse(Fixture("gnibbo.json"))!;
         second["build"]!["name"] = "Tarrow";
-        await Import("GNIB08", second.ToJsonString());
+        await Import(campaign.Code, second.ToJsonString());
 
-        var table = await Read("GNIB08");
+        var read = await Read(campaign.Code);
 
-        Assert.Equal(["Gnibbo", "Tarrow"], table.Characters.Select(c => c.Name));
-        Assert.All(table.Characters, character => Assert.Equal(76, character.MaxHitPoints));
+        Assert.Equal(["Gnibbo", "Tarrow"], read.Characters.Select(c => c.Name));
+        Assert.All(read.Characters, character => Assert.Equal(76, character.MaxHitPoints));
     }
 
     [Fact]
     public async Task AnExportMissingTheSixDriftingKeysImportsIdentically()
     {
-        var full = await Import("GNIB09", Fixture("gnibbo.json"));
-        var vintage = await Import("GNIB10", Fixture("gnibbo-vintage.json"));
+        var one = await NewCampaign();
+        var other = await NewCampaign();
+        var full = await Import(one.Code, Fixture("gnibbo.json"));
+        var vintage = await Import(other.Code, Fixture("gnibbo-vintage.json"));
 
         foreach (var key in new[] { "dualClass", "xp", "sizeName", "rituals", "resistances", "inventorMods" })
         {
@@ -216,23 +243,57 @@ public class TrackerRules(SeededDatabase database) : IClassFixture<SeededDatabas
     [Fact]
     public async Task APayloadThatIsNotAnExportFailsWithASentenceAPlayerCanRead()
     {
+        var campaign = await NewCampaign();
+
         var notJson = await Assert.ThrowsAsync<PathbuilderFormatException>(
-            () => Import("GNIB11", "paste your character here"));
+            () => Import(campaign.Code, "paste your character here"));
         var noName = await Assert.ThrowsAsync<PathbuilderFormatException>(
-            () => Import("GNIB11", "{\"success\":true,\"build\":{\"level\":7}}"));
+            () => Import(campaign.Code, "{\"success\":true,\"build\":{\"level\":7}}"));
 
         Assert.Contains("Pathbuilder", notJson.Message);
         Assert.Contains("no character name", noName.Message);
-        Assert.False((await Read("GNIB11")).Exists, "a failed paste must not start a table");
+        Assert.Empty((await Read(campaign.Code)).Characters);
+    }
+
+    // design/007 makes a campaign something you create. Importing into a code nobody created
+    // used to start one, and that campaign's DM key went to nobody, so it had no DM.
+    [Fact]
+    public async Task ImportingIntoACampaignThatDoesNotExistFailsAndNamesTheProblem()
+    {
+        var failure = await Assert.ThrowsAsync<CampaignNotFoundException>(
+            () => Import("NOBODY", Fixture("gnibbo.json")));
+
+        Assert.Contains("NOBODY", failure.Message);
+        Assert.Contains("has to be created", failure.Message);
+        await Assert.ThrowsAsync<CampaignNotFoundException>(() => Read("NOBODY"));
     }
 
     [Fact]
-    public async Task AnUnknownCodeIsATableWaitingToBeStartedRatherThanAMissingOne()
+    public async Task TheCreatorHoldsTheDmKeyAndEverybodyElseIsAPlayer()
     {
-        var table = await Read("NOBODY");
+        var campaign = await NewCampaign();
 
-        Assert.False(table.Exists);
-        Assert.Empty(table.Characters);
+        Assert.NotEmpty(campaign.DmKey);
+        Assert.Equal("Exploration", campaign.Mode);
+        Assert.Equal("Dm", (await Read(campaign.Code, campaign.DmKey)).Role);
+        Assert.Equal("Player", (await Read(campaign.Code)).Role);
+        Assert.Equal("Player", (await Read(campaign.Code, "not-the-key")).Role);
+    }
+
+    [Fact]
+    public async Task OnlyTheDmChangesTheModeAndTheChangeReachesEverybody()
+    {
+        var campaign = await NewCampaign();
+
+        await Assert.ThrowsAsync<NotTheDmException>(() => Mode(campaign.Code, null, "Encounter"));
+        await Assert.ThrowsAsync<NotTheDmException>(() => Mode(campaign.Code, "guessing", "Encounter"));
+        Assert.Equal("Exploration", (await Read(campaign.Code)).Mode);
+
+        var changed = await Mode(campaign.Code, campaign.DmKey, "Downtime");
+
+        Assert.Equal("Downtime", changed.Mode);
+        Assert.Equal("Downtime", (await Read(campaign.Code)).Mode);
+        Assert.Equal((campaign.Code, changed), Assert.Single(Broadcaster.Modes));
     }
 
     [Fact]
@@ -287,48 +348,51 @@ public class TrackerRules(SeededDatabase database) : IClassFixture<SeededDatabas
     [Fact]
     public async Task ConcurrentHitPointChangesAllLandRatherThanClobberingEachOther()
     {
-        var character = await Import("GNIB20", Fixture("gnibbo.json"));
+        var campaign = await NewCampaign();
+        var character = await Import(campaign.Code, Fixture("gnibbo.json"));
         const int blows = 20;
 
         await Task.WhenAll(Enumerable.Range(0, blows)
-            .Select(_ => Task.Run(() => Damage("GNIB20", character.Id, -1))));
+            .Select(_ => Task.Run(() => Damage(campaign.Code, character.Id, -1))));
 
         Assert.Equal(
             character.CurrentHitPoints - blows,
-            Assert.Single((await Read("GNIB20")).Characters).CurrentHitPoints);
+            Assert.Single((await Read(campaign.Code)).Characters).CurrentHitPoints);
     }
 
     // Doing the arithmetic in the database leaves the instance the handler holds stale, and a
     // re-query does not fix it, because identity resolution hands back the object already
-    // tracked. Reading the table afterwards cannot catch that: the row is right and only the
+    // tracked. Reading the campaign afterwards cannot catch that: the row is right and only the
     // answer is wrong, so this asserts the answer against the row.
     [Fact]
     public async Task ACommandAnswersWithTheNumberTheDatabaseEndsUpHolding()
     {
-        var character = await Import("GNIB21", Fixture("gnibbo.json"));
+        var campaign = await NewCampaign();
+        var character = await Import(campaign.Code, Fixture("gnibbo.json"));
 
-        var answered = await Damage("GNIB21", character.Id, -9);
+        var answered = await Damage(campaign.Code, character.Id, -9);
 
         Assert.Equal(
-            Assert.Single((await Read("GNIB21")).Characters).CurrentHitPoints,
+            Assert.Single((await Read(campaign.Code)).Characters).CurrentHitPoints,
             answered!.CurrentHitPoints);
     }
 
-    // The slot id is client-generated so a retry over a flaky table connection converges instead
-    // of stacking duplicates. A retry is exactly what arrives twice at once, so two requests can
+    // The slot id is client-generated so a retry over a flaky connection converges instead of
+    // stacking duplicates. A retry is exactly what arrives twice at once, so two requests can
     // both find the slot empty and both insert the same key.
     [Fact]
     public async Task ConcurrentAppliesToOneSlotAllSucceedAndLeaveOneEffect()
     {
-        var character = await Import("GNIB22", Fixture("gnibbo.json"));
+        var campaign = await NewCampaign();
+        var character = await Import(campaign.Code, Fixture("gnibbo.json"));
         var slot = Guid.NewGuid();
         var spec = new EffectSpec("Clumsy", "Seeded", "clumsy", 2, null, []);
 
         var answers = await Task.WhenAll(Enumerable.Range(0, 12)
-            .Select(_ => Task.Run(() => Set("GNIB22", character.Id, slot, spec))));
+            .Select(_ => Task.Run(() => Set(campaign.Code, character.Id, slot, spec))));
 
         Assert.All(answers, answer => Assert.Single(answer!.Effects));
-        Assert.Single(Assert.Single((await Read("GNIB22")).Characters).Effects);
+        Assert.Single(Assert.Single((await Read(campaign.Code)).Characters).Effects);
     }
 
     [Theory]
@@ -338,7 +402,7 @@ public class TrackerRules(SeededDatabase database) : IClassFixture<SeededDatabas
     {
         // Without Cascade.Stop the length rule dereferences the null the previous rule just
         // rejected, and the caller gets a 500 naming nothing instead of a 400 naming the field.
-        var result = new ImportCharacterValidator().Validate(new ImportCharacter("TABLE1", payload!));
+        var result = new ImportCharacterValidator().Validate(new ImportCharacter("ABCDEF", payload!));
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.PropertyName == "Pathbuilder");

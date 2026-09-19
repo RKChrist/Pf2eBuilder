@@ -9,8 +9,24 @@ public sealed class CampaignApiException(string message) : Exception(message);
 
 public sealed class TrackerApi(HttpClient http)
 {
+    /// <summary>The DM key this browser holds, which is only ever the one that came back from
+    /// creating a campaign. It rides on every request from then on and is what the server reads
+    /// to decide the role; nothing in this class decides anything about it.</summary>
+    public const string DmKeyHeader = "X-DM-Key";
+
+    string? _dmKey;
+
+    public void UseDmKey(string key) => _dmKey = key;
+
+    public Task<CreatedCampaignView> CreateCampaignAsync(CancellationToken ct) =>
+        SendAsync<CreatedCampaignView>(new HttpRequestMessage(HttpMethod.Post, "campaigns"), ct);
+
     public Task<CampaignView> GetCampaignAsync(string code, CancellationToken ct) =>
         SendAsync<CampaignView>(new HttpRequestMessage(HttpMethod.Get, Campaign(code)), ct);
+
+    public Task<CampaignModeView> SetModeAsync(string code, string mode, CancellationToken ct) =>
+        SendAsync<CampaignModeView>(
+            Carrying(HttpMethod.Post, $"{Campaign(code)}/mode", new SetModeRequest(mode)), ct);
 
     public Task<CharacterSheetView> ImportAsync(string code, string pathbuilder, CancellationToken ct) =>
         SendAsync<CharacterSheetView>(
@@ -42,6 +58,11 @@ public sealed class TrackerApi(HttpClient http)
 
     async Task<T> SendAsync<T>(HttpRequestMessage request, CancellationToken ct)
     {
+        if (_dmKey is { Length: > 0 } key)
+        {
+            request.Headers.Add(DmKeyHeader, key);
+        }
+
         HttpResponseMessage response;
         try
         {
