@@ -212,7 +212,7 @@ for (const [name, page] of [['first', one.page], ['second', two.page]]) {
   // through the HTTP negotiate that precedes it. No negotiate means unverified, not fine.
   const negotiate = calls.filter(url => url.includes('/negotiate'));
   check(`the ${name} page's hub negotiated`, negotiate.length > 0,
-    'no negotiate call seen; the hub origin is unverified');
+    negotiate[0] ?? 'no negotiate call seen, so the hub origin is unverified');
   check(`the ${name} page's hub negotiated against the API under test`,
     negotiate.length > 0 && negotiate.every(url => url.startsWith(apiOrigin)), negotiate.join(' | '));
 
