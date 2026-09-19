@@ -141,7 +141,7 @@
   cursor: progress;
 }
 
-.pf-btn__full {
+.pf-btn--full {
   display: flex;
   width: 100%;
 }
@@ -711,10 +711,12 @@
 
 /* The sign is always drawn, and a penalty uses a true minus rather than a hyphen, because
    the failure this component exists to prevent is reading -2 as +2 in bad light. */
+/* Tighter inside than the gap between two of these, because a stat breakdown lists several
+   in a row and the value must bind to its own type name, not to the next one. */
 .pf-mod {
   display: inline-flex;
   align-items: baseline;
-  gap: var(--space-2);
+  gap: var(--space-1);
   font-family: var(--font-family-data);
 }
 
@@ -817,7 +819,10 @@
   background: var(--surface-sunken);
 }
 
-.pf-row:last-child {
+/* Rows sit either directly in a card or wrapped in list items, and the last one drops its
+   rule either way. */
+.pf-row:last-child,
+.pf-card__list > li:last-child > .pf-row {
   border-bottom: none;
 }
 
