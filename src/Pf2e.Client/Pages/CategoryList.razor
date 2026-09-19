@@ -199,8 +199,8 @@ else
         }
 
         var matching = counted.Value.TotalMatching;
-        var noun = matching == 1 ? category.One : category.Label;
         var of = Sizes.Value.Of(category.Key) is int all && all != matching ? $" of {Numbers.Grouped(all)}" : null;
+        var noun = matching == 1 && of is null ? category.One : category.Label;
         return $"{Numbers.Grouped(matching)}{of} {noun.ToLowerInvariant()}";
     }
 

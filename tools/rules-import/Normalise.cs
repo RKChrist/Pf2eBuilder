@@ -43,6 +43,7 @@ static partial class Normalise
             : throw new InvalidOperationException(
                 $"unknown AoN marker '{match.Value}' in \"{text}\"; name its words in Normalise.Glyphs"));
         plain = MarkdownLink().Replace(plain, match => match.Groups[1].Value);
+        plain = Emphasis().Replace(plain, match => match.Groups["words"].Value);
         plain = WebUtility.HtmlDecode(Tag().Replace(plain, string.Empty));
         plain = ClassScoped().Replace(plain, ScopedToClass);
         return Spaces().Replace(plain, " ").Trim();
@@ -77,6 +78,9 @@ static partial class Normalise
 
     [GeneratedRegex("""_?\[([^\]]+)\]\([^)]*\)_?""")]
     private static partial Regex MarkdownLink();
+
+    [GeneratedRegex("""(?<!\w)(?<mark>_|\*\*)(?<words>[^_*\s][^_*]*?)\k<mark>(?!\w)""")]
+    private static partial Regex Emphasis();
 
     [GeneratedRegex("""</?[A-Za-z][^>]*>""")]
     private static partial Regex Tag();

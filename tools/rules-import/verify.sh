@@ -670,6 +670,7 @@ const rules = [
   ['html tag', /<\/?[A-Za-z][^>]*>/],
   ['html entity', /&(#\d+|[a-z]+);/i],
   ['markdown link', /\]\(/],
+  ['markdown emphasis', /(^|[^\w])(_|\*\*)[^_*\s][^_*]*?\2($|[^\w])/],
   ['class-scoped prefix', /\[[A-Z][^\]]*\] /],
   ['doubled whitespace', /\s{2}/],
   ['untrimmed', /^\s|\s$/],
