@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Pf2e.Application.Features.Conditions;
 using Pf2e.Application.Features.Rules;
 using Pf2e.Domain;
+using Pf2e.Infrastructure.Persistence;
 
 namespace Pf2e.Persistence.Tests;
 
@@ -66,6 +67,44 @@ public class SeedingRules(SeededDatabase database) : IClassFixture<SeededDatabas
         await using var db = database.NewContext();
         Assert.Equal(Published.Values.Sum(), await db.RuleRecords.CountAsync());
         Assert.Equal(1, await db.SeedState.CountAsync());
+    }
+
+    [Fact]
+    public async Task ASeedWhoseValuesChangeAtTheSameCountIsSeededAgain()
+    {
+        var seed = Directory.CreateTempSubdirectory("pf2e-seed-").FullName;
+        var file = Path.Combine(Path.GetTempPath(), $"pf2e-reseed-{Guid.NewGuid():N}.db");
+        File.Copy(Path.Combine(SeededDatabase.SeedPath, "condition.json"), Path.Combine(seed, "condition.json"));
+        RulesDbContext Open() => new(new DbContextOptionsBuilder<RulesDbContext>().UseSqlite($"Data Source={file}").Options);
+
+        await using (var db = Open())
+        {
+            await db.Database.MigrateAsync();
+            Assert.False((await SeededDatabase.SeederFor(db, seed).SeedAsync()).Skipped);
+        }
+
+        var conditions = JsonNode.Parse(await File.ReadAllTextAsync(Path.Combine(seed, "condition.json")))!.AsArray();
+        var first = conditions[0]!.AsObject();
+        var id = first["id"]!.GetValue<string>();
+        first["name"] = "Renamed by the transform";
+        await File.WriteAllTextAsync(Path.Combine(seed, "condition.json"), conditions.ToJsonString());
+
+        await using (var db = Open())
+        {
+            var again = await SeededDatabase.SeederFor(db, seed).SeedAsync();
+            Assert.False(again.Skipped, "a changed value at an unchanged count must reseed");
+            Assert.Equal(conditions.Count, again.RecordCount);
+        }
+
+        await using (var db = Open())
+        {
+            Assert.Equal("Renamed by the transform", (await db.RuleRecords.SingleAsync(r => r.Id == id)).Name);
+            Assert.True((await SeededDatabase.SeederFor(db, seed).SeedAsync()).Skipped);
+        }
+
+        SqliteConnectionPool.Clear();
+        File.Delete(file);
+        Directory.Delete(seed, recursive: true);
     }
 
     [Fact]
