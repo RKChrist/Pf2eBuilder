@@ -27,7 +27,7 @@
                 </header>
 
                 <dl class="mechanics">
-                    @foreach (var row in MechanicsDisplay.Rows(rule.Mechanics, rule.Summary.Name))
+                    @foreach (var row in MechanicsDisplay.Rows(rule))
                     {
                         <dt>@row.Label</dt>
                         <dd>@string.Join(", ", row.Values)</dd>

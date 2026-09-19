@@ -132,14 +132,21 @@ public static class MechanicsDisplay
         ReadingOrder.GroupBy(entry => entry.Key, StringComparer.Ordinal)
              .ToDictionary(group => group.Key, group => group.First().Label, StringComparer.Ordinal);
 
-    /// <param name="recordName">
-    /// Dropped wherever it appears as a value. A feat's own <c>feat</c> field is its own name,
-    /// and "Feats: Shield Block" under the heading "Shield Block" reads as a defect.
-    /// </param>
-    public static IReadOnlyList<MechanicRow> Rows(IReadOnlyList<MechanicField> fields, string recordName)
+    /// <summary>
+    /// A record restates its own name under a field named after its own category: a feat carries
+    /// <c>feat</c>, a domain carries <c>domain</c>, and "Feats: Shield Block" under the heading
+    /// "Shield Block" reads as a defect. Only that field is dropped. Matching the name against
+    /// every field instead would cost the Club its weapon group and Unarmored its armour
+    /// category, which are facts about the record rather than echoes of it.
+    /// </summary>
+    public static IReadOnlyList<MechanicRow> Rows(RuleDetail rule)
     {
-        var populated = fields
-            .Select(field => new MechanicField(field.Key, Trimmed(field.Values, recordName)))
+        var selfReference = rule.Summary.Category.Replace('-', '_');
+
+        var populated = rule.Mechanics
+            .Select(field => new MechanicField(
+                field.Key,
+                Trimmed(field.Values, field.Key == selfReference ? rule.Summary.Name : null)))
             .Where(field => field.Values.Count > 0)
             .ToDictionary(field => field.Key, StringComparer.Ordinal);
 
@@ -168,8 +175,8 @@ public static class MechanicsDisplay
         string.Join(' ', key.Split('_', StringSplitOptions.RemoveEmptyEntries)
                             .Select(word => char.ToUpperInvariant(word[0]) + word[1..]));
 
-    static IReadOnlyList<string> Trimmed(IReadOnlyList<string> values, string recordName) =>
+    static IReadOnlyList<string> Trimmed(IReadOnlyList<string> values, string? echoed) =>
         [.. values.Select(value => value.Trim())
                   .Where(value => value.Length > 0
-                                  && !value.Equals(recordName, StringComparison.OrdinalIgnoreCase))];
+                                  && !value.Equals(echoed, StringComparison.OrdinalIgnoreCase))];
 }
