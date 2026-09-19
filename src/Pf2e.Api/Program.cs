@@ -43,6 +43,14 @@ app.UseExceptionHandler(handler => handler.Run(async context =>
         return;
     }
 
+    // A query string that does not bind, such as Page=abc, is the caller's mistake too.
+    if (error is BadHttpRequestException malformed)
+    {
+        context.Response.StatusCode = malformed.StatusCode;
+        await context.Response.WriteAsJsonAsync(new { title = "The request was not valid.", detail = malformed.Message });
+        return;
+    }
+
     context.Response.StatusCode = StatusCodes.Status500InternalServerError;
     await context.Response.WriteAsJsonAsync(new { title = "Something went wrong." });
 }));

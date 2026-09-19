@@ -8,7 +8,7 @@ namespace Pf2e.Application.Features.Rules;
 
 /// <summary>Every trait in one category under a name and level filter, with how many records
 /// carry it. The trait filter itself is not applied: these are what a reader picks one from.</summary>
-public sealed record CountTraits(string Category, string? Name = null, int? MinLevel = null, int? MaxLevel = null)
+public sealed record CountTraits(string? Category = null, string? Name = null, int? MinLevel = null, int? MaxLevel = null)
     : IRequest<TraitCounts>;
 
 public sealed class CountTraitsValidator : AbstractValidator<CountTraits>
