@@ -1,0 +1,30 @@
+<div @attributes="Attributes" class="pf-state @Class">
+    @if (Icon is not null)
+    {
+        <div class="pf-state__icon" aria-hidden="true">@Icon</div>
+    }
+    <h2 class="pf-state__title">@Title</h2>
+    @if (ChildContent is not null)
+    {
+        <p class="pf-state__body">@ChildContent</p>
+    }
+    @if (Action is not null)
+    {
+        <div class="pf-state__action">@Action</div>
+    }
+</div>
+
+@code {
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    [Parameter] public RenderFragment? Icon { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    [Parameter] public RenderFragment? Action { get; set; }
+}

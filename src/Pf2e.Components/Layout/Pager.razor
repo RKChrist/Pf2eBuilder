@@ -1,0 +1,32 @@
+<nav @attributes="Attributes" class="pf-pager @Class" aria-label="@Label">
+    <button type="button"
+            class="pf-pager__btn pf-pager__btn--prev"
+            aria-label="@PreviousLabel"
+            disabled="@(Page <= 1)"
+            @onclick="() => PageChanged.InvokeAsync(Page - 1)"></button>
+    <span class="pf-pager__status" aria-live="polite">Page @Page of @PageCount</span>
+    <button type="button"
+            class="pf-pager__btn pf-pager__btn--next"
+            aria-label="@NextLabel"
+            disabled="@(Page >= PageCount)"
+            @onclick="() => PageChanged.InvokeAsync(Page + 1)"></button>
+</nav>
+
+@code {
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter] public int Page { get; set; }
+
+    [Parameter] public int PageCount { get; set; }
+
+    [Parameter] public EventCallback<int> PageChanged { get; set; }
+
+    [Parameter] public string Label { get; set; } = "Pagination";
+
+    [Parameter] public string PreviousLabel { get; set; } = "Previous page";
+
+    [Parameter] public string NextLabel { get; set; } = "Next page";
+}

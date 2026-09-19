@@ -1,0 +1,20 @@
+<span @attributes="Attributes" class="pf-pips @Class">
+    <span class="pf-pips__track" aria-hidden="true">
+        @for (var pip = 0; pip < TrackLength; pip++)
+        {
+            <i class="pf-pips__pip @(pip < Rank.FilledPips() ? "pf-pips__pip--filled" : null)"></i>
+        }
+    </span>
+    <span class="pf-pips__label">@Rank.DisplayText()</span>
+</span>
+
+@code {
+    private const int TrackLength = 5;
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter] public ProficiencyRank Rank { get; set; }
+}

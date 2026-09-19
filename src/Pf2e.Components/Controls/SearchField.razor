@@ -1,0 +1,37 @@
+<div @attributes="Attributes" class="pf-search @Class">
+    <span class="pf-search__icon" aria-hidden="true"></span>
+    <input class="pf-search__input"
+           type="search"
+           value="@Value"
+           @oninput="OnInput"
+           placeholder="@Placeholder"
+           aria-label="@Label"
+           disabled="@Disabled" />
+    @if (!string.IsNullOrEmpty(Value))
+    {
+        <button type="button" class="pf-search__clear" aria-label="@ClearLabel" @onclick="Clear"></button>
+    }
+</div>
+
+@code {
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter] public string? Value { get; set; }
+
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    [Parameter] public string? Placeholder { get; set; }
+
+    [Parameter] public string Label { get; set; } = "Search";
+
+    [Parameter] public string ClearLabel { get; set; } = "Clear search";
+
+    [Parameter] public bool Disabled { get; set; }
+
+    private Task OnInput(ChangeEventArgs e) => ValueChanged.InvokeAsync(e.Value?.ToString());
+
+    private Task Clear() => ValueChanged.InvokeAsync(null);
+}
