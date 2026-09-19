@@ -48,3 +48,19 @@ including Home, End and the page keys, the invariant that range thumbs cannot cr
 drag moves the thumb without scrolling the page, hold-to-confirm on destructive actions, and that
 reduced motion zeroes transitions while deliberately leaving the hold delay alone. `cdp.mjs` is
 the shared driver; both scripts use only Node builtins.
+
+## Recording a walkthrough
+
+`record.mjs` drives the running app through scripted scenarios and captures frames:
+
+    CLIENT_URL=http://localhost:5173 \
+    GALLERY_URL=file:///.../src/Pf2e.Components/gallery/index.html \
+      node tools/ui-check/record.mjs <outputDir> [scenario...]
+
+Scenarios are `browse`, `detail`, `conditions` and `sliders`. Frames land as JPEGs beside a
+`manifest.json` naming each frame and its caption. Text is typed one key event at a time rather
+than by setting `.value`, so the debounce is exercised instead of bypassed.
+
+Frames are captured under the same emulation override `measure.mjs` uses, so a recording and a
+measurement always describe the same viewport. That is the whole point: Chrome's `--screenshot`
+flag renders at its own viewport and crops, which is how two false bugs got reported here.
