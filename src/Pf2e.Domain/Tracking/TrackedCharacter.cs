@@ -15,7 +15,7 @@ public sealed class TrackedCharacter
     }
 
     public Guid Id { get; private set; }
-    public Guid TableId { get; private set; }
+    public Guid CampaignId { get; private set; }
 
     public string Name { get; private set; } = string.Empty;
     public int Level { get; private set; }
@@ -53,7 +53,7 @@ public sealed class TrackedCharacter
         var character = new TrackedCharacter
         {
             Id = Guid.NewGuid(),
-            TableId = tableId,
+            CampaignId = tableId,
             CurrentHitPoints = session.CurrentHitPoints,
             TemporaryHitPoints = session.TemporaryHitPoints,
             HeroPoints = session.HeroPoints,

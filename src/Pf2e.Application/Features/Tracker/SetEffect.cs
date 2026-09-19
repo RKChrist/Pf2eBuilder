@@ -10,19 +10,19 @@ namespace Pf2e.Application.Features.Tracker;
 
 /// <summary>
 /// One operation applies, updates and removes, and it is idempotent: the client names the slot
-/// with a Guid it generates, so resending the same apply over a flaky table wifi converges on
+/// with a Guid it generates, so resending the same apply over a flaky campaign wifi converges on
 /// the same state instead of stacking a duplicate. A null <see cref="Effect"/> empties the slot,
 /// and emptying a slot nothing is in succeeds.
 /// </summary>
-public sealed record SetEffect(string TableCode, Guid CharacterId, Guid EffectId, EffectSpec? Effect)
+public sealed record SetEffect(string Code, Guid CharacterId, Guid EffectId, EffectSpec? Effect)
     : IRequest<CharacterSheetView?>;
 
 public sealed class SetEffectValidator : AbstractValidator<SetEffect>
 {
     public SetEffectValidator()
     {
-        RuleFor(c => c.TableCode).Must(TableCode.IsValid)
-                                 .WithMessage("A table code is four to twelve letters and digits.");
+        RuleFor(c => c.Code).Must(CampaignCode.IsValid)
+                                 .WithMessage("A campaign code is four to twelve letters and digits.");
         RuleFor(c => c.CharacterId).NotEmpty();
 
         // An empty slot id is a client that forgot to generate one, and every such client would
@@ -65,7 +65,7 @@ public sealed class EffectSpecValidator : AbstractValidator<EffectSpec>
         When(e => e.Kind == "Custom", () =>
         {
             RuleFor(e => e.Name).NotEmpty().WithMessage("A custom effect needs a name a player will recognise.");
-            RuleFor(e => e.Key).Null().WithMessage("A custom effect comes from nowhere but the table.");
+            RuleFor(e => e.Key).Null().WithMessage("A custom effect comes from nowhere but the campaign?.");
             RuleFor(e => e.Modifiers).NotEmpty()
                                      .Must(modifiers => modifiers.Count <= MaxModifiers)
                                      .WithMessage($"At most {MaxModifiers} modifiers.");
@@ -115,18 +115,18 @@ public sealed class SelectorSpecViewValidator : AbstractValidator<SelectorSpecVi
         Enum.TryParse<SelectorKind>(kind, ignoreCase: true, out var parsed) ? parsed : null;
 }
 
-public sealed class SetEffectHandler(ITrackerDbContext db, ITableBroadcaster broadcaster)
+public sealed class SetEffectHandler(ITrackerDbContext db, ICampaignBroadcaster broadcaster)
     : IRequestHandler<SetEffect, CharacterSheetView?>
 {
     public async Task<CharacterSheetView?> Handle(SetEffect command, CancellationToken ct)
     {
-        var code = TableCode.Normalize(command.TableCode);
+        var code = CampaignCode.Normalize(command.Code);
 
-        var table = await db.Tables
+        var campaign = await db.Campaigns
             .Include(t => t.Characters).ThenInclude(c => c.Effects)
             .SingleOrDefaultAsync(t => t.Code == code, ct);
 
-        if (table?.Characters.FirstOrDefault(c => c.Id == command.CharacterId) is not { } character)
+        if (campaign?.Characters.FirstOrDefault(c => c.Id == command.CharacterId) is not { } character)
         {
             return null;
         }
@@ -163,7 +163,7 @@ public sealed class SetEffectHandler(ITrackerDbContext db, ITableBroadcaster bro
             // safe, and it is the case that breaks a find-then-insert: both requests see the
             // slot empty and both insert the same key. If the slot now holds what this caller
             // asked for then this caller succeeded, whoever wrote the row, so answer with what
-            // is there. The request that did the writing has already told the table, which is
+            // is there. The request that did the writing has already told the campaign, which is
             // why nothing is broadcast here.
             var settled = await Current(code, command.CharacterId, ct);
             if (settled is null || (command.Effect is not null && settled.Effects.All(e => e.Id != command.EffectId)))
@@ -181,12 +181,12 @@ public sealed class SetEffectHandler(ITrackerDbContext db, ITableBroadcaster bro
 
     async Task<CharacterSheetView?> Current(string code, Guid characterId, CancellationToken ct)
     {
-        var table = await db.Tables
+        var campaign = await db.Campaigns
             .AsNoTracking()
             .Include(t => t.Characters).ThenInclude(c => c.Effects)
             .SingleOrDefaultAsync(t => t.Code == code, ct);
 
-        return table?.Characters.FirstOrDefault(c => c.Id == characterId) is { } character
+        return campaign?.Characters.FirstOrDefault(c => c.Id == characterId) is { } character
             ? SheetViews.Of(character)
             : null;
     }

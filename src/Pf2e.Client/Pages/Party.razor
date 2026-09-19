@@ -12,23 +12,23 @@
     @if (State.Code.Length > 0)
     {
         <p class="code">
-            <span class="code__label">Table</span>
-            <span class="table-code">@State.Code</span>
+            <span class="code__label">Campaign</span>
+            <span class="campaign-code">@State.Code</span>
         </p>
     }
 </header>
 
-<RemoteView T="TableView" Data="State.Table">
+<RemoteView T="CampaignView" Data="State.Campaign">
     <NotAsked>@Entrance</NotAsked>
     <Loading>
         <div class="pending">
-            <Spinner ShowLabel="true" Label="Opening the table" />
+            <Spinner ShowLabel="true" Label="Opening the campaign" />
         </div>
     </Loading>
     <Failed Context="message">
         <div class="panel">
             <Card>
-                <ErrorState Title="Could not open that table">
+                <ErrorState Title="Could not open that campaign">
                     <ChildContent>@message</ChildContent>
                 </ErrorState>
             </Card>
@@ -39,7 +39,7 @@
         @if (!State.Live)
         {
             <p class="offline" role="status">
-                Changes other people make will not arrive until this page can reach the table.
+                Changes other people make will not arrive until this page can reach the campaign.
             </p>
         }
 
@@ -52,9 +52,9 @@
         {
             <div class="panel">
                 <Card>
-                    <EmptyState Title="@(table.Exists ? "Nobody is at this table yet" : "A table waiting for its first character")">
+                    <EmptyState Title="@(table.Exists ? "Nobody is in this campaign yet" : "A campaign waiting for its first character")">
                         <ChildContent>
-                            Read out the code @State.Code so everyone joins the same table, then paste a
+                            Read out the code @State.Code so everyone joins the same campaign, then paste a
                             Pathbuilder export below to put a character on it.
                         </ChildContent>
                     </EmptyState>
@@ -130,7 +130,7 @@
         }
 
         <div class="panel import">
-            <Card Title="Put a character on the table">
+            <Card Title="Put a character in the campaign">
                 <ChildContent>
                     <TextArea Label="Pathbuilder export"
                               Rows="5"
@@ -409,14 +409,14 @@
     RenderFragment Entrance => @<div class="join">
         <div class="panel">
             <Card>
-                <EmptyState Title="Join a table">
+                <EmptyState Title="Join a campaign">
                     <ChildContent>
-                        A table is a short code everyone playing types in. Whoever starts one reads it
+                        A campaign is a short code everyone playing types in. Whoever starts one reads it
                         out; after that every change anybody makes shows up on everybody's screen.
                     </ChildContent>
                     <Action>
                         <div class="entry">
-                            <TextInput Label="Table code"
+                            <TextInput Label="Campaign code"
                                        Placeholder="ABC234"
                                        InputMode="text"
                                        Value="@State.CodeDraft"
@@ -428,8 +428,8 @@
                                     Join
                                 </Button>
                                 <Button Variant="ButtonVariant.Secondary"
-                                        OnClick="() => Dispatcher.Dispatch(new TableCreationRequested())">
-                                    Start a new table
+                                        OnClick="() => Dispatcher.Dispatch(new CampaignCreationRequested())">
+                                    Start a new campaign
                                 </Button>
                             </div>
                         </div>
@@ -455,7 +455,7 @@
     }
 
     CharacterSheetView? Character(Guid id) =>
-        State.Table is RemoteData<TableView>.Loaded loaded
+        State.Campaign is RemoteData<CampaignView>.Loaded loaded
             ? loaded.Value.Characters.FirstOrDefault(character => character.Id == id)
             : null;
 

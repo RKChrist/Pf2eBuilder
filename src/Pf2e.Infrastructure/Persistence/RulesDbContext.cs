@@ -10,7 +10,7 @@ public sealed class RulesDbContext(DbContextOptions<RulesDbContext> options)
 {
     public DbSet<RuleRecord> RuleRecords => Set<RuleRecord>();
     public DbSet<SeedState> SeedState => Set<SeedState>();
-    public DbSet<TrackedTable> Tables => Set<TrackedTable>();
+    public DbSet<Campaign> Campaigns => Set<Campaign>();
     public DbSet<TrackedCharacter> Characters => Set<TrackedCharacter>();
 
     protected override void OnModelCreating(ModelBuilder model)

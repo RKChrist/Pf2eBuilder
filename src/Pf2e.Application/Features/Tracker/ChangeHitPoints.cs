@@ -10,26 +10,26 @@ namespace Pf2e.Application.Features.Tracker;
 
 /// <summary>A signed delta and never an absolute. Two people applying damage at once must sum,
 /// and last-write-wins on an absolute silently loses one of them.</summary>
-public sealed record ChangeHitPoints(string TableCode, Guid CharacterId, int Delta)
+public sealed record ChangeHitPoints(string Code, Guid CharacterId, int Delta)
     : IRequest<CharacterSheetView?>;
 
 public sealed class ChangeHitPointsValidator : AbstractValidator<ChangeHitPoints>
 {
     public ChangeHitPointsValidator()
     {
-        RuleFor(c => c.TableCode).Must(TableCode.IsValid)
-                                 .WithMessage("A table code is four to twelve letters and digits.");
+        RuleFor(c => c.Code).Must(CampaignCode.IsValid)
+                                 .WithMessage("A campaign code is four to twelve letters and digits.");
         RuleFor(c => c.Delta).NotEqual(0).WithMessage("A change of no hit points is not a change.");
         RuleFor(c => c.Delta).InclusiveBetween(-999, 999);
     }
 }
 
-public sealed class ChangeHitPointsHandler(ITrackerDbContext db, ITableBroadcaster broadcaster)
+public sealed class ChangeHitPointsHandler(ITrackerDbContext db, ICampaignBroadcaster broadcaster)
     : IRequestHandler<ChangeHitPoints, CharacterSheetView?>
 {
     public async Task<CharacterSheetView?> Handle(ChangeHitPoints command, CancellationToken ct)
     {
-        var code = TableCode.Normalize(command.TableCode);
+        var code = CampaignCode.Normalize(command.Code);
 
         if (await Load(code, command.CharacterId, ct) is not { } character)
         {
@@ -67,11 +67,11 @@ public sealed class ChangeHitPointsHandler(ITrackerDbContext db, ITableBroadcast
 
     async Task<TrackedCharacter?> Load(string code, Guid characterId, CancellationToken ct)
     {
-        var table = await db.Tables
+        var campaign = await db.Campaigns
             .AsNoTracking()
             .Include(t => t.Characters).ThenInclude(c => c.Effects)
             .SingleOrDefaultAsync(t => t.Code == code, ct);
 
-        return table?.Characters.FirstOrDefault(c => c.Id == characterId);
+        return campaign?.Characters.FirstOrDefault(c => c.Id == characterId);
     }
 }

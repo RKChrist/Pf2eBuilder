@@ -7,7 +7,7 @@ public sealed class RealtimeOptions
     public const string Section = "Realtime";
 
     [Required]
-    public string HubPath { get; set; } = "/hub/table";
+    public string HubPath { get; set; } = "/hub/campaign";
 
     /// <summary>A table runs on phone wifi, where an idle connection is dropped by something in
     /// the middle long before either end notices.</summary>

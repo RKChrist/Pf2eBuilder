@@ -200,15 +200,15 @@ public class TrackerRules
     [InlineData("abc", false)]
     [InlineData("abcdefghijklm", false)]
     [InlineData("ab-cd", false)]
-    public void ATableCodeIsFourToTwelveLettersAndDigits(string code, bool valid)
+    public void ACampaignCodeIsFourToTwelveLettersAndDigits(string code, bool valid)
     {
-        Assert.Equal(valid, TableCode.IsValid(code));
+        Assert.Equal(valid, CampaignCode.IsValid(code));
     }
 
     [Fact]
-    public void NormalizingATableCodeUppercasesAndTrimsSoTwoTypingsAreOneTable()
+    public void NormalizingACampaignCodeUppercasesAndTrimsSoTwoTypingsAreOneCampaign()
     {
-        Assert.Equal("GNIB7", TableCode.Normalize(" gnib7 "));
+        Assert.Equal("GNIB7", CampaignCode.Normalize(" gnib7 "));
     }
 
     [Fact]

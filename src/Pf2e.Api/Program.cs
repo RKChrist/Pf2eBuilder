@@ -60,7 +60,7 @@ builder.Services.AddOptions<HubOptions>()
         hub.KeepAliveInterval = TimeSpan.FromSeconds(mine.Value.KeepAliveSeconds);
         hub.ClientTimeoutInterval = TimeSpan.FromSeconds(mine.Value.ClientTimeoutSeconds);
     });
-builder.Services.AddScoped<ITableBroadcaster, TableBroadcaster>();
+builder.Services.AddScoped<ICampaignBroadcaster, CampaignBroadcaster>();
 
 var app = builder.Build();
 
@@ -155,7 +155,7 @@ if (!string.IsNullOrWhiteSpace(clientRoot))
 
 app.MapRules();
 app.MapTracker();
-app.MapHub<TableHub>(app.Services.GetRequiredService<IOptions<RealtimeOptions>>().Value.HubPath);
+app.MapHub<CampaignHub>(app.Services.GetRequiredService<IOptions<RealtimeOptions>>().Value.HubPath);
 
 app.MapGet("/health", async (RulesDbContext db) => Results.Ok(new
 {

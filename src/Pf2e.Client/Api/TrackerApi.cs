@@ -5,16 +5,16 @@ using Pf2e.Contracts.Tracker;
 
 namespace Pf2e.Client.Api;
 
-public sealed class TrackerApiException(string message) : Exception(message);
+public sealed class CampaignApiException(string message) : Exception(message);
 
 public sealed class TrackerApi(HttpClient http)
 {
-    public Task<TableView> GetTableAsync(string code, CancellationToken ct) =>
-        SendAsync<TableView>(new HttpRequestMessage(HttpMethod.Get, Table(code)), ct);
+    public Task<CampaignView> GetCampaignAsync(string code, CancellationToken ct) =>
+        SendAsync<CampaignView>(new HttpRequestMessage(HttpMethod.Get, Campaign(code)), ct);
 
     public Task<CharacterSheetView> ImportAsync(string code, string pathbuilder, CancellationToken ct) =>
         SendAsync<CharacterSheetView>(
-            Carrying(HttpMethod.Post, $"{Table(code)}/characters", new ImportCharacterRequest(pathbuilder)),
+            Carrying(HttpMethod.Post, $"{Campaign(code)}/characters", new ImportCharacterRequest(pathbuilder)),
             ct);
 
     public Task<CharacterSheetView> ChangeHitPointsAsync(
@@ -22,7 +22,7 @@ public sealed class TrackerApi(HttpClient http)
         SendAsync<CharacterSheetView>(
             Carrying(
                 HttpMethod.Post,
-                $"{Table(code)}/characters/{character}/hit-points",
+                $"{Campaign(code)}/characters/{character}/hit-points",
                 new ChangeHitPointsRequest(delta)),
             ct);
 
@@ -31,11 +31,11 @@ public sealed class TrackerApi(HttpClient http)
         SendAsync<CharacterSheetView>(
             Carrying(
                 HttpMethod.Put,
-                $"{Table(code)}/characters/{character}/effects/{slot}",
+                $"{Campaign(code)}/characters/{character}/effects/{slot}",
                 new SetEffectRequest(effect)),
             ct);
 
-    static string Table(string code) => $"tables/{Uri.EscapeDataString(code)}";
+    static string Campaign(string code) => $"campaigns/{Uri.EscapeDataString(code)}";
 
     static HttpRequestMessage Carrying<T>(HttpMethod method, string url, T body) =>
         new(method, url) { Content = JsonContent.Create(body) };
@@ -49,22 +49,22 @@ public sealed class TrackerApi(HttpClient http)
         }
         catch (HttpRequestException)
         {
-            throw new TrackerApiException("The table service is not reachable.");
+            throw new CampaignApiException("The campaign service is not reachable.");
         }
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new TrackerApiException(await ReadFailureAsync(response, ct));
+            throw new CampaignApiException(await ReadFailureAsync(response, ct));
         }
 
         try
         {
             return await response.Content.ReadFromJsonAsync<T>(ct)
-                   ?? throw new TrackerApiException("The table service sent an empty answer.");
+                   ?? throw new CampaignApiException("The campaign service sent an empty answer.");
         }
-        catch (Exception error) when (error is not (TrackerApiException or OperationCanceledException))
+        catch (Exception error) when (error is not (CampaignApiException or OperationCanceledException))
         {
-            throw new TrackerApiException("The table service sent something this app could not read.");
+            throw new CampaignApiException("The campaign service sent something this app could not read.");
         }
     }
 
@@ -77,7 +77,7 @@ public sealed class TrackerApi(HttpClient http)
     {
         if (response.StatusCode is HttpStatusCode.NotFound)
         {
-            return "That character is no longer at this table.";
+            return "That character is no longer in this campaign.";
         }
 
         try
@@ -94,6 +94,6 @@ public sealed class TrackerApi(HttpClient http)
         {
         }
 
-        return "The table service could not do that.";
+        return "The campaign service could not do that.";
     }
 }

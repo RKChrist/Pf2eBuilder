@@ -11,7 +11,7 @@ using Pf2e.Infrastructure.Persistence;
 namespace Pf2e.Persistence.Tests;
 
 /// <summary>Records what a table would have been told, so a test can assert that it was.</summary>
-sealed class RecordingBroadcaster : ITableBroadcaster
+sealed class RecordingBroadcaster : ICampaignBroadcaster
 {
     public List<(string Code, CharacterSheetView Sheet)> Sent { get; } = [];
 
@@ -55,10 +55,10 @@ public class TrackerRules(SeededDatabase database) : IClassFixture<SeededDatabas
             .Handle(new SetEffect(code, characterId, slot, effect), default);
     }
 
-    async Task<TableView> Read(string code)
+    async Task<CampaignView> Read(string code)
     {
         await using var db = database.NewContext();
-        return await new GetTableHandler(db).Handle(new GetTable(code), default);
+        return await new GetCampaignHandler(db).Handle(new GetCampaign(code), default);
     }
 
     static string Shape(CharacterSheetView sheet) =>

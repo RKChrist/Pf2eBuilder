@@ -9,7 +9,7 @@ namespace Pf2e.Application.Abstractions;
 /// </summary>
 public interface ITrackerDbContext
 {
-    DbSet<TrackedTable> Tables { get; }
+    DbSet<Campaign> Campaigns { get; }
 
     DbSet<TrackedCharacter> Characters { get; }
 

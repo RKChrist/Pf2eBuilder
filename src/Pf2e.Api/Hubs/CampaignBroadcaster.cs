@@ -5,8 +5,8 @@ using Pf2e.Domain;
 
 namespace Pf2e.Api.Hubs;
 
-public sealed class TableBroadcaster(IHubContext<TableHub> hub) : ITableBroadcaster
+public sealed class CampaignBroadcaster(IHubContext<CampaignHub> hub) : ICampaignBroadcaster
 {
     public Task CharacterChangedAsync(string tableCode, CharacterSheetView sheet, CancellationToken ct) =>
-        hub.Clients.Group(TableCode.Normalize(tableCode)).SendAsync("CharacterChanged", sheet, ct);
+        hub.Clients.Group(CampaignCode.Normalize(tableCode)).SendAsync("CharacterChanged", sheet, ct);
 }

@@ -10,7 +10,7 @@ public sealed class PartyEffects
 {
     readonly TrackerApi _tracker;
     readonly RulesApi _rules;
-    readonly TableHub _hub;
+    readonly CampaignHub _hub;
     readonly IState<PartyState> _state;
     readonly TimeSpan _debounce;
 
@@ -20,7 +20,7 @@ public sealed class PartyEffects
     public PartyEffects(
         TrackerApi tracker,
         RulesApi rules,
-        TableHub hub,
+        CampaignHub hub,
         IState<PartyState> state,
         IOptions<ApiOptions> options,
         IDispatcher dispatcher)
@@ -37,10 +37,10 @@ public sealed class PartyEffects
     [EffectMethod]
     public async Task Handle(JoinRequested action, IDispatcher dispatcher)
     {
-        var code = TableCodes.Normalize(action.Code);
-        if (!TableCodes.IsValid(code))
+        var code = CampaignCodes.Normalize(action.Code);
+        if (!CampaignCodes.IsValid(code))
         {
-            dispatcher.Dispatch(new TableFailed("A table code is four to twelve letters and digits."));
+            dispatcher.Dispatch(new CampaignFailed("A campaign code is four to twelve letters and digits."));
             return;
         }
 
@@ -48,31 +48,31 @@ public sealed class PartyEffects
     }
 
     [EffectMethod]
-    public async Task Handle(TableCreationRequested _, IDispatcher dispatcher)
+    public async Task Handle(CampaignCreationRequested _, IDispatcher dispatcher)
     {
         const int draws = 5;
 
         for (var draw = 0; draw < draws; draw++)
         {
-            TableView table;
+            CampaignView table;
             try
             {
-                table = await _tracker.GetTableAsync(TableCodes.Draw(), CancellationToken.None);
+                table = await _tracker.GetCampaignAsync(CampaignCodes.Draw(), CancellationToken.None);
             }
-            catch (TrackerApiException failure)
+            catch (CampaignApiException failure)
             {
-                dispatcher.Dispatch(new TableFailed(failure.Message));
+                dispatcher.Dispatch(new CampaignFailed(failure.Message));
                 return;
             }
 
             if (!table.Exists)
             {
-                dispatcher.Dispatch(new TableOpened(table));
+                dispatcher.Dispatch(new CampaignOpened(table));
                 return;
             }
         }
 
-        dispatcher.Dispatch(new TableFailed(
+        dispatcher.Dispatch(new CampaignFailed(
             $"Every one of {draws} codes this app drew is already a table. Try again."));
     }
 
@@ -82,11 +82,11 @@ public sealed class PartyEffects
     /// working. Not live is a state a player can be shown.
     /// </summary>
     [EffectMethod]
-    public async Task Handle(TableOpened action, IDispatcher dispatcher)
+    public async Task Handle(CampaignOpened action, IDispatcher dispatcher)
     {
         try
         {
-            await _hub.JoinAsync(action.Table.Code, CancellationToken.None);
+            await _hub.JoinAsync(action.Campaign.Code, CancellationToken.None);
             dispatcher.Dispatch(new LiveJoined());
         }
         catch (Exception failure) when (failure is not OperationCanceledException)
@@ -106,7 +106,7 @@ public sealed class PartyEffects
                 await _tracker.ImportAsync(now.Code, now.PasteDraft, CancellationToken.None)));
             dispatcher.Dispatch(new ImportSucceeded());
         }
-        catch (TrackerApiException failure)
+        catch (CampaignApiException failure)
         {
             dispatcher.Dispatch(new ImportFailed(failure.Message));
         }
@@ -189,11 +189,11 @@ public sealed class PartyEffects
     {
         try
         {
-            dispatcher.Dispatch(new TableOpened(await _tracker.GetTableAsync(code, CancellationToken.None)));
+            dispatcher.Dispatch(new CampaignOpened(await _tracker.GetCampaignAsync(code, CancellationToken.None)));
         }
-        catch (TrackerApiException failure)
+        catch (CampaignApiException failure)
         {
-            dispatcher.Dispatch(new TableFailed(failure.Message));
+            dispatcher.Dispatch(new CampaignFailed(failure.Message));
         }
     }
 
@@ -203,7 +203,7 @@ public sealed class PartyEffects
         {
             dispatcher.Dispatch(new CharacterUpdated(await call(_state.Value.Code)));
         }
-        catch (TrackerApiException failure)
+        catch (CampaignApiException failure)
         {
             dispatcher.Dispatch(new ActionFailed(failure.Message));
         }

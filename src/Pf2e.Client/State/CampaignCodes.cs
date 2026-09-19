@@ -3,10 +3,10 @@ using System.Security.Cryptography;
 namespace Pf2e.Client.State;
 
 /// <summary>
-/// A table is made up here and the server accepts any valid code, which is why there is no
+/// A campaign code is made up here and the server accepts any valid code, which is why there is no
 /// operation that creates one.
 /// </summary>
-public static class TableCodes
+public static class CampaignCodes
 {
     public const int Length = 6;
 

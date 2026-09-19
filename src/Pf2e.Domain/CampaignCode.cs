@@ -1,11 +1,11 @@
 namespace Pf2e.Domain;
 
 /// <summary>
-/// A table is a short code and anyone with the code is at that table. Generation lives in the
+/// A campaign is a short code and anyone with the code is in that campaign. Generation lives in the
 /// client: it makes a code up and the server accepts any valid one, which is why there is no
-/// operation that creates a table.
+/// operation that creates a campaign.
 /// </summary>
-public static class TableCode
+public static class CampaignCode
 {
     public const int GeneratedLength = 6;
 

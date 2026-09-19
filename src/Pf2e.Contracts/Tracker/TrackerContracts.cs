@@ -47,9 +47,9 @@ public sealed record CharacterSheetView(
     IReadOnlyList<ActiveEffectView> Effects);
 
 /// <summary>Exists is false for a code nobody has imported into yet. Anyone with a code is at
-/// that table, so an unknown code is a table waiting to be started rather than an error; the
+/// that campaign, so an unknown code is a campaign waiting to be started rather than an error; the
 /// screen still needs to tell the two apart so a mistyped code does not look like a join.</summary>
-public sealed record TableView(string Code, bool Exists, IReadOnlyList<CharacterSheetView> Characters);
+public sealed record CampaignView(string Code, bool Exists, IReadOnlyList<CharacterSheetView> Characters);
 
 public sealed record ImportCharacterRequest(string Pathbuilder);
 

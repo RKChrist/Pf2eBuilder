@@ -36,12 +36,12 @@ public sealed record PartyState
 
     public string CodeDraft { get; init; } = string.Empty;
 
-    public RemoteData<TableView> Table { get; init; } = new RemoteData<TableView>.NotAsked();
+    public RemoteData<CampaignView> Campaign { get; init; } = new RemoteData<CampaignView>.NotAsked();
 
     public string PasteDraft { get; init; } = string.Empty;
 
-    /// <summary>Separate from <see cref="Table"/> on purpose: a paste that will not import must
-    /// not blank the table everyone at it is reading.</summary>
+    /// <summary>Separate from <see cref="Campaign"/> on purpose: a paste that will not import must
+    /// not blank the campaign everyone in it is reading.</summary>
     public bool Importing { get; init; }
 
     public string? ImportError { get; init; }
@@ -61,11 +61,11 @@ public sealed record CodeDraftChanged(string Draft);
 
 public sealed record JoinRequested(string Code);
 
-public sealed record TableCreationRequested;
+public sealed record CampaignCreationRequested;
 
-public sealed record TableOpened(TableView Table);
+public sealed record CampaignOpened(CampaignView Campaign);
 
-public sealed record TableFailed(string Message);
+public sealed record CampaignFailed(string Message);
 
 public sealed record PasteDraftChanged(string Draft);
 
@@ -129,25 +129,25 @@ public static class PartyReducers
 
     [ReducerMethod]
     public static PartyState On(PartyState state, JoinRequested _) =>
-        state with { Table = new RemoteData<TableView>.Loading() };
+        state with { Campaign = new RemoteData<CampaignView>.Loading() };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, TableCreationRequested _) =>
-        state with { Table = new RemoteData<TableView>.Loading() };
+    public static PartyState On(PartyState state, CampaignCreationRequested _) =>
+        state with { Campaign = new RemoteData<CampaignView>.Loading() };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, TableOpened action) => state with
+    public static PartyState On(PartyState state, CampaignOpened action) => state with
     {
-        Code = action.Table.Code,
+        Code = action.Campaign.Code,
         CodeDraft = string.Empty,
-        Table = new RemoteData<TableView>.Loaded(action.Table),
+        Campaign = new RemoteData<CampaignView>.Loaded(action.Campaign),
         ImportError = null,
         ActionError = null,
     };
 
     [ReducerMethod]
-    public static PartyState On(PartyState state, TableFailed action) =>
-        state with { Table = new RemoteData<TableView>.Failed(action.Message) };
+    public static PartyState On(PartyState state, CampaignFailed action) =>
+        state with { Campaign = new RemoteData<CampaignView>.Failed(action.Message) };
 
     [ReducerMethod]
     public static PartyState On(PartyState state, PasteDraftChanged action) =>
@@ -168,7 +168,7 @@ public static class PartyReducers
     [ReducerMethod]
     public static PartyState On(PartyState state, CharacterUpdated action)
     {
-        if (state.Table is not RemoteData<TableView>.Loaded loaded)
+        if (state.Campaign is not RemoteData<CampaignView>.Loaded loaded)
         {
             return state;
         }
@@ -182,7 +182,7 @@ public static class PartyReducers
 
         return state with
         {
-            Table = new RemoteData<TableView>.Loaded(
+            Campaign = new RemoteData<CampaignView>.Loaded(
                 loaded.Value with { Exists = true, Characters = replaced }),
         };
     }
