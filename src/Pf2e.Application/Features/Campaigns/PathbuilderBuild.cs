@@ -117,6 +117,8 @@ internal sealed record PathbuilderBuild(Character Build, int ArmorPotency)
                 Skills: ReadSkills(proficiencies, build),
                 Weapons: ReadWeapons(build),
                 Spellcasting: ReadSpellcasting(build),
+                Feats: ReadFeats(build),
+                Spells: ReadSpells(build),
                 AncestryHitPoints: Int(attributes, "ancestryhp", 0),
                 ClassHitPoints: Int(attributes, "classhp", 0),
                 BonusHitPoints: Int(attributes, "bonushp", 0),
@@ -191,6 +193,89 @@ internal sealed record PathbuilderBuild(Character Build, int ArmorPotency)
                     w.Bonus,
                     AttributeKind.Strength)),
         ];
+    }
+
+    /// <summary>
+    /// The export writes a feat as ["Bardic Lore", null, "Class Feat", 1]: a name, a choice made
+    /// inside it, its kind and the level it was taken at. The second slot is the feat's own
+    /// option and is not a feat, so it is left alone.
+    /// </summary>
+    static ImmutableArray<SheetEntry> ReadFeats(JsonElement? build)
+    {
+        if (build is not { } parent
+            || !parent.TryGetProperty("feats", out var feats)
+            || feats.ValueKind is not JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        var taken = new List<SheetEntry>();
+        foreach (var feat in feats.EnumerateArray().Where(f => f.ValueKind is JsonValueKind.Array))
+        {
+            var parts = feat.EnumerateArray().ToList();
+            if (parts.Count == 0 || parts[0].ValueKind is not JsonValueKind.String)
+            {
+                continue;
+            }
+
+            var name = parts[0].GetString();
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                continue;
+            }
+
+            var kind = parts.Count > 2 && parts[2].ValueKind is JsonValueKind.String
+                ? parts[2].GetString()!
+                : "Feat";
+            var level = parts.Count > 3 && parts[3].TryGetInt32(out var taken1) ? taken1 : 1;
+
+            taken.Add(new SheetEntry(name, kind, level, null));
+        }
+
+        return [.. taken];
+    }
+
+    /// <summary>Every spell in every caster block, by rank. A dual-class character has two
+    /// blocks and both of their repertoires are theirs, so unlike the spell attack this does not
+    /// stop at the first.</summary>
+    static ImmutableArray<SheetEntry> ReadSpells(JsonElement? build)
+    {
+        if (build is not { } parent
+            || !parent.TryGetProperty("spellCasters", out var casters)
+            || casters.ValueKind is not JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        var known = new List<SheetEntry>();
+        foreach (var caster in casters.EnumerateArray().Where(c => c.ValueKind is JsonValueKind.Object))
+        {
+            if (!caster.TryGetProperty("spells", out var ranks) || ranks.ValueKind is not JsonValueKind.Array)
+            {
+                continue;
+            }
+
+            foreach (var rank in ranks.EnumerateArray().Where(r => r.ValueKind is JsonValueKind.Object))
+            {
+                var level = Int(rank, "spellLevel", 0);
+                if (!rank.TryGetProperty("list", out var list) || list.ValueKind is not JsonValueKind.Array)
+                {
+                    continue;
+                }
+
+                foreach (var spell in list.EnumerateArray().Where(s => s.ValueKind is JsonValueKind.String))
+                {
+                    var name = spell.GetString();
+                    if (!string.IsNullOrWhiteSpace(name))
+                    {
+                        known.Add(new SheetEntry(name, level == 0 ? "Cantrip" : $"Rank {level}", level, null));
+                    }
+                }
+            }
+        }
+
+        // The same cantrip can be in two blocks, and one row per copy would read as two spells.
+        return [.. known.DistinctBy(entry => (entry.Name, entry.Level))];
     }
 
     /// <summary>The first caster block. A dual-class character can hold two and this shows the

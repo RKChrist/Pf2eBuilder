@@ -110,7 +110,14 @@ public sealed record CharacterSheetView(
     int? DowntimeTaskLevel,
     /// <summary>The DC that task level comes to, so no screen carries the table. Null when no
     /// task level was set.</summary>
-    int? DowntimeDc);
+    int? DowntimeDc,
+    /// <summary>The feats and spells off this character's own sheet. RuleId is the seeded
+    /// record where the ruleset holds one, and null for homebrew or a name newer than the
+    /// snapshot, which still shows and simply does not open.</summary>
+    IReadOnlyList<SheetEntryView> Feats,
+    IReadOnlyList<SheetEntryView> Spells);
+
+public sealed record SheetEntryView(string Name, string Kind, int Level, string? RuleId);
 
 /// <summary>One thing a character can be doing between fights, with the sentence a screen
 /// shows under it. The list is the engine's, so a screen never spells one out itself.</summary>

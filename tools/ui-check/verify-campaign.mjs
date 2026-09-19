@@ -87,6 +87,35 @@ await waitFor(dm, '.character');
 check('the imported character is on the card', (await dm.eval(`document.querySelector('.character__name').textContent.trim()`)) === 'Gnibbo');
 await shot(dm, 'dm-01-exploration');
 
+// The party's own feats and spells, joined to the records the ruleset holds.
+await waitFor(dm, '[data-owned]');
+const owned = await dm.eval(`(() => {
+  const panel = document.querySelector('[data-owned]');
+  panel.open = true;
+  return {
+    summary: panel.querySelector('.owned__count').textContent.trim(),
+    kinds: [...panel.querySelectorAll('.owned__kind')].map(h => h.textContent.trim()),
+    openable: panel.querySelectorAll('a.owned__entry').length,
+    unopenable: [...panel.querySelectorAll('.owned__entry--unknown .owned__entry-kind')].map(e => e.textContent.trim()),
+    named: [...panel.querySelectorAll('.owned__entry-name')].map(e => e.textContent.trim()),
+  };
+})()`);
+check('the party panel counts what each character has', /\d+ feats, \d+ spells/.test(owned.summary), owned.summary);
+check('grouped the way a character sheet is', owned.kinds.includes('Class Feat') && owned.kinds.includes('Cantrip'),
+  owned.kinds.join(', '));
+// Three of the bard's names are pre-Remaster ones whose current records are called something
+// else. The pull drops superseded records, so there is no alias table in the repo to follow
+// and the honest contract is that every entry either opens or says why it cannot.
+check('most of them open their rule', owned.openable >= owned.named.length - 4,
+  `${owned.openable} of ${owned.named.length}`);
+check('and the rest say why rather than looking broken',
+  owned.openable + owned.unopenable.length === owned.named.length
+  && owned.unopenable.every(t => t.includes('no record under this name')),
+  owned.unopenable.join(' | ') || 'all of them opened');
+check('including a spell off the repertoire', owned.named.includes('Invisibility'), owned.named.slice(0, 8).join(', '));
+await shot(dm, 'dm-08-reference');
+
+
 // Exploration: what everyone is doing, and the one that changes how the fight starts.
 check('exploration asks what each character is doing', await dm.eval(
   `!!document.querySelector('[data-doing]')`));

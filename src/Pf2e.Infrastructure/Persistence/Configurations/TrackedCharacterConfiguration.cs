@@ -57,6 +57,28 @@ public sealed class TrackedCharacterConfiguration : IEntityTypeConfiguration<Tra
                           v => Read<WeaponAttack>(Write(v))))
                   .IsRequired();
 
+        // The same shape as Skills and Weapons: read whole, replaced whole on re-import, never
+        // queried inside.
+        characters.Property(c => c.Feats)
+                  .HasConversion(
+                      feats => Write(feats),
+                      json => Read<SheetEntry>(json),
+                      new ValueComparer<ImmutableArray<SheetEntry>>(
+                          (a, b) => Write(a) == Write(b),
+                          v => Write(v).GetHashCode(StringComparison.Ordinal),
+                          v => Read<SheetEntry>(Write(v))))
+                  .IsRequired();
+
+        characters.Property(c => c.Spells)
+                  .HasConversion(
+                      spells => Write(spells),
+                      json => Read<SheetEntry>(json),
+                      new ValueComparer<ImmutableArray<SheetEntry>>(
+                          (a, b) => Write(a) == Write(b),
+                          v => Write(v).GetHashCode(StringComparison.Ordinal),
+                          v => Read<SheetEntry>(Write(v))))
+                  .IsRequired();
+
         // One value or none, so null stays null rather than becoming an empty object a reader
         // would have to distinguish from a caster with no tradition.
         characters.Property(c => c.Spellcasting)

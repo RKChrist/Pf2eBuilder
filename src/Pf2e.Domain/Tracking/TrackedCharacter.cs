@@ -50,6 +50,8 @@ public sealed class TrackedCharacter
     public ImmutableArray<SkillProficiency> Skills { get; private set; } = [];
     public ImmutableArray<WeaponAttack> Weapons { get; private set; } = [];
     public Spellcasting? Spellcasting { get; private set; }
+    public ImmutableArray<SheetEntry> Feats { get; private set; } = [];
+    public ImmutableArray<SheetEntry> Spells { get; private set; } = [];
 
     public int CurrentHitPoints { get; set; }
     public int TemporaryHitPoints { get; set; }
@@ -120,7 +122,9 @@ public sealed class TrackedCharacter
         BonusHitPointsPerLevel,
         Skills,
         Weapons,
-        Spellcasting);
+        Spellcasting,
+        Feats,
+        Spells);
 
     public SessionState ToSession(IEnumerable<EffectApplication> campaignEffects) => new(
         CurrentHitPoints,
@@ -161,5 +165,7 @@ public sealed class TrackedCharacter
         Skills = build.Skills;
         Weapons = build.Weapons;
         Spellcasting = build.Spellcasting;
+        Feats = build.Feats;
+        Spells = build.Spells;
     }
 }

@@ -46,10 +46,15 @@ internal static class SheetViews
             ImmuneFor(character, elapsedMinutes),
             character.DowntimeActivity,
             character.DowntimeTaskLevel,
-            character.DowntimeTaskLevel is { } task ? LevelBasedDc.For(task) : null);
+            character.DowntimeTaskLevel is { } task ? LevelBasedDc.For(task) : null,
+            [.. character.Feats.Select(Of)],
+            [.. character.Spells.Select(Of)]);
     }
 
     static NamedBreakdownView Of(NamedBreakdown named) => new(named.Name, Of(named.Value), named.Rank?.ToString());
+
+    static SheetEntryView Of(SheetEntry entry) =>
+        new(entry.Name, entry.Kind, entry.Level, entry.RuleId);
 
     /// <summary>Minutes left on the Treat Wounds immunity, subtracted here so no screen has to.
     /// Zero for somebody who has never been Treated, which is the same answer as somebody whose

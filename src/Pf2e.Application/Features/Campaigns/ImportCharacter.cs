@@ -79,7 +79,45 @@ public sealed class ImportCharacterHandler(
     /// would then refuse to combine.
     /// </summary>
     async Task<Character> WithSeededGear(PathbuilderBuild parsed, CancellationToken ct) =>
-        await WithSeededWeapons(await WithSeededArmor(parsed, ct), ct);
+        await WithSeededEntries(await WithSeededWeapons(await WithSeededArmor(parsed, ct), ct), ct);
+
+    /// <summary>
+    /// Joins the feats and spells the export named to the records the ruleset holds, so the
+    /// reference screen can open the rule rather than only printing the name.
+    /// <para>Matched on the name, in memory, over the two categories rather than by a provider
+    /// whose collation decides whether "fear" finds "Fear". A name the ruleset does not hold
+    /// keeps a null id and still shows: homebrew is somebody's character too, and a feat newer
+    /// than the snapshot is not the player's mistake.</para>
+    /// </summary>
+    async Task<Character> WithSeededEntries(Character build, CancellationToken ct)
+    {
+        if (build.Feats.Length == 0 && build.Spells.Length == 0)
+        {
+            return build;
+        }
+
+        var wanted = build.Feats.Concat(build.Spells)
+            .Select(entry => entry.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var records = (await rules.RuleRecords.AsNoTracking()
+                .Where(r => r.Category == "feat" || r.Category == "spell")
+                .Select(r => new { r.Id, r.Name, r.Category })
+                .ToListAsync(ct))
+            .Where(r => wanted.Contains(r.Name))
+            .ToList();
+
+        string? Resolve(string category, string name) =>
+            records.FirstOrDefault(r =>
+                r.Category == category
+                && string.Equals(r.Name, name, StringComparison.OrdinalIgnoreCase))?.Id;
+
+        return build with
+        {
+            Feats = [.. build.Feats.Select(feat => feat with { RuleId = Resolve("feat", feat.Name) })],
+            Spells = [.. build.Spells.Select(spell => spell with { RuleId = Resolve("spell", spell.Name) })],
+        };
+    }
 
     /// <summary>
     /// Which attribute governs an attack is not in the export and is in the ruleset: a ranged

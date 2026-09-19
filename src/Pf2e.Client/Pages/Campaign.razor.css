@@ -911,3 +911,83 @@
     color: var(--text-secondary);
     text-wrap: pretty;
 }
+
+.reference {
+    padding: var(--space-3) var(--layout-gutter) 0;
+}
+
+.reference__heading {
+    margin: 0 0 var(--space-2);
+    font-size: var(--font-size-subhead);
+}
+
+/* Folded per character, because six players is six sheets worth of feats and the panel is for
+   settling one question rather than for reading. */
+.owned {
+    border-top: var(--border-hair) solid var(--line-subtle);
+}
+
+.owned__summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-height: var(--tap-min);
+    padding: var(--space-2) 0;
+    cursor: pointer;
+}
+
+.owned__name {
+    font-size: var(--font-size-body);
+}
+
+.owned__count {
+    font-size: var(--font-size-chip);
+    color: var(--text-muted);
+}
+
+.owned__kind {
+    margin: var(--space-3) 0 var(--space-1);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.owned__entries {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+    gap: var(--space-1);
+}
+
+.owned__entry {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: var(--tap-min);
+    justify-content: center;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-chip);
+    text-decoration: none;
+}
+
+a.owned__entry:hover {
+    background: var(--surface-sunken);
+}
+
+.owned__entry-name {
+    font-size: var(--font-size-data);
+    color: var(--text-primary);
+}
+
+.owned__entry-kind {
+    font-size: var(--font-size-chip);
+    color: var(--text-muted);
+}
+
+/* Not an error state. Homebrew is somebody's character too; it just has no record to open. */
+.owned__entry--unknown .owned__entry-name {
+    color: var(--text-secondary);
+}

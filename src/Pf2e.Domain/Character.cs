@@ -42,6 +42,17 @@ public readonly record struct SkillProficiency(string Name, ProficiencyRank Rank
 /// </summary>
 public readonly record struct WeaponAttack(string Name, string Display, int Bonus, AttributeKind GovernedBy);
 
+/// <summary>
+/// One thing off the character's own sheet that the ruleset also has a record of.
+/// <para><see cref="RuleId"/> is the seeded record, resolved at import by name, and null for
+/// something the ruleset does not hold: homebrew, a typo, or a feat newer than the snapshot. A
+/// null id is why this carries the name too. The reference screen shows the name either way and
+/// only offers to open the ones it can.</para>
+/// <para><see cref="Kind"/> is the export's own word for it, such as "Class Feat" or "Ancestry
+/// Feat", or the spell's rank written as "Cantrip" or "Rank 3".</para>
+/// </summary>
+public readonly record struct SheetEntry(string Name, string Kind, int Level, string? RuleId);
+
 /// <summary>The tradition and rank a spell attack and spell DC are built from. Null on a
 /// character who casts nothing, which is most fighters.</summary>
 public readonly record struct Spellcasting(string Tradition, ProficiencyRank Rank, AttributeKind Attribute);
@@ -72,11 +83,17 @@ public sealed record Character(
     int BonusHitPointsPerLevel,
     ImmutableArray<SkillProficiency> Skills = default,
     ImmutableArray<WeaponAttack> Weapons = default,
-    Spellcasting? Spellcasting = null)
+    Spellcasting? Spellcasting = null,
+    ImmutableArray<SheetEntry> Feats = default,
+    ImmutableArray<SheetEntry> Spells = default)
 {
     // A default ImmutableArray is not an empty one and throws on enumeration. These arrive from
     // deserialization and from a positional default, where absent is exactly that.
     public ImmutableArray<SkillProficiency> Skills { get; init; } = Skills.IsDefault ? [] : Skills;
 
     public ImmutableArray<WeaponAttack> Weapons { get; init; } = Weapons.IsDefault ? [] : Weapons;
+
+    public ImmutableArray<SheetEntry> Feats { get; init; } = Feats.IsDefault ? [] : Feats;
+
+    public ImmutableArray<SheetEntry> Spells { get; init; } = Spells.IsDefault ? [] : Spells;
 }
