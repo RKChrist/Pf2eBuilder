@@ -445,7 +445,7 @@
 
         if (Browser.Value.ActiveGroup != GroupKey.Play)
         {
-            Dispatcher.Dispatch(new GroupSelected(GroupKey.Play));
+            Dispatcher.Dispatch(new BoardOpened(GroupKey.Play));
         }
 
         if (ConditionsStore.Value.Conditions is RemoteData<IReadOnlyList<ConditionSummary>>.NotAsked)

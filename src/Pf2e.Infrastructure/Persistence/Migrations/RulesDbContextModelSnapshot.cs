@@ -254,6 +254,11 @@ namespace Pf2e.Infrastructure.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("SeedFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTimeOffset>("SeededAtUtc")
                         .HasColumnType("TEXT");
 

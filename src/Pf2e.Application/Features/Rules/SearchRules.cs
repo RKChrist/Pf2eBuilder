@@ -32,47 +32,27 @@ public sealed class SearchRulesValidator : AbstractValidator<SearchRules>
     }
 }
 
+/// <summary>
+/// A name search ranks the exact name first, then names that start with the query, then names
+/// that merely contain it, alphabetically within each. Typing "shield" has to find Shield before
+/// Reinforced Shield Block, or search looks broken on the most common thing anyone asks it.
+/// </summary>
 public sealed class SearchRulesHandler(IRulesDbContext db) : IRequestHandler<SearchRules, RuleSearchResult>
 {
     public async Task<RuleSearchResult> Handle(SearchRules query, CancellationToken ct)
     {
-        IQueryable<RuleRecord> records = db.RuleRecords.AsNoTracking();
+        var records = db.RuleRecords.AsNoTracking()
+            .InCategory(query.Category)
+            .NameContains(query.Name)
+            .LevelBetween(query.MinLevel, query.MaxLevel);
 
-        if (query.Category is { Length: > 0 } category)
-        {
-            records = records.Where(r => r.Category == category);
-        }
-
-        if (query.Name is { Length: > 0 } name)
-        {
-            records = records.Where(r => EF.Functions.Like(r.Name, $"%{name}%"));
-        }
-
-        if (query.MinLevel is int min)
-        {
-            records = records.Where(r => r.Level >= min);
-        }
-
-        if (query.MaxLevel is int max)
-        {
-            records = records.Where(r => r.Level <= max);
-        }
-
-        // Traits are a JSON array behind a value converter, so no provider can translate this
-        // into SQL. Filtering after materialising is correct rather than merely convenient: the
-        // largest category is 6,568 rows, and paging before the filter would drop matches.
         if (query.Trait is { Length: > 0 } trait)
         {
-            var matched = (await records.ToListAsync(ct))
-                .Where(r => r.Traits.Contains(trait, StringComparer.OrdinalIgnoreCase))
-                .ToList();
-
-            return Page(matched, matched.Count, query);
+            return await ByTrait(records, trait, query, ct);
         }
 
         var total = await records.CountAsync(ct);
-        var page = await records
-            .OrderBy(r => r.Name).ThenBy(r => r.Id)
+        var page = await Ranked(records, query.Name)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
             .ToListAsync(ct);
@@ -80,15 +60,52 @@ public sealed class SearchRulesHandler(IRulesDbContext db) : IRequestHandler<Sea
         return new RuleSearchResult([.. page.Select(RuleSummaries.Of)], total, query.Page, query.PageSize);
     }
 
-    static RuleSearchResult Page(List<RuleRecord> all, int total, SearchRules query)
+    static IOrderedQueryable<RuleRecord> Ranked(IQueryable<RuleRecord> records, string? name)
     {
-        var items = all
-            .OrderBy(r => r.Name, StringComparer.Ordinal).ThenBy(r => r.Id, StringComparer.Ordinal)
+        if (name is not { Length: > 0 })
+        {
+            return records.OrderBy(r => r.Name).ThenBy(r => r.Id);
+        }
+
+        var lowered = name.ToLowerInvariant();
+        return records
+            .OrderBy(r => r.Name.ToLower() == lowered ? 0 : r.Name.ToLower().StartsWith(lowered) ? 1 : 2)
+            .ThenBy(r => r.Name)
+            .ThenBy(r => r.Id);
+    }
+
+    /// <summary>
+    /// Traits are a JSON array behind a value converter, so no provider can translate the filter
+    /// into SQL, and paging before it would drop matches. Every candidate is read, but only the
+    /// columns the filter and the order need; the mechanics document is read for the one page
+    /// that is returned.
+    /// </summary>
+    async Task<RuleSearchResult> ByTrait(IQueryable<RuleRecord> records, string trait, SearchRules query, CancellationToken ct)
+    {
+        var candidates = await records.Select(r => new { r.Id, r.Name, r.Traits }).ToListAsync(ct);
+        var matched = candidates.Where(r => RuleFilters.HasTrait(r.Traits, trait)).ToList();
+
+        var pageIds = matched
+            .OrderBy(r => Rank(r.Name, query.Name))
+            .ThenBy(r => r.Name, StringComparer.Ordinal)
+            .ThenBy(r => r.Id, StringComparer.Ordinal)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
-            .Select(RuleSummaries.Of)
+            .Select(r => r.Id)
             .ToList();
 
-        return new RuleSearchResult(items, total, query.Page, query.PageSize);
+        var rows = await db.RuleRecords.AsNoTracking()
+            .Where(r => pageIds.Contains(r.Id))
+            .ToDictionaryAsync(r => r.Id, ct);
+
+        return new RuleSearchResult(
+            [.. pageIds.Select(id => RuleSummaries.Of(rows[id]))], matched.Count, query.Page, query.PageSize);
     }
+
+    /// <summary>The in-memory twin of <see cref="Ranked"/>, for the one path SQL cannot filter.</summary>
+    static int Rank(string candidate, string? name) =>
+        name is not { Length: > 0 } ? 0
+        : candidate.Equals(name, StringComparison.OrdinalIgnoreCase) ? 0
+        : candidate.StartsWith(name, StringComparison.OrdinalIgnoreCase) ? 1
+        : 2;
 }

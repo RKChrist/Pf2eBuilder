@@ -1,0 +1,1026 @@
+[
+  {
+    "id": "skill-18",
+    "name": "Agriculture",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=18",
+    "is_standard_ancestry_feat": false,
+    "primary_source": "Kingmaker Adventure Path",
+    "primary_source_category": "Adventure Paths",
+    "primary_source_group": "Kingmaker",
+    "primary_source_raw": "Kingmaker Adventure Path pg. 522",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2022-10-26",
+    "skill": [
+      "Agriculture"
+    ],
+    "source": [
+      "Kingmaker Adventure Path"
+    ],
+    "source_category": [
+      "Adventure Paths"
+    ],
+    "source_group": [
+      "Kingmaker"
+    ],
+    "source_raw": [
+      "Kingmaker Adventure Path pg. 522"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-19",
+    "name": "Arts",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=19",
+    "is_standard_ancestry_feat": false,
+    "primary_source": "Kingmaker Adventure Path",
+    "primary_source_category": "Adventure Paths",
+    "primary_source_group": "Kingmaker",
+    "primary_source_raw": "Kingmaker Adventure Path pg. 522",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2022-10-26",
+    "skill": [
+      "Arts"
+    ],
+    "source": [
+      "Kingmaker Adventure Path"
+    ],
+    "source_category": [
+      "Adventure Paths"
+    ],
+    "source_group": [
+      "Kingmaker"
+    ],
+    "source_raw": [
+      "Kingmaker Adventure Path pg. 522"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-20",
+    "name": "Boating",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=20",
+    "is_standard_ancestry_feat": false,
+    "primary_source": "Kingmaker Adventure Path",
+    "primary_source_category": "Adventure Paths",
+    "primary_source_group": "Kingmaker",
+    "primary_source_raw": "Kingmaker Adventure Path pg. 522",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2022-10-26",
+    "skill": [
+      "Boating"
+    ],
+    "source": [
+      "Kingmaker Adventure Path"
+    ],
+    "source_category": [
+      "Adventure Paths"
+    ],
+    "source_group": [
+      "Kingmaker"
+    ],
+    "source_raw": [
+      "Kingmaker Adventure Path pg. 522"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-21",
+    "name": "Defense",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=21",
+    "is_standard_ancestry_feat": false,
+    "primary_source": "Kingmaker Adventure Path",
+    "primary_source_category": "Adventure Paths",
+    "primary_source_group": "Kingmaker",
+    "primary_source_raw": "Kingmaker Adventure Path pg. 522",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2022-10-26",
+    "skill": [
+      "Defense"
+    ],
+    "source": [
+      "Kingmaker Adventure Path"
+    ],
+    "source_category": [
+      "Adventure Paths"
+    ],
+    "source_group": [
+      "Kingmaker"
+    ],
+    "source_raw": [
+      "Kingmaker Adventure Path pg. 522"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-22",
+    "name": "Engineering",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=22",
+    "is_standard_ancestry_feat": false,
+    "primary_source": "Kingmaker Adventure Path",
+    "primary_source_category": "Adventure Paths",
+    "primary_source_group": "Kingmaker",
+    "primary_source_raw": "Kingmaker Adventure Path pg. 523",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2022-10-26",
+    "skill": [
+      "Engineering"
+    ],
+    "source": [
+      "Kingmaker Adventure Path"
+    ],
+    "source_category": [
+      "Adventure Paths"
+    ],
+    "source_group": [
+      "Kingmaker"
+    ],
+    "source_raw": [
+      "Kingmaker Adventure Path pg. 523"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-23",
+    "name": "Exploration",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=23",
+    "is_standard_ancestry_feat": false,
+    "primary_source": "Kingmaker Adventure Path",
+    "primary_source_category": "Adventure Paths",
+    "primary_source_group": "Kingmaker",
+    "primary_source_raw": "Kingmaker Adventure Path pg. 524",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2022-10-26",
+    "skill": [
+      "Exploration"
+    ],
+    "source": [
+      "Kingmaker Adventure Path"
+    ],
+    "source_category": [
+      "Adventure Paths"
+    ],
+    "source_group": [
+      "Kingmaker"
+    ],
+    "source_raw": [
+      "Kingmaker Adventure Path pg. 524"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-24",
+    "name": "Folklore",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=24",
+    "is_standard_ancestry_feat": false,
+    "primary_source": "Kingmaker Adventure Path",
+    "primary_source_category": "Adventure Paths",
+    "primary_source_group": "Kingmaker",
+    "primary_source_raw": "Kingmaker Adventure Path pg. 524",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2022-10-26",
+    "skill": [
+      "Folklore"
+    ],
+    "source": [
+      "Kingmaker Adventure Path"
+    ],
+    "source_category": [
+      "Adventure Paths"
+    ],
+    "source_group": [
+      "Kingmaker"
+    ],
+    "source_raw": [
+      "Kingmaker Adventure Path pg. 524"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-25",
+    "name": "Industry",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=25",
+    "is_standard_ancestry_feat": false,
+    "primary_source": "Kingmaker Adventure Path",
+    "primary_source_category": "Adventure Paths",
+    "primary_source_group": "Kingmaker",
+    "primary_source_raw": "Kingmaker Adventure Path pg. 525",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2022-10-26",
+    "skill": [
+      "Industry"
+    ],
+    "source": [
+      "Kingmaker Adventure Path"
+    ],
+    "source_category": [
+      "Adventure Paths"
+    ],
+    "source_group": [
+      "Kingmaker"
+    ],
+    "source_raw": [
+      "Kingmaker Adventure Path pg. 525"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-26",
+    "name": "Intrigue",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=26",
+    "is_standard_ancestry_feat": false,
+    "primary_source": "Kingmaker Adventure Path",
+    "primary_source_category": "Adventure Paths",
+    "primary_source_group": "Kingmaker",
+    "primary_source_raw": "Kingmaker Adventure Path pg. 526",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2022-10-26",
+    "skill": [
+      "Intrigue"
+    ],
+    "source": [
+      "Kingmaker Adventure Path"
+    ],
+    "source_category": [
+      "Adventure Paths"
+    ],
+    "source_group": [
+      "Kingmaker"
+    ],
+    "source_raw": [
+      "Kingmaker Adventure Path pg. 526"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-27",
+    "name": "Magic",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=27",
+    "is_standard_ancestry_feat": false,
+    "primary_source": "Kingmaker Adventure Path",
+    "primary_source_category": "Adventure Paths",
+    "primary_source_group": "Kingmaker",
+    "primary_source_raw": "Kingmaker Adventure Path pg. 526",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2022-10-26",
+    "skill": [
+      "Magic"
+    ],
+    "source": [
+      "Kingmaker Adventure Path"
+    ],
+    "source_category": [
+      "Adventure Paths"
+    ],
+    "source_group": [
+      "Kingmaker"
+    ],
+    "source_raw": [
+      "Kingmaker Adventure Path pg. 526"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-28",
+    "name": "Politics",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=28",
+    "is_standard_ancestry_feat": false,
+    "primary_source": "Kingmaker Adventure Path",
+    "primary_source_category": "Adventure Paths",
+    "primary_source_group": "Kingmaker",
+    "primary_source_raw": "Kingmaker Adventure Path pg. 527",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2022-10-26",
+    "skill": [
+      "Politics"
+    ],
+    "source": [
+      "Kingmaker Adventure Path"
+    ],
+    "source_category": [
+      "Adventure Paths"
+    ],
+    "source_group": [
+      "Kingmaker"
+    ],
+    "source_raw": [
+      "Kingmaker Adventure Path pg. 527"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-29",
+    "name": "Scholarship",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=29",
+    "is_standard_ancestry_feat": false,
+    "primary_source": "Kingmaker Adventure Path",
+    "primary_source_category": "Adventure Paths",
+    "primary_source_group": "Kingmaker",
+    "primary_source_raw": "Kingmaker Adventure Path pg. 527",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2022-10-26",
+    "skill": [
+      "Scholarship"
+    ],
+    "source": [
+      "Kingmaker Adventure Path"
+    ],
+    "source_category": [
+      "Adventure Paths"
+    ],
+    "source_group": [
+      "Kingmaker"
+    ],
+    "source_raw": [
+      "Kingmaker Adventure Path pg. 527"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-30",
+    "name": "Statecraft",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=30",
+    "is_standard_ancestry_feat": false,
+    "primary_source": "Kingmaker Adventure Path",
+    "primary_source_category": "Adventure Paths",
+    "primary_source_group": "Kingmaker",
+    "primary_source_raw": "Kingmaker Adventure Path pg. 528",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2022-10-26",
+    "skill": [
+      "Statecraft"
+    ],
+    "source": [
+      "Kingmaker Adventure Path"
+    ],
+    "source_category": [
+      "Adventure Paths"
+    ],
+    "source_group": [
+      "Kingmaker"
+    ],
+    "source_raw": [
+      "Kingmaker Adventure Path pg. 528"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-31",
+    "name": "Trade",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=31",
+    "is_standard_ancestry_feat": false,
+    "primary_source": "Kingmaker Adventure Path",
+    "primary_source_category": "Adventure Paths",
+    "primary_source_group": "Kingmaker",
+    "primary_source_raw": "Kingmaker Adventure Path pg. 529",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2022-10-26",
+    "skill": [
+      "Trade"
+    ],
+    "source": [
+      "Kingmaker Adventure Path"
+    ],
+    "source_category": [
+      "Adventure Paths"
+    ],
+    "source_group": [
+      "Kingmaker"
+    ],
+    "source_raw": [
+      "Kingmaker Adventure Path pg. 529"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-32",
+    "name": "Warfare",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=32",
+    "is_standard_ancestry_feat": false,
+    "primary_source": "Kingmaker Adventure Path",
+    "primary_source_category": "Adventure Paths",
+    "primary_source_group": "Kingmaker",
+    "primary_source_raw": "Kingmaker Adventure Path pg. 530",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2022-10-26",
+    "skill": [
+      "Warfare"
+    ],
+    "source": [
+      "Kingmaker Adventure Path"
+    ],
+    "source_category": [
+      "Adventure Paths"
+    ],
+    "source_group": [
+      "Kingmaker"
+    ],
+    "source_raw": [
+      "Kingmaker Adventure Path pg. 530"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-33",
+    "name": "Wilderness",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=33",
+    "is_standard_ancestry_feat": false,
+    "primary_source": "Kingmaker Adventure Path",
+    "primary_source_category": "Adventure Paths",
+    "primary_source_group": "Kingmaker",
+    "primary_source_raw": "Kingmaker Adventure Path pg. 530",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2022-10-26",
+    "skill": [
+      "Wilderness"
+    ],
+    "source": [
+      "Kingmaker Adventure Path"
+    ],
+    "source_category": [
+      "Adventure Paths"
+    ],
+    "source_group": [
+      "Kingmaker"
+    ],
+    "source_raw": [
+      "Kingmaker Adventure Path pg. 530"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-34",
+    "name": "Acrobatics",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=34",
+    "attribute": [
+      "Dexterity"
+    ],
+    "is_standard_ancestry_feat": false,
+    "legacy_id": [
+      "skill-1"
+    ],
+    "primary_source": "Player Core",
+    "primary_source_category": "Rulebooks",
+    "primary_source_raw": "Player Core pg. 233",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2023-11-15",
+    "skill": [
+      "Acrobatics"
+    ],
+    "source": [
+      "Player Core"
+    ],
+    "source_category": [
+      "Rulebooks"
+    ],
+    "source_raw": [
+      "Player Core pg. 233"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-35",
+    "name": "Arcana",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=35",
+    "attribute": [
+      "Intelligence"
+    ],
+    "is_standard_ancestry_feat": false,
+    "legacy_id": [
+      "skill-2"
+    ],
+    "primary_source": "Player Core",
+    "primary_source_category": "Rulebooks",
+    "primary_source_raw": "Player Core pg. 234",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2023-11-15",
+    "skill": [
+      "Arcana"
+    ],
+    "source": [
+      "Player Core"
+    ],
+    "source_category": [
+      "Rulebooks"
+    ],
+    "source_raw": [
+      "Player Core pg. 234"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-36",
+    "name": "Athletics",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=36",
+    "attribute": [
+      "Strength"
+    ],
+    "is_standard_ancestry_feat": false,
+    "legacy_id": [
+      "skill-3"
+    ],
+    "primary_source": "Player Core",
+    "primary_source_category": "Rulebooks",
+    "primary_source_raw": "Player Core pg. 234",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2023-11-15",
+    "skill": [
+      "Athletics"
+    ],
+    "source": [
+      "Player Core"
+    ],
+    "source_category": [
+      "Rulebooks"
+    ],
+    "source_raw": [
+      "Player Core pg. 234"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-37",
+    "name": "Crafting",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=37",
+    "attribute": [
+      "Intelligence"
+    ],
+    "is_standard_ancestry_feat": false,
+    "legacy_id": [
+      "skill-4"
+    ],
+    "primary_source": "Player Core",
+    "primary_source_category": "Rulebooks",
+    "primary_source_raw": "Player Core pg. 236",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2023-11-15",
+    "skill": [
+      "Crafting"
+    ],
+    "source": [
+      "Player Core"
+    ],
+    "source_category": [
+      "Rulebooks"
+    ],
+    "source_raw": [
+      "Player Core pg. 236"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-38",
+    "name": "Deception",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=38",
+    "attribute": [
+      "Charisma"
+    ],
+    "is_standard_ancestry_feat": false,
+    "legacy_id": [
+      "skill-5"
+    ],
+    "primary_source": "Player Core",
+    "primary_source_category": "Rulebooks",
+    "primary_source_raw": "Player Core pg. 237",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2023-11-15",
+    "skill": [
+      "Deception"
+    ],
+    "source": [
+      "Player Core"
+    ],
+    "source_category": [
+      "Rulebooks"
+    ],
+    "source_raw": [
+      "Player Core pg. 237"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-39",
+    "name": "Diplomacy",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=39",
+    "attribute": [
+      "Charisma"
+    ],
+    "is_standard_ancestry_feat": false,
+    "legacy_id": [
+      "skill-6"
+    ],
+    "primary_source": "Player Core",
+    "primary_source_category": "Rulebooks",
+    "primary_source_raw": "Player Core pg. 239",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2023-11-15",
+    "skill": [
+      "Diplomacy"
+    ],
+    "source": [
+      "Player Core"
+    ],
+    "source_category": [
+      "Rulebooks"
+    ],
+    "source_raw": [
+      "Player Core pg. 239"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-40",
+    "name": "Intimidation",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=40",
+    "attribute": [
+      "Charisma"
+    ],
+    "is_standard_ancestry_feat": false,
+    "legacy_id": [
+      "skill-7"
+    ],
+    "primary_source": "Player Core",
+    "primary_source_category": "Rulebooks",
+    "primary_source_raw": "Player Core pg. 240",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2023-11-15",
+    "skill": [
+      "Intimidation"
+    ],
+    "source": [
+      "Player Core"
+    ],
+    "source_category": [
+      "Rulebooks"
+    ],
+    "source_raw": [
+      "Player Core pg. 240"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-41",
+    "name": "Lore",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=41",
+    "attribute": [
+      "Intelligence"
+    ],
+    "is_standard_ancestry_feat": false,
+    "legacy_id": [
+      "skill-8"
+    ],
+    "primary_source": "Player Core",
+    "primary_source_category": "Rulebooks",
+    "primary_source_raw": "Player Core pg. 240",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2023-11-15",
+    "skill": [
+      "Lore"
+    ],
+    "source": [
+      "Player Core"
+    ],
+    "source_category": [
+      "Rulebooks"
+    ],
+    "source_raw": [
+      "Player Core pg. 240"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-42",
+    "name": "Medicine",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=42",
+    "attribute": [
+      "Wisdom"
+    ],
+    "is_standard_ancestry_feat": false,
+    "legacy_id": [
+      "skill-9"
+    ],
+    "primary_source": "Player Core",
+    "primary_source_category": "Rulebooks",
+    "primary_source_raw": "Player Core pg. 241",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2023-11-15",
+    "skill": [
+      "Medicine"
+    ],
+    "source": [
+      "Player Core"
+    ],
+    "source_category": [
+      "Rulebooks"
+    ],
+    "source_raw": [
+      "Player Core pg. 241"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-43",
+    "name": "Nature",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=43",
+    "attribute": [
+      "Wisdom"
+    ],
+    "is_standard_ancestry_feat": false,
+    "legacy_id": [
+      "skill-10"
+    ],
+    "primary_source": "Player Core",
+    "primary_source_category": "Rulebooks",
+    "primary_source_raw": "Player Core pg. 242",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2023-11-15",
+    "skill": [
+      "Nature"
+    ],
+    "source": [
+      "Player Core"
+    ],
+    "source_category": [
+      "Rulebooks"
+    ],
+    "source_raw": [
+      "Player Core pg. 242"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-44",
+    "name": "Occultism",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=44",
+    "attribute": [
+      "Intelligence"
+    ],
+    "is_standard_ancestry_feat": false,
+    "legacy_id": [
+      "skill-11"
+    ],
+    "primary_source": "Player Core",
+    "primary_source_category": "Rulebooks",
+    "primary_source_raw": "Player Core pg. 243",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2023-11-15",
+    "skill": [
+      "Occultism"
+    ],
+    "source": [
+      "Player Core"
+    ],
+    "source_category": [
+      "Rulebooks"
+    ],
+    "source_raw": [
+      "Player Core pg. 243"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-45",
+    "name": "Performance",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=45",
+    "attribute": [
+      "Charisma"
+    ],
+    "is_standard_ancestry_feat": false,
+    "legacy_id": [
+      "skill-12"
+    ],
+    "primary_source": "Player Core",
+    "primary_source_category": "Rulebooks",
+    "primary_source_raw": "Player Core pg. 243",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2023-11-15",
+    "skill": [
+      "Performance"
+    ],
+    "source": [
+      "Player Core"
+    ],
+    "source_category": [
+      "Rulebooks"
+    ],
+    "source_raw": [
+      "Player Core pg. 243"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-46",
+    "name": "Religion",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=46",
+    "attribute": [
+      "Wisdom"
+    ],
+    "is_standard_ancestry_feat": false,
+    "legacy_id": [
+      "skill-13"
+    ],
+    "primary_source": "Player Core",
+    "primary_source_category": "Rulebooks",
+    "primary_source_raw": "Player Core pg. 244",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2023-11-15",
+    "skill": [
+      "Religion"
+    ],
+    "source": [
+      "Player Core"
+    ],
+    "source_category": [
+      "Rulebooks"
+    ],
+    "source_raw": [
+      "Player Core pg. 244"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-47",
+    "name": "Society",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=47",
+    "attribute": [
+      "Intelligence"
+    ],
+    "is_standard_ancestry_feat": false,
+    "legacy_id": [
+      "skill-14"
+    ],
+    "primary_source": "Player Core",
+    "primary_source_category": "Rulebooks",
+    "primary_source_raw": "Player Core pg. 244",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2023-11-15",
+    "skill": [
+      "Society"
+    ],
+    "source": [
+      "Player Core"
+    ],
+    "source_category": [
+      "Rulebooks"
+    ],
+    "source_raw": [
+      "Player Core pg. 244"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-48",
+    "name": "Stealth",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=48",
+    "attribute": [
+      "Dexterity"
+    ],
+    "is_standard_ancestry_feat": false,
+    "legacy_id": [
+      "skill-15"
+    ],
+    "primary_source": "Player Core",
+    "primary_source_category": "Rulebooks",
+    "primary_source_raw": "Player Core pg. 244",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2023-11-15",
+    "skill": [
+      "Stealth"
+    ],
+    "source": [
+      "Player Core"
+    ],
+    "source_category": [
+      "Rulebooks"
+    ],
+    "source_raw": [
+      "Player Core pg. 244"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-49",
+    "name": "Survival",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=49",
+    "attribute": [
+      "Wisdom"
+    ],
+    "is_standard_ancestry_feat": false,
+    "legacy_id": [
+      "skill-16"
+    ],
+    "primary_source": "Player Core",
+    "primary_source_category": "Rulebooks",
+    "primary_source_raw": "Player Core pg. 246",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2023-11-15",
+    "skill": [
+      "Survival"
+    ],
+    "source": [
+      "Player Core"
+    ],
+    "source_category": [
+      "Rulebooks"
+    ],
+    "source_raw": [
+      "Player Core pg. 246"
+    ],
+    "type": "Skill"
+  },
+  {
+    "id": "skill-50",
+    "name": "Thievery",
+    "category": "skill",
+    "sourceUrl": "https://2e.aonprd.com/Skills.aspx?ID=50",
+    "attribute": [
+      "Dexterity"
+    ],
+    "is_standard_ancestry_feat": false,
+    "legacy_id": [
+      "skill-17"
+    ],
+    "primary_source": "Player Core",
+    "primary_source_category": "Rulebooks",
+    "primary_source_raw": "Player Core pg. 246",
+    "rarity": "common",
+    "rarity_id": 1,
+    "release_date": "2023-11-15",
+    "skill": [
+      "Thievery"
+    ],
+    "source": [
+      "Player Core"
+    ],
+    "source_category": [
+      "Rulebooks"
+    ],
+    "source_raw": [
+      "Player Core pg. 246"
+    ],
+    "type": "Skill"
+  }
+]

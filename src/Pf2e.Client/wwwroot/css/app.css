@@ -63,13 +63,18 @@ a {
 
 /* ---------------------------------------------------------------- the frame
 
-   Three bands, from design/003. A phone gets one column under a bottom bar. A tablet spends its
-   extra width on more columns of short labels, never on a longer line of prose. A laptop stands
-   the navigation up as a rail beside the content, because a pointer has no thumb arc, and opens
-   a record next to the list instead of over it. 600px and 1024px are layout.viewport-wide and
-   layout.viewport-desk; a media query cannot read a custom property. */
+   Three bands, from design/003 as amended by design/004. A phone gets one column under a bottom
+   bar. A tablet and a laptop spend the whole width: more columns of short labels, a record's
+   facts on one line, filters in a column of their own. Prose alone keeps its measure. A laptop
+   stands the navigation up as a rail beside the content, because a pointer has no thumb arc, and
+   opens a record next to the list instead of over it. 600px and 1024px are layout.viewport-wide
+   and layout.viewport-desk; a media query cannot read a custom property. */
 
 .page {
+    /* The sticky header's height, set on it rather than measured from it, so a column held in view
+       below it starts exactly where it ends: the search field and its two borders, the header's
+       padding and its one rule. */
+    --site-head-block: calc(var(--tap-default) + var(--border-hair) * 3 + var(--space-3) * 2);
     max-width: var(--layout-content-max);
     margin-inline: auto;
     padding-bottom: calc(var(--layout-bottom-bar) + var(--space-5) + var(--layout-safe-bottom));
@@ -104,16 +109,8 @@ a {
         padding-bottom: var(--space-5);
     }
 
-    /* A column again, but only here, and only because the width beside it is now spent on the
-       record rather than left empty. Capping it is also what keeps the list still while a
-       record opens: the panel eats the margin, not the list. */
-    .panel,
-    .pending {
-        max-width: var(--layout-content-max);
-    }
-
-    /* Only as much as the docked panel takes, and only while one is open, so the list keeps its
-       left edge and nothing moves under the reader. */
+    /* Only as much as the docked panel takes, and only while one is open. The list keeps its left
+       edge and reflows into what is left, rather than sliding under the record. */
     .page:has(.pf-sheet:not([hidden])) {
         margin-inline-end: var(--pf-sheet-dock-width);
     }
@@ -167,4 +164,42 @@ a {
 #blazor-error-ui .reload {
     color: var(--text-on-accent);
     margin-inline-start: var(--space-3);
+}
+
+/* ---------------------------------------------------------------- the header
+
+   Search sits at the top of every screen, because "what is this thing called Magical" is asked
+   from anywhere. It is the one sticky band, so a screen's own heading scrolls away beneath it
+   rather than stacking a second sticky header under the first. */
+
+.site-head {
+    block-size: var(--site-head-block);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    padding: var(--space-3) var(--layout-gutter);
+    background: var(--surface-page);
+    border-bottom: var(--border-hair) solid var(--line-subtle);
+}
+
+/* A field's length on a phone and a tablet. The results it opens are sized by the header, which
+   is why the header is a container. */
+.site-head {
+    container-type: inline-size;
+}
+
+.site-search {
+    max-width: calc(var(--layout-content-max) - var(--layout-gutter) * 2);
+}
+
+@media (min-width: 1024px) {
+    .site-search {
+        max-width: 44rem;
+    }
+}
+
+/* FocusOnNavigate moves focus to the heading so a screen reader announces the new screen. The
+   heading is not a control, so it draws no ring. */
+h1:focus {
+    outline: none;
 }

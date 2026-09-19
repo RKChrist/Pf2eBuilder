@@ -2,14 +2,30 @@ using Pf2e.Client.State;
 
 namespace Pf2e.Client.Catalog;
 
-/// <summary><paramref name="Route"/> is how a category gets a screen of its own without any
-/// renderer learning a category name.</summary>
-public sealed record RuleCategory(string Key, string Label, GroupKey Group, string Route = RuleCatalog.BrowseRoute);
+/// <summary><paramref name="OwnRoute"/> is how a category gets a screen of its own without any
+/// renderer learning a category name; without one it is a list at /browse/{key}.
+/// <paramref name="LevelWord"/> is what its levels are called: spells and rituals have ranks.</summary>
+public sealed record RuleCategory(
+    string Key,
+    string Label,
+    GroupKey Group,
+    string? OwnRoute = null,
+    string? Singular = null,
+    string LevelWord = "Level")
+{
+    /// <summary>"Feat 10" in a record's header. Derived from the plural, which is right for all
+    /// but the two rows that say otherwise.</summary>
+    public string One => Singular ?? (Label switch
+    {
+        _ when Label.EndsWith("ies", StringComparison.Ordinal) => Label[..^3] + "y",
+        _ when Label.EndsWith("sses", StringComparison.Ordinal) => Label[..^2],
+        _ when Label.EndsWith('s') => Label[..^1],
+        _ => Label,
+    });
+}
 
 public static class RuleCatalog
 {
-    public const string BrowseRoute = "/";
-
     public const string ConditionsRoute = "/conditions";
 
     public const int CategoryCount = 74;
@@ -23,7 +39,7 @@ public static class RuleCatalog
         new("class-feature", "Class Features", GroupKey.Build),
         new("apparition", "Apparitions", GroupKey.Build),
         new("arcane-school", "Arcane Schools", GroupKey.Build),
-        new("arcane-thesis", "Arcane Theses", GroupKey.Build),
+        new("arcane-thesis", "Arcane Theses", GroupKey.Build, Singular: "Arcane Thesis"),
         new("bloodline", "Bloodlines", GroupKey.Build),
         new("cause", "Causes", GroupKey.Build),
         new("conscious-mind", "Conscious Minds", GroupKey.Build),
@@ -55,15 +71,15 @@ public static class RuleCatalog
         new("feat", "Feats", GroupKey.Feats),
         new("archetype", "Archetypes", GroupKey.Feats),
 
-        new("spell", "Spells", GroupKey.Spells),
-        new("ritual", "Rituals", GroupKey.Spells),
+        new("spell", "Spells", GroupKey.Spells, LevelWord: "Rank"),
+        new("ritual", "Rituals", GroupKey.Spells, LevelWord: "Rank"),
         new("tradition", "Traditions", GroupKey.Spells),
 
         new("equipment", "Equipment", GroupKey.Gear),
         new("weapon", "Weapons", GroupKey.Gear),
         new("armor", "Armor", GroupKey.Gear),
         new("shield", "Shields", GroupKey.Gear),
-        new("item-bonus", "Item Bonuses", GroupKey.Gear),
+        new("item-bonus", "Item Bonuses", GroupKey.Gear, Singular: "Item Bonus"),
         new("relic", "Relics", GroupKey.Gear),
         new("set-relic", "Set Relics", GroupKey.Gear),
         new("curse", "Curses", GroupKey.Gear),
@@ -100,8 +116,23 @@ public static class RuleCatalog
     public static IReadOnlyList<RuleCategory> InGroup(GroupKey group) =>
         [.. All.Where(category => category.Group == group)];
 
-    public static string LabelOf(string key) =>
-        All.FirstOrDefault(category => category.Key == key)?.Label ?? key;
+    static readonly Dictionary<string, RuleCategory> ByKey = All.ToDictionary(category => category.Key, StringComparer.Ordinal);
+
+    public static RuleCategory? Of(string key) => ByKey.GetValueOrDefault(key);
+
+    public static string LabelOf(string key) => Of(key)?.Label ?? key;
+
+    public static string OneOf(string key) => Of(key)?.One ?? key;
+
+    public static string LevelWordOf(string key) => Of(key)?.LevelWord ?? "Level";
+
+    /// <summary>"Feat 4", or "Spell, rank 3" where a level is called something else.</summary>
+    public static string KindAndLevel(string key, int? level) => level switch
+    {
+        null => OneOf(key),
+        int at when LevelWordOf(key) == "Level" => $"{OneOf(key)} {at}",
+        int at => $"{OneOf(key)}, {LevelWordOf(key).ToLowerInvariant()} {at}",
+    };
 
     public static void EnsureComplete()
     {
@@ -112,6 +143,17 @@ public static class RuleCatalog
             throw new InvalidOperationException(
                 $"The rule catalog must hold {CategoryCount} distinct categories, one per seed file. " +
                 $"It holds {All.Count} rows with {distinct} distinct keys.");
+        }
+
+        var unplaced = All.Where(category =>
+            CategoryNotes.Of(category.Key) is not { } note
+            || !CategoryNotes.SectionOrder(category.Group).Contains(note.Section)).ToList();
+
+        if (unplaced.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "Every category needs a note whose section its group lists, or the board drops it: " +
+                string.Join(", ", unplaced.Select(category => category.Key)));
         }
     }
 }

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
@@ -57,10 +58,11 @@ public sealed class RulesSeeder(RulesDbContext db, IOptions<SeedingOptions> opti
             perCategory[category] = array.Count;
         }
 
+        var fingerprint = await Fingerprint(files, ct);
         var existing = await db.SeedState.SingleOrDefaultAsync(ct);
         if (existing is not null
             && existing.RulesetVersion == _options.RulesetVersion
-            && existing.RecordCount == records.Count)
+            && existing.SeedFingerprint == fingerprint)
         {
             log.LogInformation("Rules data already seeded at {Version}, {Count} records.",
                 existing.RulesetVersion, existing.RecordCount);
@@ -78,6 +80,7 @@ public sealed class RulesSeeder(RulesDbContext db, IOptions<SeedingOptions> opti
             {
                 RulesetVersion = _options.RulesetVersion,
                 RecordCount = records.Count,
+                SeedFingerprint = fingerprint,
                 SeededAtUtc = DateTimeOffset.UtcNow,
             });
         }
@@ -85,6 +88,7 @@ public sealed class RulesSeeder(RulesDbContext db, IOptions<SeedingOptions> opti
         {
             existing.RulesetVersion = _options.RulesetVersion;
             existing.RecordCount = records.Count;
+            existing.SeedFingerprint = fingerprint;
             existing.SeededAtUtc = DateTimeOffset.UtcNow;
         }
 
@@ -94,6 +98,19 @@ public sealed class RulesSeeder(RulesDbContext db, IOptions<SeedingOptions> opti
             records.Count, perCategory.Count, started.Elapsed);
 
         return new SeedingReport(false, records.Count, perCategory, started.Elapsed);
+    }
+
+    /// <summary>Every seed file's name and bytes, so any edit to the seed reseeds and nothing else does.</summary>
+    static async Task<string> Fingerprint(IEnumerable<string> files, CancellationToken ct)
+    {
+        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        foreach (var file in files)
+        {
+            hash.AppendData(System.Text.Encoding.UTF8.GetBytes(Path.GetFileName(file)));
+            hash.AppendData(await File.ReadAllBytesAsync(file, ct));
+        }
+
+        return Convert.ToHexString(hash.GetHashAndReset());
     }
 
     RuleRecord ToRecord(JsonObject source)

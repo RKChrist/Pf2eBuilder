@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "api",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "src/Pf2e.Api", "--launch-profile", "http"],
+      "port": 5092
+    },
+    {
+      "name": "client",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "src/Pf2e.Client", "--launch-profile", "http"],
+      "port": 5173
+    }
+  ]
+}

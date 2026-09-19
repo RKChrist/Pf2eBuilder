@@ -80,8 +80,8 @@ app.UseExceptionHandler(handler => handler.Run(async context =>
         return;
     }
 
-    // A paste that is not an export is the player's mistake and reads as one, not as a fault
-    // in the server.
+    // A paste that is not an export is the player's mistake and reads as one, not as a
+    // fault in the server.
     if (error is PathbuilderFormatException pathbuilder)
     {
         context.Response.StatusCode = StatusCodes.Status400BadRequest;
@@ -89,16 +89,27 @@ app.UseExceptionHandler(handler => handler.Run(async context =>
         return;
     }
 
-    // A body the model binder could not read is the caller's mistake too. Left as a 500 it
-    // reads as a server fault, and the caller with a wrong field name goes looking for a bug
-    // that is not there. I did exactly that against this endpoint before fixing it.
-    if (error is BadHttpRequestException or JsonException)
+    // A body or query string the binder could not read is the caller's mistake too. Left
+    // as a 500 it reads as a server fault, and the caller with a wrong field name goes
+    // looking for a bug that is not there. I did exactly that against this API.
+    if (error is BadHttpRequestException malformed)
+    {
+        context.Response.StatusCode = malformed.StatusCode;
+        await context.Response.WriteAsJsonAsync(new
+        {
+            title = "The request was not valid.",
+            detail = malformed.Message,
+        });
+        return;
+    }
+
+    if (error is JsonException json)
     {
         context.Response.StatusCode = StatusCodes.Status400BadRequest;
         await context.Response.WriteAsJsonAsync(new
         {
             title = "The request body could not be read.",
-            detail = error is BadHttpRequestException bad ? bad.Message : error.Message,
+            detail = json.Message,
         });
         return;
     }

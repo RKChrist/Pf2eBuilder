@@ -1,0 +1,35 @@
+@* The top of every list screen: where it sits, what it is called, what it is for, and how much is
+   in it. One component so the board, a category and conditions cannot drift apart. *@
+<header class="top">
+    @if (Back is { } back)
+    {
+        <a class="pf-btn pf-btn--quiet back" href="@back.Href">
+            <span aria-hidden="true">←</span>
+            @back.Label
+        </a>
+    }
+
+    <h1 class="heading">@Heading</h1>
+
+    @if (Blurb is { Length: > 0 } blurb)
+    {
+        <p class="blurb">@blurb</p>
+    }
+
+    @if (Detail is { Length: > 0 } detail)
+    {
+        <p class="total">@detail</p>
+    }
+</header>
+
+@code {
+    public sealed record BackLink(string Href, string Label);
+
+    [Parameter] public BackLink? Back { get; set; }
+
+    [Parameter, EditorRequired] public string Heading { get; set; } = string.Empty;
+
+    [Parameter] public string? Blurb { get; set; }
+
+    [Parameter] public string? Detail { get; set; }
+}

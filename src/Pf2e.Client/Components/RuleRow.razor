@@ -1,0 +1,51 @@
+@* One record in a list. The button holds everything that opens it; the marks below sit outside
+   it, so a trait can be a control of its own without a button inside a button. The button's
+   stretched hit area still covers the whole row, marks included. *@
+<li class="rule">
+    <button type="button" class="open" @onclick="OnOpen">
+        <span class="top">
+            <span class="name">@Rule.Name</span>
+            @if (Rule.Level is int level)
+            {
+                <span class="level">@RuleCatalog.LevelWordOf(Rule.Category) @level</span>
+            }
+        </span>
+        @if (ShowCategory)
+        {
+            <span class="kind">@RuleCatalog.OneOf(Rule.Category)</span>
+        }
+        <GlanceLine Rule="Rule" />
+    </button>
+
+    @if (Rarity != Pf2e.Components.Rarity.Common || Traits.Count > 0)
+    {
+        <div class="marks">
+            @if (Rarity != Pf2e.Components.Rarity.Common)
+            {
+                <RarityBadge Value="Rarity" />
+            }
+            @foreach (var trait in Traits.Take(TraitsShown))
+            {
+                <TraitLink Name="@trait" />
+            }
+            @if (Traits.Count > TraitsShown)
+            {
+                <span class="more" aria-label="@($"and {Traits.Count - TraitsShown} more traits")">+@(Traits.Count - TraitsShown)</span>
+            }
+        </div>
+    }
+</li>
+
+@code {
+    const int TraitsShown = 4;
+
+    [Parameter, EditorRequired] public RuleSummary Rule { get; set; } = default!;
+
+    [Parameter] public bool ShowCategory { get; set; }
+
+    [Parameter] public EventCallback OnOpen { get; set; }
+
+    Rarity Rarity => RuleDisplay.RarityOf(Rule.Rarity);
+
+    IReadOnlyList<string> Traits => [.. RuleDisplay.TraitsBeside(Rule)];
+}

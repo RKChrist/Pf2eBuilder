@@ -134,6 +134,11 @@ static class FieldPolicy
         return targets;
     }
 
+    // AoN marks its own non-entries this way: item-activation fragments filed as actions, and
+    // superseded duplicates it keeps so old links still resolve. Neither is a rule to show anyone.
+    public static bool IsSiteExcluded(JsonObject record) =>
+        record["exclude_from_search"] is JsonValue flag && flag.TryGetValue<bool>(out var excluded) && excluded;
+
     public static bool IsProseField(string name) =>
         name.EndsWith("_markdown", StringComparison.Ordinal) || ProseFields.Contains(name);
 

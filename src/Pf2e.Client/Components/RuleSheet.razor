@@ -1,9 +1,10 @@
 @inherits FluxorComponent
 @inject IState<RuleDetailState> Detail
 @inject IDispatcher Dispatcher
+@inject NavigationManager Navigation
 @inject IJSRuntime Js
 
-<BottomSheet Open="@(Detail.Value.Id is not null)" Title="@Title" OnClose="Close" Class="pf-sheet--dock">
+<BottomSheet Open="@(Detail.Value.Id is not null)" Title="@Title" OnClose="Close" Class="pf-sheet--dock rule-sheet">
     <RemoteView T="RuleDetail" Data="Detail.Value.Detail">
         <Loading>
             <div class="pending">
@@ -21,41 +22,123 @@
                 </Action>
             </ErrorState>
         </Failed>
+        <Missing>
+            <EmptyState Title="Nothing by that address">
+                <ChildContent>
+                    No record in the ruleset has the id “@Detail.Value.Id”. The link may be mistyped, or
+                    from before a record was retired. Asking again will not change the answer.
+                </ChildContent>
+                <Action>
+                    <Button Variant="ButtonVariant.Secondary" OnClick="Dismiss">Close</Button>
+                </Action>
+            </EmptyState>
+        </Missing>
         <Loaded Context="rule">
-            <div class="pf-cluster">
-                @if (rule.Summary.Level is int level)
+            <div class="head">
+                <p class="kind">@RuleCatalog.KindAndLevel(rule.Summary.Category, rule.Summary.Level)</p>
+                @if (RuleDisplay.RarityOf(rule.Summary.Rarity) is var rarity && rarity != Rarity.Common)
                 {
-                    <span class="level">Level @level</span>
+                    <RarityBadge Value="rarity" />
                 }
-                <RarityBadge Value="RuleDisplay.RarityOf(rule.Summary.Rarity)" />
-                @foreach (var trait in RuleDisplay.TraitsBeside(rule.Summary))
+                @foreach (var flag in MechanicsDisplay.FlagsOf(rule))
                 {
-                    <TraitChip>@trait</TraitChip>
+                    <span class="flag">@flag</span>
                 }
             </div>
 
-            <dl class="mechanics">
-                @foreach (var row in MechanicsDisplay.Rows(rule))
-                {
-                    <dt>@row.Label</dt>
-                    <dd>@string.Join(", ", row.Values)</dd>
-                }
-            </dl>
+            @if (RuleDisplay.TraitsBeside(rule.Summary).ToList() is { Count: > 0 } traits)
+            {
+                <div class="traits" aria-label="Traits, each explained when tapped">
+                    @foreach (var trait in traits)
+                    {
+                        <TraitLink Name="@trait" />
+                    }
+                </div>
+            }
 
-            <a class="archives" href="@rule.Summary.SourceUrl" target="_blank" rel="noopener">
-                Read it on Archives of Nethys
+            @{ var (lead, after) = MechanicsDisplay.Split(rule); }
+
+            @if (lead.Count > 0)
+            {
+                <dl class="stats">
+                    @foreach (var row in lead)
+                    {
+                        <div class="stat @(MechanicsDisplay.IsGate(row.Key) ? "gate" : null)">
+                            <dt>@row.Label</dt>
+                            <dd>@Value(rule, row)</dd>
+                        </div>
+                    }
+                </dl>
+            }
+
+            @if (after.Count > 0)
+            {
+                <dl class="mechanics">
+                    @foreach (var row in after)
+                    {
+                        <dt>@row.Label</dt>
+                        <dd>@Value(rule, row)</dd>
+                    }
+                </dl>
+            }
+
+            <a class="pf-btn pf-btn--secondary pf-btn--full archives" href="@rule.Summary.SourceUrl" target="_blank" rel="noopener">
+                Full rules text on Archives of Nethys
             </a>
         </Loaded>
     </RemoteView>
 </BottomSheet>
 
 @code {
-    /// <summary>Owned by the query string so the phone's back button closes the sheet.</summary>
-    [Parameter] public string? RuleId { get; set; }
+    /// <summary>Owned by the query string so the phone's back button closes the sheet, on any
+    /// screen: the sheet lives in the layout.</summary>
+    [Parameter, SupplyParameterFromQuery(Name = "rule")] public string? RuleId { get; set; }
 
-    string Title => Detail.Value.Detail is RemoteData<RuleDetail>.Loaded loaded
-        ? loaded.Value.Summary.Name
-        : "Rule";
+    string Title => Detail.Value.Detail switch
+    {
+        RemoteData<RuleDetail>.Loaded loaded => loaded.Value.Summary.Name,
+        RemoteData<RuleDetail>.Missing => "No such record",
+        _ => "Rule",
+    };
+
+    /// <summary>A value is a link only where the server found a record of exactly that name, so a
+    /// phrase such as "a Lore skill associated with your school" stays words.</summary>
+    RenderFragment Value(RuleDetail rule, MechanicRow row)
+    {
+        if (row.Key == "actions")
+        {
+            return @<span class="cost">
+                @if (Glance.Part(new MechanicField(row.Key, row.Values)) is { Cost: { } cost })
+                {
+                    <ActionCost Cost="cost" />
+                }
+                <span>@string.Join(", ", row.Values)</span>
+            </span>;
+        }
+
+        var targets = rule.Links.Where(link => link.Field == row.Key)
+            .DistinctBy(link => link.Value, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(link => link.Value, link => link.Id, StringComparer.OrdinalIgnoreCase);
+
+        if (targets.Count == 0)
+        {
+            return @<text>@string.Join(", ", row.Values)</text>;
+        }
+
+        return @<span class="refs">
+            @foreach (var value in row.Values)
+            {
+                @if (targets.TryGetValue(value, out var id))
+                {
+                    <a class="ref" href="@Navigation.Rule(id)">@value</a>
+                }
+                else
+                {
+                    <span class="plain">@value</span>
+                }
+            }
+        </span>;
+    }
 
     protected override void OnParametersSet()
     {
@@ -67,5 +150,19 @@
         }
     }
 
-    async Task Close() => await Js.InvokeVoidAsync("history.back");
+    /// <summary>Back, so the phone's back button and this close the same way. A missing record is
+    /// the exception: it is usually reached by a link from outside, with nothing of this app behind
+    /// it in history, so it closes by address instead.</summary>
+    async Task Close()
+    {
+        if (Detail.Value.Detail is RemoteData<RuleDetail>.Missing)
+        {
+            Dismiss();
+            return;
+        }
+
+        await Js.InvokeVoidAsync("history.back");
+    }
+
+    void Dismiss() => Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("rule", (string?)null), replace: true);
 }

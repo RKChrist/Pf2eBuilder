@@ -1,0 +1,194 @@
+@inherits FluxorComponent
+@inject IState<SearchState> Search
+@inject IDispatcher Dispatcher
+@inject NavigationManager Navigation
+
+<div class="site-search" @onkeydown="OnKey" @onfocusin="Opened" @onfocusout="Closed">
+    <SearchField Class="field"
+                 Value="@State.Query"
+                 ValueChanged="OnTyped"
+                 Placeholder="Search feats, spells, traits…"
+                 Label="Search the rules"
+                 InputAttributes="InputAttributes" />
+
+    @if (ShowPanel)
+    {
+        @* Pressing inside the panel must not take focus from the field, or the panel would close
+           under the pointer before the click that was aimed at it arrives. *@
+        <div class="panel" @onmousedown:preventDefault>
+            <RemoteView T="RuleSearchResult" Data="State.Results">
+                <NotAsked><div class="note">Searching…</div></NotAsked>
+                <Loading>
+                    <div class="note"><Spinner Label="Searching" /> Searching…</div>
+                </Loading>
+                <Failed Context="message">
+                    <div class="note failed">
+                        <span>@message</span>
+                        <Button Variant="ButtonVariant.Quiet" tabindex="-1"
+                                OnClick="@(() => Dispatcher.Dispatch(new SearchRetriedEverywhere()))">
+                            Try again
+                        </Button>
+                    </div>
+                </Failed>
+                <Loaded Context="found">
+                    @if (found.Items.Count == 0)
+                    {
+                        <div class="note">Nothing is called “@State.Query.Trim()”. Try fewer letters.</div>
+                    }
+                    else
+                    {
+                        @if (Counts is { Categories.Count: > 1 } counts)
+                        {
+                            <div class="chips" aria-label="Matches by category">
+                                @foreach (var category in counts.Categories.Take(ChipCount))
+                                {
+                                    <a class="chip" tabindex="-1" href="@Links.Search(State.Query, category.Category)"
+                                       @onclick="Close">
+                                        @RuleCatalog.LabelOf(category.Category)
+                                        <span class="count">@Numbers.Grouped(category.Count)</span>
+                                    </a>
+                                }
+                            </div>
+                        }
+
+                        <ul class="options" role="listbox" id="@ListId" aria-label="Best matches">
+                            @for (var index = 0; index < Shown(found).Count; index++)
+                            {
+                                var item = Shown(found)[index];
+                                var position = index;
+                                <li class="option @(position == _active ? "active" : null)"
+                                    role="option"
+                                    id="@OptionId(position)"
+                                    aria-selected="@(position == _active ? "true" : "false")"
+                                    @onclick="() => Pick(item)">
+                                    <span class="line">
+                                        <span class="name">@item.Name</span>
+                                        <span class="kind">@Kind(item)</span>
+                                    </span>
+                                    <GlanceLine Rule="item" Class="one-line" />
+                                </li>
+                            }
+                        </ul>
+
+                        <a class="all" tabindex="-1" href="@Links.Search(State.Query)" @onclick="Close">
+                            See all @Numbers.Grouped(found.TotalMatching) results
+                        </a>
+                    }
+                </Loaded>
+            </RemoteView>
+        </div>
+    }
+</div>
+
+@code {
+    const int OptionCount = 8;
+    const int ChipCount = 6;
+    const string ListId = "site-search-options";
+
+    bool _open;
+    int _active = -1;
+
+    SearchState State => Search.Value;
+
+    bool ShowPanel => _open && State.HasQuery && !Navigation.IsOn(Links.SearchRoute);
+
+    RuleCounts? Counts => State.Counts is RemoteData<RuleCounts>.Loaded loaded ? loaded.Value : null;
+
+    IReadOnlyList<RuleSummary> Options => State.Results is RemoteData<RuleSearchResult>.Loaded loaded
+        ? Shown(loaded.Value)
+        : [];
+
+    static IReadOnlyList<RuleSummary> Shown(RuleSearchResult found) => [.. found.Items.Take(OptionCount)];
+
+    static string OptionId(int index) => $"site-search-option-{index}";
+
+    static string Kind(RuleSummary item) => RuleCatalog.KindAndLevel(item.Category, item.Level);
+
+    IReadOnlyDictionary<string, object> InputAttributes
+    {
+        get
+        {
+            var attributes = new Dictionary<string, object>
+            {
+                ["role"] = "combobox",
+                ["aria-autocomplete"] = "list",
+                ["aria-controls"] = ListId,
+                ["aria-expanded"] = ShowPanel ? "true" : "false",
+                ["autocomplete"] = "off",
+                ["enterkeyhint"] = "search",
+                ["spellcheck"] = "false",
+                ["data-site-search"] = "true",
+            };
+            if (_active >= 0)
+            {
+                attributes["aria-activedescendant"] = OptionId(_active);
+            }
+
+            return attributes;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        _open = false;
+        _active = -1;
+        InvokeAsync(StateHasChanged);
+    }
+
+    void Opened() => _open = true;
+
+    void Closed() => _open = false;
+
+    void Close() => _open = false;
+
+    void OnTyped(string? query)
+    {
+        _open = true;
+        _active = -1;
+        Dispatcher.Dispatch(new SearchTyped(query ?? string.Empty));
+    }
+
+    void OnKey(KeyboardEventArgs key)
+    {
+        switch (key.Key)
+        {
+            case "ArrowDown":
+                _open = true;
+                _active = Math.Min(_active + 1, Options.Count - 1);
+                break;
+            case "ArrowUp":
+                _active = Math.Max(_active - 1, -1);
+                break;
+            case "Escape":
+                _open = false;
+                _active = -1;
+                break;
+            case "Enter" when _active >= 0 && _active < Options.Count && ShowPanel:
+                Pick(Options[_active]);
+                break;
+            case "Enter" when State.HasQuery:
+                _open = false;
+                Navigation.NavigateTo(Links.Search(State.Query));
+                break;
+        }
+    }
+
+    void Pick(RuleSummary item)
+    {
+        _open = false;
+        _active = -1;
+        Navigation.NavigateTo(Navigation.Rule(item.Id));
+    }
+
+    protected override ValueTask DisposeAsyncCore(bool disposing)
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+        return base.DisposeAsyncCore(disposing);
+    }
+}

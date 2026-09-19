@@ -137,7 +137,7 @@ public sealed class PartyEffects
     [EffectMethod]
     public async Task Handle(RuleEffectRequested action, IDispatcher dispatcher)
     {
-        RuleDetail rule;
+        RuleDetail? rule;
         try
         {
             rule = await _rules.GetRuleAsync(action.RuleId, CancellationToken.None);
@@ -145,6 +145,14 @@ public sealed class PartyEffects
         catch (RulesApiException failure)
         {
             dispatcher.Dispatch(new ActionFailed(failure.Message));
+            return;
+        }
+
+        // A record the catalogue no longer holds reads as a missing record, not as a failure to
+        // reach the server, because those are two different things to a player mid-combat.
+        if (rule is null)
+        {
+            dispatcher.Dispatch(new ActionFailed($"{action.Name} is no longer in the rules."));
             return;
         }
 
