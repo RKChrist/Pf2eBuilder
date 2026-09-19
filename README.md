@@ -20,7 +20,17 @@ contract, the Pathbuilder import contract, the phase plan and the open decisions
 | `tests/` | `Pf2e.Behaviour.Tests` (one scenario per rule) and `Pf2e.Unit.Tests` |
 | `tools/` | Style Dictionary token build, rules-data import scripts |
 
+## Running it
+
+Double-click `run.cmd`, or read `docs/running-locally.md`.
+
+Running `src/Pf2e.Client` alone gives you a client that cannot reach anything. The
+client is a separate deployable that talks to the API over HTTP, which is the
+architecture rather than a bug, so one project is never enough.
+
 ## Current state
 
-Design only. No application code exists yet. The phase plan in the design document
-says what comes first and what green looks like for each phase.
+A rules browser over 24,940 seeded Archives of Nethys records, a 22-component kit
+with its own gallery, and a rules engine whose every computed number can explain
+itself. The party tracker is being built now; until it lands there are no
+characters and nothing to update.
