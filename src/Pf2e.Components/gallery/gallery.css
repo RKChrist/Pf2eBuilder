@@ -129,6 +129,19 @@
   font-size: var(--font-size-stat);
 }
 
+/* Pins the two pointer renderings so both can be seen at once. They set the same two custom
+   properties the pointer queries set and inherit down to the component, so no component
+   styling is copied here. */
+.g-pointer--coarse {
+  --pf-thumb-mark: var(--control-thumb-coarse);
+  --pf-track: var(--control-track-coarse);
+}
+
+.g-pointer--fine {
+  --pf-thumb-mark: var(--control-thumb-fine);
+  --pf-track: var(--control-track-fine);
+}
+
 /* A transform makes this element the containing block for the fixed-position sheet, so a
    component that owns the viewport in the app can be shown in place on this page. */
 .g-frame {
