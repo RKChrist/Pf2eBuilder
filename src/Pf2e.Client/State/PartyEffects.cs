@@ -126,6 +126,11 @@ public sealed class PartyEffects
     }
 
     [EffectMethod]
+    public Task Handle(HitPointsApplied action, IDispatcher dispatcher) =>
+        ApplyToCampaignAsync(dispatcher, code => _tracker.ChangeHitPointsAsync(
+            code, action.CharacterId, action.Amount, action.Direction, CancellationToken.None));
+
+    [EffectMethod]
     public Task Handle(HitPointsNudged action, IDispatcher dispatcher) =>
         ApplyToCampaignAsync(dispatcher, code => _tracker.ChangeHitPointsAsync(
             code,

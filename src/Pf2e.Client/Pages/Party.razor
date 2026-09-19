@@ -156,8 +156,32 @@
                                     <span class="hp__of" aria-hidden="true">/</span>
                                     <span class="hp__max">@character.MaxHitPoints</span>
                                 </p>
-                                @* Zero is the resting value, so the minus button is live without a tap to
-                                   arm it and the card never shows a total the server has not sent back. *@
+                                @* The primary control, because the stepper alone made losing a hundred
+                                   hit points a hundred taps and a hundred round trips, which is unusable
+                                   in the moment it exists for. The keypad comes up on a phone. *@
+                                <div class="amount">
+                                    <TextInput Class="amount__field"
+                                               Label="@($"Hit points to apply to {character.Name}")"
+                                               InputMode="numeric"
+                                               Placeholder="0"
+                                               Value="@State.HitPointDraft(character.Id)"
+                                               ValueChanged="typed => Dispatcher.Dispatch(
+                                                   new HitPointDraftChanged(character.Id, typed ?? string.Empty))" />
+                                    <Button Variant="ButtonVariant.Secondary"
+                                            Disabled="@(Typed(character.Id) is null)"
+                                            OnClick='() => Apply(character.Id, "Damage")'>
+                                        Damage
+                                    </Button>
+                                    <Button Variant="ButtonVariant.Secondary"
+                                            Disabled="@(Typed(character.Id) is null)"
+                                            OnClick='() => Apply(character.Id, "Heal")'>
+                                        Heal
+                                    </Button>
+                                </div>
+
+                                @* The stepper stays for the nudge case. Zero is the resting value, so the
+                                   minus button is live without a tap to arm it and the card never shows a
+                                   total the server has not sent back. *@
                                 <NumberStepper Class="delta"
                                                Label="@($"Change {character.Name}'s hit points")"
                                                DecrementLabel="@($"{character.Name} takes a point of damage")"
@@ -580,6 +604,21 @@
 
     void Nudge(Guid characterId, int delta) =>
         Dispatcher.Dispatch(new HitPointsNudged(characterId, delta));
+
+    /// <summary>Null for anything that is not a number a table would apply, which is what leaves
+    /// both buttons disabled rather than sending a request the server will refuse.</summary>
+    int? Typed(Guid characterId) =>
+        int.TryParse(State.HitPointDraft(characterId), out var amount) && amount is > 0 and <= 999
+            ? amount
+            : null;
+
+    void Apply(Guid characterId, string direction)
+    {
+        if (Typed(characterId) is { } amount)
+        {
+            Dispatcher.Dispatch(new HitPointsApplied(characterId, amount, direction));
+        }
+    }
 
     void Redraft(EffectDraft draft) => Dispatcher.Dispatch(new DraftChanged(draft));
 

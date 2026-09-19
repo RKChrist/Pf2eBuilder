@@ -59,6 +59,14 @@ public sealed record PartyState
     public EffectPicker? Picker { get; init; }
 
     public EffectDraft Draft { get; init; } = EffectDraft.Fresh;
+
+    /// <summary>What each card's hit point field holds, keyed by character, because two cards
+    /// are open at once and one shared number would send the fighter's damage to the bard.</summary>
+    public IReadOnlyDictionary<Guid, string> HitPointDrafts { get; init; } =
+        new Dictionary<Guid, string>();
+
+    public string HitPointDraft(Guid characterId) =>
+        HitPointDrafts.TryGetValue(characterId, out var typed) ? typed : string.Empty;
 }
 
 public sealed record CodeDraftChanged(string Draft);
@@ -94,7 +102,18 @@ public sealed record ImportFailed(string Message);
 /// push both arrive here, so a local change and somebody else's are the same render.</summary>
 public sealed record CharacterUpdated(CharacterSheetView Character);
 
+/// <summary>One point, for the nudge case the steppers still serve.</summary>
 public sealed record HitPointsNudged(Guid CharacterId, int Delta);
+
+public sealed record HitPointDraftChanged(Guid CharacterId, string Draft);
+
+/// <summary>
+/// The typed amount, which is the primary control: losing a hundred hit points is one number and
+/// one round trip rather than a hundred taps. Direction is "Damage" or "Heal".
+/// <para>The amount travels with the action because its reducer empties the field, and a reducer
+/// runs before the effect that has to send what was in it.</para>
+/// </summary>
+public sealed record HitPointsApplied(Guid CharacterId, int Amount, string Direction);
 
 public sealed record EffectSet(Guid CharacterId, Guid Slot, EffectSpec? Effect);
 
@@ -221,6 +240,19 @@ public static class PartyReducers
                     loaded.Value with { Mode = action.Mode.Mode }),
             }
             : state;
+
+    [ReducerMethod]
+    public static PartyState On(PartyState state, HitPointDraftChanged action) =>
+        state with { HitPointDrafts = Drafts(state, action.CharacterId, action.Draft) };
+
+    /// <summary>The field empties on the tap, so a DM who taps Damage twice by accident does not
+    /// apply the number twice.</summary>
+    [ReducerMethod]
+    public static PartyState On(PartyState state, HitPointsApplied action) =>
+        state with { HitPointDrafts = Drafts(state, action.CharacterId, string.Empty) };
+
+    static Dictionary<Guid, string> Drafts(PartyState state, Guid characterId, string draft) =>
+        new(state.HitPointDrafts) { [characterId] = draft };
 
     [ReducerMethod]
     public static PartyState On(PartyState state, ActionFailed action) =>
