@@ -47,7 +47,7 @@ static class Transform
             foreach (var record in ReadCategory(dir, category))
             {
                 var id = Str(record, "id");
-                var name = Str(record, "name");
+                var name = Str(record, "name") is { } raw ? Normalise.Text(raw) : null;
                 var url = Str(record, "url");
 
                 AssertNoProse(record, id, category);
@@ -114,9 +114,15 @@ static class Transform
             ["sourceUrl"] = SiteRoot + url,
         };
 
-        foreach (var (key, value) in record.OrderBy(field => field.Key, StringComparer.Ordinal))
+        foreach (var (key, raw) in record.OrderBy(field => field.Key, StringComparer.Ordinal))
         {
-            if (value is null || !FieldPolicy.SeedAllowList.Contains(key) || FieldPolicy.IsEmptyValue(value))
+            if (raw is null || !FieldPolicy.SeedAllowList.Contains(key))
+            {
+                continue;
+            }
+
+            var value = Normalise.Value(key, raw);
+            if (FieldPolicy.IsEmptyValue(value))
             {
                 continue;
             }
@@ -131,7 +137,7 @@ static class Transform
                 }
             }
 
-            seed[key] = value.DeepClone();
+            seed[key] = value;
         }
 
         return seed;

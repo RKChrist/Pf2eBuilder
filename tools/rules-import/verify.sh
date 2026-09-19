@@ -661,6 +661,71 @@ else
   fi
 fi
 
+cat > "$TMP/markup.js" <<'JS'
+const fs = require('fs');
+const path = require('path');
+const dir = process.argv[2];
+const rules = [
+  ['template marker', /\{\{/],
+  ['html tag', /<\/?[A-Za-z][^>]*>/],
+  ['html entity', /&(#\d+|[a-z]+);/i],
+  ['markdown link', /\]\(/],
+  ['class-scoped prefix', /\[[A-Z][^\]]*\] /],
+  ['doubled whitespace', /\s{2}/],
+  ['untrimmed', /^\s|\s$/],
+];
+const found = new Map(rules.map(([name]) => [name, []]));
+let duplicateTraits = [];
+const visit = (r, key, value) => {
+  if (typeof value === 'string') {
+    for (const [name, re] of rules) {
+      if (re.test(value)) found.get(name).push(r.id + '.' + key + ' ' + JSON.stringify(value.slice(0, 80)));
+    }
+  } else if (Array.isArray(value)) {
+    value.forEach(v => visit(r, key, v));
+  } else if (value && typeof value === 'object') {
+    for (const [k, v] of Object.entries(value)) visit(r, key + '.' + k, v);
+  }
+};
+for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.json')).sort()) {
+  for (const r of JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'))) {
+    for (const [key, value] of Object.entries(r)) {
+      if (key !== 'sourceUrl') visit(r, key, value);
+    }
+    if (Array.isArray(r.trait)) {
+      const lowered = r.trait.map(t => String(t).toLowerCase());
+      if (new Set(lowered).size !== lowered.length) duplicateTraits.push(r.id + ' ' + r.trait.join('|'));
+    }
+  }
+}
+found.set('repeated trait', duplicateTraits);
+for (const [name, hits] of found) {
+  console.log('RULE ' + hits.length + ' ' + name);
+  for (const hit of hits.slice(0, 5)) console.log('HIT ' + name + ': ' + hit);
+}
+JS
+
+heading "11. AoN markup in seeded values"
+if [ "$SEED_RECORDS" -eq 0 ] || ! command -v node >/dev/null 2>&1; then
+  fail "check 11 could not run: it needs a parsed seed and node"
+else
+  MARKUP_OUT=$(node "$(winpath "$TMP/markup.js")" "$(winpath "$SEED_DIR")" 2>&1)
+  rules_run=$(printf '%s\n' "$MARKUP_OUT" | awk '$1 == "RULE"' | wc -l | tr -d ' ')
+  if [ "$rules_run" -eq 0 ]; then
+    fail "check 11 could not run"
+    printf '%s\n' "$MARKUP_OUT" | head -n 5 | sed 's/^/      /'
+  else
+    printf '%s\n' "$MARKUP_OUT" | awk '$1 == "RULE" { n = $2; $1 = ""; $2 = ""; printf "      %6s %s\n", n, substr($0, 3) }'
+    dirty=$(printf '%s\n' "$MARKUP_OUT" | awk '$1 == "RULE" && $2 != 0' | wc -l | tr -d ' ')
+    if [ "$dirty" -eq 0 ]; then
+      pass "no seeded value carries a template marker, tag, entity, link, class prefix or stray space, and no trait repeats"
+    else
+      fail "$dirty kinds of AoN markup survive into the seed"
+      printf '%s\n' "$MARKUP_OUT" | awk '$1 == "HIT"' | sed 's/^HIT /      /'
+    fi
+  fi
+fi
+
 heading "Summary"
 printf '%d check(s) FAILED\n' "$FAILURES"
 exit "$FAILURES"

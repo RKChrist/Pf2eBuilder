@@ -166,6 +166,18 @@ list for a category disagrees with the snapshot's count.
 No category empties. `action` falls from 3,921 records to 551, and the seed from 24,940 records to
 21,323.
 
+## Values are text, not AoN markup
+
+AoN writes its site's markup into plain string fields. `Normalise` in the transform turns each
+seeded string, names included, into the words a reader sees. A template marker such as
+`{{rules 2387 "emanation"}}` becomes `emanation`, and an action glyph marker becomes the seed's
+own wording, such as `Single Action`. HTML tags go and their inner text stays, entities are
+decoded, and a markdown link keeps its text. A class-scoped prerequisite such as
+`[Bard] enigma muse` reads `enigma muse (Bard)`. Runs of whitespace collapse to one space, and a
+trait list keeps the first of any case-insensitive repeat. An unknown marker fails the run rather
+than passing through. The length ceiling below measures the text after this, because markup is not
+text. `verify.sh` check 11 fails if any of that markup survives into the seed.
+
 ## Length ceiling on the re-included labels (300 characters)
 
 The thirteen re-included label fields carry a 300-character ceiling. They are `area_raw`, `cost`,
