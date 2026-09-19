@@ -5,8 +5,8 @@ namespace Pf2e.Client.Catalog;
 public sealed record RuleGroup(GroupKey Key, string Label, string Heading);
 
 /// <summary>
-/// The bottom bar holds six items across 320px, so the bar label is short and the screen
-/// heading is the full word.
+/// The bottom bar holds six items across --layout-viewport-min, so the bar label is short and
+/// the screen heading is the full word.
 /// </summary>
 public static class RuleGroups
 {

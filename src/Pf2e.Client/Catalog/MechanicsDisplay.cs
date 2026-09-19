@@ -124,6 +124,15 @@ public static class MechanicsDisplay
         "actions_number",
     };
 
+    /// <summary>
+    /// A field the seed also prints under another name. Dropped only when the two say exactly
+    /// the same thing, so a record printed in a second book still shows that.
+    /// </summary>
+    static readonly (string Key, string Echoes)[] Repeats =
+    [
+        ("source_raw", "primary_source_raw"),
+    ];
+
     static readonly Dictionary<string, int> Order =
         Known.Select((entry, index) => (entry.Key, index))
              .ToDictionary(entry => entry.Key, entry => entry.index, StringComparer.Ordinal);
@@ -132,26 +141,34 @@ public static class MechanicsDisplay
         Known.GroupBy(entry => entry.Key, StringComparer.Ordinal)
              .ToDictionary(group => group.Key, group => group.First().Label, StringComparer.Ordinal);
 
-    public static IReadOnlyList<MechanicRow> Rows(IReadOnlyList<MechanicField> fields)
+    /// <param name="recordName">
+    /// Dropped wherever it appears as a value. A feat's own <c>feat</c> field is its own name,
+    /// and "Feats: Shield Block" under the heading "Shield Block" reads as a defect.
+    /// </param>
+    public static IReadOnlyList<MechanicRow> Rows(IReadOnlyList<MechanicField> fields, string recordName)
     {
         var populated = fields
-            .Select(field => new MechanicField(field.Key, Trimmed(field.Values)))
+            .Select(field => new MechanicField(field.Key, Trimmed(field.Values, recordName)))
             .Where(field => field.Values.Count > 0)
-            .ToList();
-
-        var keys = populated.Select(field => field.Key).ToHashSet(StringComparer.Ordinal);
+            .ToDictionary(field => field.Key, StringComparer.Ordinal);
 
         return
         [
-            .. populated
+            .. populated.Values
                 .Where(field => !Hidden.Contains(field.Key))
                 // The seed carries a numeric field beside its printed form, such as 14000 beside
                 // "140 gp". Only the printed form means anything to a player.
-                .Where(field => !keys.Contains(field.Key + "_raw"))
+                .Where(field => !populated.ContainsKey(field.Key + "_raw"))
+                .Where(field => !Echoes(field, populated))
                 .OrderBy(field => Order.GetValueOrDefault(field.Key, int.MaxValue))
                 .Select(field => new MechanicRow(LabelOf(field.Key), field.Values)),
         ];
     }
+
+    static bool Echoes(MechanicField field, IReadOnlyDictionary<string, MechanicField> present) =>
+        Repeats.Any(repeat => repeat.Key == field.Key
+                              && present.TryGetValue(repeat.Echoes, out var original)
+                              && original.Values.SequenceEqual(field.Values, StringComparer.Ordinal));
 
     static string LabelOf(string key) =>
         Labels.TryGetValue(key, out var label) ? label : Humanised(key);
@@ -160,6 +177,8 @@ public static class MechanicsDisplay
         string.Join(' ', key.Split('_', StringSplitOptions.RemoveEmptyEntries)
                             .Select(word => char.ToUpperInvariant(word[0]) + word[1..]));
 
-    static IReadOnlyList<string> Trimmed(IReadOnlyList<string> values) =>
-        [.. values.Select(value => value.Trim()).Where(value => value.Length > 0)];
+    static IReadOnlyList<string> Trimmed(IReadOnlyList<string> values, string recordName) =>
+        [.. values.Select(value => value.Trim())
+                  .Where(value => value.Length > 0
+                                  && !value.Equals(recordName, StringComparison.OrdinalIgnoreCase))];
 }

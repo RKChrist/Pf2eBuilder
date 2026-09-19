@@ -10,7 +10,7 @@
     @if (State.ActiveCategory is not null)
     {
         <button type="button" class="back" @onclick="@(() => Dispatcher.Dispatch(new CategoryCleared()))">
-            <span class="chevron" aria-hidden="true">&#8592;</span>
+            <span class="chevron" aria-hidden="true">←</span>
             All @RuleGroups.Of(State.ActiveGroup).Label categories
         </button>
     }
@@ -28,14 +28,14 @@
                 {
                     <button type="button" class="category" @onclick="() => Open(category.Key)">
                         @category.Label
-                        <span class="chevron" aria-hidden="true">&#8594;</span>
+                        <span class="chevron" aria-hidden="true">→</span>
                     </button>
                 }
                 else
                 {
                     <a class="category" href="@category.Route">
                         @category.Label
-                        <span class="chevron" aria-hidden="true">&#8594;</span>
+                        <span class="chevron" aria-hidden="true">→</span>
                     </a>
                 }
             </li>
@@ -53,7 +53,7 @@ else
         {
             <button type="button" class="active-trait" @onclick="@(() => Dispatcher.Dispatch(new TraitSelected(null)))">
                 @activeTrait
-                <span class="dismiss" aria-hidden="true">&#215;</span>
+                <span class="dismiss" aria-hidden="true">×</span>
                 <span class="assistive">Remove this trait filter</span>
             </button>
         }
@@ -70,7 +70,9 @@ else
             <FailureState Message="@message" OnRetry="@(() => Dispatcher.Dispatch(new SearchRetried()))" />
         </Failed>
         <Loaded Context="found">
-            @if (found.Items.Any(item => item.Level is not null))
+            @* The page's own rows decide whether levels are a thing here, except once a range is
+               set: taking away the control that emptied the list is not a kindness. *@
+            @if (found.Items.Any(item => item.Level is not null) || State.MinLevel is not null || State.MaxLevel is not null)
             {
                 <div class="levels">
                     <label class="level-field">

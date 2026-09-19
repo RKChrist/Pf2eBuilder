@@ -1,9 +1,11 @@
-<ul class="traits">
+@* Spans rather than a list, because a row's traits sit inside the button that opens the row and
+   a <ul> is not valid there. *@
+<span class="traits">
     @foreach (var trait in Shown)
     {
-        <li class="trait">@trait</li>
+        <span class="trait">@trait</span>
     }
-</ul>
+</span>
 
 @code {
     [Parameter, EditorRequired] public IReadOnlyList<string> Traits { get; set; } = [];

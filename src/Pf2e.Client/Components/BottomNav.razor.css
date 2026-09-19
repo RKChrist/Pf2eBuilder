@@ -5,8 +5,8 @@
     z-index: 3;
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    /* At the 320px floor this leaves each target 46px wide, still over --tap-min, with real
-       travel between two of them. */
+    /* At --layout-viewport-min each target is still wider than --tap-min, with real travel
+       between two of them. */
     column-gap: var(--tap-separation);
     min-height: var(--layout-bottom-bar);
     padding-bottom: env(safe-area-inset-bottom);
