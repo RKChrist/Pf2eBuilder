@@ -97,6 +97,23 @@ app.UseExceptionHandler(handler => handler.Run(async context =>
         return;
     }
 
+    // An empty undo stack is a state and not a fault, and it is not a 404 either: the campaign
+    // is there and the request simply cannot be satisfied from where it stands.
+    if (error is NothingToUndoException nothing)
+    {
+        context.Response.StatusCode = StatusCodes.Status409Conflict;
+        await context.Response.WriteAsJsonAsync(new { title = nothing.Message });
+        return;
+    }
+
+    // Which creature is the whole question, so the sentence carries it.
+    if (error is CombatantNotFoundException absent)
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        await context.Response.WriteAsJsonAsync(new { title = absent.Message });
+        return;
+    }
+
     // Forbidden rather than unauthorized: the campaign is there and this caller is not its DM.
     if (error is NotTheDmException notTheDm)
     {

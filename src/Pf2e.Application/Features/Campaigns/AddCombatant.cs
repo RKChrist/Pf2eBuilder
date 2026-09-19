@@ -38,12 +38,13 @@ public sealed class AddCombatantValidator : AbstractValidator<AddCombatant>
 }
 
 public sealed class AddCombatantHandler(
-    ITrackerDbContext db, IRulesDbContext rules, ICampaignBroadcaster broadcaster)
+    ITrackerDbContext db, IRulesDbContext rules, IUndoStack undo, ICampaignBroadcaster broadcaster)
     : IRequestHandler<AddCombatant, CampaignView>
 {
     public async Task<CampaignView> Handle(AddCombatant command, CancellationToken ct)
     {
-        var (campaign, role) = await CampaignAccess.LoadAsync(db, command.Code, command.DmKey, ct);
+        var (campaign, role) = await CampaignAccess.LoadForChangeAsync(
+            db, undo, command.Code, command.DmKey, "a combatant", ct);
         CampaignAccess.RequireDm(role, "add a combatant");
 
         var encounter = campaign.Encounter ??= new Encounter

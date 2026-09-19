@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Pf2e.Application.Features.Campaigns;
+using Pf2e.Infrastructure.Persistence;
 using Pf2e.Contracts.Tracker;
 
 namespace Pf2e.Persistence.Tests;
@@ -16,6 +17,8 @@ public class EncounterFlowRules(SeededDatabase database) : IClassFixture<SeededD
     const string Wolf = "creature-501";
 
     RecordingBroadcaster Broadcaster { get; } = new();
+
+    MemoryUndoStack Stack { get; } = new();
 
     static string Fixture(string name) =>
         File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", name));
@@ -40,28 +43,28 @@ public class EncounterFlowRules(SeededDatabase database) : IClassFixture<SeededD
         CreatedCampaignView campaign, string ruleId, string name, int? initiative = null)
     {
         await using var db = database.NewContext();
-        return await new AddCombatantHandler(db, db, Broadcaster)
+        return await new AddCombatantHandler(db, db, Stack, Broadcaster)
             .Handle(new AddCombatant(campaign.Code, campaign.DmKey, ruleId, null, name, initiative), default);
     }
 
     async Task<CampaignView> AddPlayer(CreatedCampaignView campaign, Guid characterId)
     {
         await using var db = database.NewContext();
-        return await new AddCombatantHandler(db, db, Broadcaster)
+        return await new AddCombatantHandler(db, db, Stack, Broadcaster)
             .Handle(new AddCombatant(campaign.Code, campaign.DmKey, null, characterId, null), default);
     }
 
     async Task<CampaignView> Roll(CreatedCampaignView campaign, params InitiativeRoll[] rolls)
     {
         await using var db = database.NewContext();
-        return await new RollInitiativeHandler(db, Broadcaster)
+        return await new RollInitiativeHandler(db, Stack, Broadcaster)
             .Handle(new RollInitiative(campaign.Code, campaign.DmKey, rolls), default);
     }
 
     async Task<CampaignView> Next(CreatedCampaignView campaign)
     {
         await using var db = database.NewContext();
-        return await new NextTurnHandler(db, Broadcaster)
+        return await new NextTurnHandler(db, Stack, Broadcaster)
             .Handle(new NextTurn(campaign.Code, campaign.DmKey), default);
     }
 
@@ -91,7 +94,7 @@ public class EncounterFlowRules(SeededDatabase database) : IClassFixture<SeededD
         Assert.Equal("Ogre boss", started.Encounter.Combatants.Single(c => c.IsCurrentTurn).Name);
 
         await using var db = database.NewContext();
-        var ended = await new EndEncounterHandler(db, Broadcaster)
+        var ended = await new EndEncounterHandler(db, Stack, Broadcaster)
             .Handle(new EndEncounter(campaign.Code, campaign.DmKey), default);
 
         Assert.Equal("Exploration", ended.Mode);
@@ -155,6 +158,121 @@ public class EncounterFlowRules(SeededDatabase database) : IClassFixture<SeededD
         var after = await Next(campaign);
         Assert.Equal(fighter.Id, after.Encounter!.CurrentCombatantId);
     }
+
+    // Damage applied to the wrong combatant mid-fight is the single most common mistake at a
+    // table, which is the whole reason design/006 brought undo back.
+    [Fact]
+    public async Task UndoPutsBackTheHitPointsTheLastDamageTook()
+    {
+        var campaign = await NewCampaign();
+        var bard = await Import(campaign.Code, "Zuz");
+        await AddPlayer(campaign, bard.Id);
+        var withOgre = await AddMonster(campaign, Ogre, "Ogre boss");
+        var ogre = MonsterNamed(withOgre, "Ogre boss");
+        await Roll(campaign, new InitiativeRoll(bard.Id, 21), new InitiativeRoll(ogre, 23));
+
+        var hurt = await Damage(campaign, ogre, 37);
+        Assert.Equal(13, Monster(hurt, ogre).Monster!.CurrentHitPoints);
+
+        var undone = await Undo(campaign);
+        Assert.Equal(50, Monster(undone, ogre).Monster!.CurrentHitPoints);
+
+        // And it is really back in the database, not only in the answer.
+        await using var db = database.NewContext();
+        var read = await new GetCampaignHandler(db)
+            .Handle(new GetCampaign(campaign.Code, campaign.DmKey), default);
+        Assert.Equal(50, Monster(read, ogre).Monster!.CurrentHitPoints);
+    }
+
+    [Fact]
+    public async Task UndoReversesATurnCompletely()
+    {
+        var campaign = await NewCampaign();
+        var bard = await Import(campaign.Code, "Zuz");
+        await AddPlayer(campaign, bard.Id);
+        var withOgre = await AddMonster(campaign, Ogre, "Ogre boss");
+        var ogre = MonsterNamed(withOgre, "Ogre boss");
+        await Roll(campaign, new InitiativeRoll(bard.Id, 21), new InitiativeRoll(ogre, 23));
+
+        await Next(campaign);
+        var wrapped = await Next(campaign);
+        Assert.Equal(2, wrapped.Encounter!.Round);
+
+        var undone = await Undo(campaign);
+
+        Assert.Equal(1, undone.Encounter!.Round);
+        Assert.Equal(bard.Id, undone.Encounter.CurrentCombatantId);
+    }
+
+    // Undo is a DM control. A player reversing the DM's damage is not an undo, and an empty
+    // stack is a sentence rather than a fault.
+    [Fact]
+    public async Task OnlyTheDmUndoesAndAnEmptyStackSaysSo()
+    {
+        var campaign = await NewCampaign();
+        await Import(campaign.Code, "Zuz");
+
+        await using var db = database.NewContext();
+        var handler = new UndoLastChangeHandler(db, Stack, Broadcaster);
+
+        await Assert.ThrowsAsync<NotTheDmException>(
+            () => handler.Handle(new UndoLastChange(campaign.Code, null), default));
+        await Assert.ThrowsAsync<NothingToUndoException>(
+            () => handler.Handle(new UndoLastChange(campaign.Code, campaign.DmKey), default));
+    }
+
+    // Bounded and in memory. The cap is what keeps a process left running for a month from
+    // growing without bound, and nothing here survives a restart.
+    [Fact]
+    public async Task TheStackIsCappedAndEndingTheEncounterEmptiesIt()
+    {
+        var campaign = await NewCampaign();
+        var bard = await Import(campaign.Code, "Zuz");
+        await AddPlayer(campaign, bard.Id);
+        var withOgre = await AddMonster(campaign, Ogre, "Ogre boss");
+        var ogre = MonsterNamed(withOgre, "Ogre boss");
+        await Roll(campaign, new InitiativeRoll(bard.Id, 21), new InitiativeRoll(ogre, 23));
+
+        for (var blow = 0; blow < MemoryUndoStack.PerCampaign + 10; blow++)
+        {
+            await Damage(campaign, ogre, 1);
+        }
+
+        var campaignId = await CampaignId(campaign.Code);
+        Assert.Equal(MemoryUndoStack.PerCampaign, Stack.Depth(campaignId));
+
+        await using (var db = database.NewContext())
+        {
+            await new EndEncounterHandler(db, Stack, Broadcaster)
+                .Handle(new EndEncounter(campaign.Code, campaign.DmKey), default);
+        }
+
+        Assert.Equal(0, Stack.Depth(campaignId));
+    }
+
+    async Task<Guid> CampaignId(string code)
+    {
+        await using var db = database.NewContext();
+        return db.Campaigns.Single(c => c.Code == code).Id;
+    }
+
+    async Task<CampaignView> Damage(CreatedCampaignView campaign, Guid creature, int amount)
+    {
+        await using var db = database.NewContext();
+        return await new ChangeHitPointsHandler(db, Stack, Broadcaster).Handle(
+            new ChangeHitPoints(campaign.Code, campaign.DmKey, creature, amount, HitPointDirection.Damage),
+            default);
+    }
+
+    async Task<CampaignView> Undo(CreatedCampaignView campaign)
+    {
+        await using var db = database.NewContext();
+        return await new UndoLastChangeHandler(db, Stack, Broadcaster)
+            .Handle(new UndoLastChange(campaign.Code, campaign.DmKey), default);
+    }
+
+    static CombatantView Monster(CampaignView view, Guid id) =>
+        view.Encounter!.Combatants.Single(c => c.Id == id);
 
     static int IndexOf(CampaignView view, Guid id) =>
         view.Encounter!.Combatants.Select(c => c.Id).ToList().IndexOf(id);

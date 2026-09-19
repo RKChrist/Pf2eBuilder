@@ -62,6 +62,10 @@ public static class CampaignEndpoints
             (ISender sender, HttpRequest request, string code, RollInitiativeRequest? body, CancellationToken ct) =>
                 sender.Send(new RollInitiative(code, DmKeyOf(request), body?.Rolls ?? []), ct));
 
+        app.MapPost("/campaigns/{code}/encounter/undo",
+            (ISender sender, HttpRequest request, string code, CancellationToken ct) =>
+                sender.Send(new UndoLastChange(code, DmKeyOf(request)), ct));
+
         app.MapPost("/campaigns/{code}/encounter/next-turn",
             (ISender sender, HttpRequest request, string code, CancellationToken ct) =>
                 sender.Send(new NextTurn(code, DmKeyOf(request)), ct));

@@ -30,12 +30,14 @@ public sealed class RollInitiativeValidator : AbstractValidator<RollInitiative>
     }
 }
 
-public sealed class RollInitiativeHandler(ITrackerDbContext db, ICampaignBroadcaster broadcaster)
+public sealed class RollInitiativeHandler(
+    ITrackerDbContext db, IUndoStack undo, ICampaignBroadcaster broadcaster)
     : IRequestHandler<RollInitiative, CampaignView>
 {
     public async Task<CampaignView> Handle(RollInitiative command, CancellationToken ct)
     {
-        var (campaign, role) = await CampaignAccess.LoadAsync(db, command.Code, command.DmKey, ct);
+        var (campaign, role) = await CampaignAccess.LoadForChangeAsync(
+            db, undo, command.Code, command.DmKey, "initiative", ct);
         CampaignAccess.RequireDm(role, "roll initiative");
 
         if (campaign.Encounter is not { Combatants.Count: > 0 } encounter)

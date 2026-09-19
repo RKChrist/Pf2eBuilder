@@ -25,12 +25,14 @@ public sealed class RevealMonsterValidator : AbstractValidator<RevealMonster>
     }
 }
 
-public sealed class RevealMonsterHandler(ITrackerDbContext db, ICampaignBroadcaster broadcaster)
+public sealed class RevealMonsterHandler(
+    ITrackerDbContext db, IUndoStack undo, ICampaignBroadcaster broadcaster)
     : IRequestHandler<RevealMonster, CampaignView>
 {
     public async Task<CampaignView> Handle(RevealMonster command, CancellationToken ct)
     {
-        var (campaign, role) = await CampaignAccess.LoadAsync(db, command.Code, command.DmKey, ct);
+        var (campaign, role) = await CampaignAccess.LoadForChangeAsync(
+            db, undo, command.Code, command.DmKey, "a reveal", ct);
         CampaignAccess.RequireDm(role, "reveal a monster");
 
         if (campaign.Encounter?.Find(command.CombatantId) is not MonsterCombatant monster)
@@ -61,13 +63,17 @@ public sealed class EndEncounterValidator : AbstractValidator<EndEncounter>
     }
 }
 
-public sealed class EndEncounterHandler(ITrackerDbContext db, ICampaignBroadcaster broadcaster)
+public sealed class EndEncounterHandler(
+    ITrackerDbContext db, IUndoStack undo, ICampaignBroadcaster broadcaster)
     : IRequestHandler<EndEncounter, CampaignView>
 {
     public async Task<CampaignView> Handle(EndEncounter command, CancellationToken ct)
     {
+        // No snapshot. Ending the fight is where the undo stack is emptied, because the stack is
+        // per encounter and there is nothing in a finished one left to reverse.
         var (campaign, role) = await CampaignAccess.LoadAsync(db, command.Code, command.DmKey, ct);
         CampaignAccess.RequireDm(role, "end the encounter");
+        undo.Clear(campaign.Id);
 
         if (campaign.Encounter is { } encounter)
         {

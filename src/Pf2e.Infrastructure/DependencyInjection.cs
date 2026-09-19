@@ -32,6 +32,7 @@ public static class DependencyInjection
 
         services.AddScoped<IRulesDbContext>(provider => provider.GetRequiredService<RulesDbContext>());
         services.AddScoped<ITrackerDbContext>(provider => provider.GetRequiredService<RulesDbContext>());
+        services.AddSingleton<IUndoStack, MemoryUndoStack>();
         services.AddScoped<RulesSeeder>();
         return services;
     }

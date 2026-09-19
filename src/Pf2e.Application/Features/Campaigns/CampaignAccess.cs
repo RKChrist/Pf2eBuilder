@@ -48,6 +48,21 @@ internal static class CampaignAccess
         return (campaign, campaign.RoleFor(dmKey));
     }
 
+    /// <summary>
+    /// Loads for a command that is going to change something, and records the prior state on the
+    /// way past so undo has something to put back.
+    /// <para>The snapshot is taken here rather than in each handler on purpose. A rule written
+    /// down once per handler is a rule somebody adding the eighth handler will not know about,
+    /// and the command whose prior state nobody captured is the one that cannot be undone.</para>
+    /// </summary>
+    public static async Task<(Campaign Campaign, ViewerRole Role)> LoadForChangeAsync(
+        ITrackerDbContext db, IUndoStack undo, string code, string? dmKey, string label, CancellationToken ct)
+    {
+        var loaded = await LoadAsync(db, code, dmKey, ct);
+        undo.Push(loaded.Campaign.Id, CampaignSnapshots.Of(loaded.Campaign, label));
+        return loaded;
+    }
+
     public static void RequireDm(ViewerRole role, string action)
     {
         if (role is not ViewerRole.Dm)

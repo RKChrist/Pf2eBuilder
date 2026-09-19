@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Pf2e.Application.Features.Campaigns;
+using Pf2e.Infrastructure.Persistence;
 using Pf2e.Contracts.Tracker;
 
 namespace Pf2e.Persistence.Tests;
@@ -34,6 +35,8 @@ public partial class PrivacyRules(SeededDatabase database) : IClassFixture<Seede
 
     RecordingBroadcaster Broadcaster { get; } = new();
 
+    MemoryUndoStack Undo { get; } = new();
+
     static string Fixture(string name) =>
         File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", name));
 
@@ -53,7 +56,7 @@ public partial class PrivacyRules(SeededDatabase database) : IClassFixture<Seede
 
         await using (var db = database.NewContext())
         {
-            await new AddCombatantHandler(db, db, Broadcaster).Handle(
+            await new AddCombatantHandler(db, db, Undo, Broadcaster).Handle(
                 new AddCombatant(campaign.Code, campaign.DmKey, FiftyHitPointCreature, null, MonsterName),
                 default);
         }
@@ -64,7 +67,7 @@ public partial class PrivacyRules(SeededDatabase database) : IClassFixture<Seede
         if (revealed)
         {
             await using var db = database.NewContext();
-            await new RevealMonsterHandler(db, Broadcaster)
+            await new RevealMonsterHandler(db, Undo, Broadcaster)
                 .Handle(new RevealMonster(campaign.Code, campaign.DmKey, monster, true), default);
         }
 
@@ -158,7 +161,7 @@ public partial class PrivacyRules(SeededDatabase database) : IClassFixture<Seede
 
         await using (var db = database.NewContext())
         {
-            await new ChangeHitPointsHandler(db, Broadcaster).Handle(
+            await new ChangeHitPointsHandler(db, Undo, Broadcaster).Handle(
                 new ChangeHitPoints(campaign.Code, campaign.DmKey, monster, 37, HitPointDirection.Damage),
                 default);
         }
@@ -178,7 +181,7 @@ public partial class PrivacyRules(SeededDatabase database) : IClassFixture<Seede
 
         await using var db = database.NewContext();
 
-        await Assert.ThrowsAsync<NotTheDmException>(() => new ChangeHitPointsHandler(db, Broadcaster)
+        await Assert.ThrowsAsync<NotTheDmException>(() => new ChangeHitPointsHandler(db, Undo, Broadcaster)
             .Handle(new ChangeHitPoints(campaign.Code, null, monster, 5, HitPointDirection.Damage), default));
     }
 }

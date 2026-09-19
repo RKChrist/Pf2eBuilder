@@ -25,12 +25,14 @@ public sealed class NextTurnValidator : AbstractValidator<NextTurn>
     }
 }
 
-public sealed class NextTurnHandler(ITrackerDbContext db, ICampaignBroadcaster broadcaster)
+public sealed class NextTurnHandler(
+    ITrackerDbContext db, IUndoStack undo, ICampaignBroadcaster broadcaster)
     : IRequestHandler<NextTurn, CampaignView>
 {
     public async Task<CampaignView> Handle(NextTurn command, CancellationToken ct)
     {
-        var (campaign, role) = await CampaignAccess.LoadAsync(db, command.Code, command.DmKey, ct);
+        var (campaign, role) = await CampaignAccess.LoadForChangeAsync(
+            db, undo, command.Code, command.DmKey, "the turn", ct);
         CampaignAccess.RequireDm(role, "advance the turn");
 
         if (campaign.Encounter is not { Round: > 0 } encounter)

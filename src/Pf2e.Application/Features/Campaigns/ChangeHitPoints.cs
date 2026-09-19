@@ -38,12 +38,14 @@ public sealed class ChangeHitPointsValidator : AbstractValidator<ChangeHitPoints
     }
 }
 
-public sealed class ChangeHitPointsHandler(ITrackerDbContext db, ICampaignBroadcaster broadcaster)
+public sealed class ChangeHitPointsHandler(
+    ITrackerDbContext db, IUndoStack undo, ICampaignBroadcaster broadcaster)
     : IRequestHandler<ChangeHitPoints, CampaignView>
 {
     public async Task<CampaignView> Handle(ChangeHitPoints command, CancellationToken ct)
     {
-        var (campaign, role) = await CampaignAccess.LoadAsync(db, command.Code, command.DmKey, ct);
+        var (campaign, role) = await CampaignAccess.LoadForChangeAsync(
+            db, undo, command.Code, command.DmKey, "hit points", ct);
         var delta = command.Direction is HitPointDirection.Damage ? -command.Amount : command.Amount;
 
         if (campaign.Encounter?.Find(command.CreatureId) is MonsterCombatant monster)

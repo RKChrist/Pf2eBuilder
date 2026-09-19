@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Pf2e.Application.Abstractions;
 using Pf2e.Application.Features.Campaigns;
+using Pf2e.Infrastructure.Persistence;
 using Pf2e.Application.Features.Rules;
 using Pf2e.Contracts.Tracker;
 using Pf2e.Domain.Rules;
@@ -50,6 +51,8 @@ public class CampaignRules(SeededDatabase database) : IClassFixture<SeededDataba
 
     RecordingBroadcaster Broadcaster { get; } = new();
 
+    MemoryUndoStack Undo { get; } = new();
+
     async Task<CreatedCampaignView> NewCampaign()
     {
         await using var db = database.NewContext();
@@ -68,7 +71,7 @@ public class CampaignRules(SeededDatabase database) : IClassFixture<SeededDataba
     async Task<CharacterSheetView?> Damage(string code, Guid characterId, int delta, string? dmKey = null)
     {
         await using var db = database.NewContext();
-        var campaign = await new ChangeHitPointsHandler(db, Broadcaster).Handle(
+        var campaign = await new ChangeHitPointsHandler(db, Undo, Broadcaster).Handle(
             new ChangeHitPoints(
                 code, dmKey, characterId, Math.Abs(delta),
                 delta < 0 ? HitPointDirection.Damage : HitPointDirection.Heal),
@@ -82,7 +85,7 @@ public class CampaignRules(SeededDatabase database) : IClassFixture<SeededDataba
     async Task<CharacterSheetView?> Set(string code, Guid characterId, Guid application, EffectSpec? effect)
     {
         await using var db = database.NewContext();
-        var campaign = await new ApplyEffectHandler(db, Broadcaster).Handle(
+        var campaign = await new ApplyEffectHandler(db, Undo, Broadcaster).Handle(
             new ApplyEffect(code, null, application, effect, [new EffectTargetSpec("Character", characterId)]),
             default);
 
@@ -344,7 +347,7 @@ public class CampaignRules(SeededDatabase database) : IClassFixture<SeededDataba
         var application = Guid.NewGuid();
         await using (var db = database.NewContext())
         {
-            await new ApplyEffectHandler(db, Broadcaster).Handle(
+            await new ApplyEffectHandler(db, Undo, Broadcaster).Handle(
                 new ApplyEffect(campaign.Code, campaign.DmKey, application,
                     Custom("Rallying Anthem", "Status", 1, "Will"),
                     [
@@ -394,7 +397,7 @@ public class CampaignRules(SeededDatabase database) : IClassFixture<SeededDataba
     async Task Apply(CreatedCampaignView campaign, Guid application, IEnumerable<Guid> targets)
     {
         await using var db = database.NewContext();
-        await new ApplyEffectHandler(db, Broadcaster).Handle(
+        await new ApplyEffectHandler(db, Undo, Broadcaster).Handle(
             new ApplyEffect(campaign.Code, campaign.DmKey, application,
                 Custom("Rallying Anthem", "Status", 1, "Will"),
                 [.. targets.Select(id => new EffectTargetSpec("Character", id))]),

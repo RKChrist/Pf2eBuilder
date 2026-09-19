@@ -55,12 +55,14 @@ public sealed class EffectTargetSpecValidator : AbstractValidator<EffectTargetSp
     }
 }
 
-public sealed class ApplyEffectHandler(ITrackerDbContext db, ICampaignBroadcaster broadcaster)
+public sealed class ApplyEffectHandler(
+    ITrackerDbContext db, IUndoStack undo, ICampaignBroadcaster broadcaster)
     : IRequestHandler<ApplyEffect, CampaignView>
 {
     public async Task<CampaignView> Handle(ApplyEffect command, CancellationToken ct)
     {
-        var (campaign, role) = await CampaignAccess.LoadAsync(db, command.Code, command.DmKey, ct);
+        var (campaign, role) = await CampaignAccess.LoadForChangeAsync(
+            db, undo, command.Code, command.DmKey, "an effect", ct);
 
         var existing = campaign.EffectApplications.FirstOrDefault(e => e.Id == command.ApplicationId);
 
