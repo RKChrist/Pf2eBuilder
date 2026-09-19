@@ -44,6 +44,10 @@ public sealed class TrackedCharacter
     public int BonusHitPoints { get; private set; }
     public int BonusHitPointsPerLevel { get; private set; }
 
+    /// <summary>The total an export stated instead of the parts, and null where the parts were
+    /// given. Build state: a re-import replaces it and a session never touches it.</summary>
+    public int? StatedMaxHitPoints { get; private set; }
+
     // Build data that is a list rather than a column. It is read whole and replaced whole on
     // re-import and nothing queries inside it, so it is stored as one JSON value per list and
     // not as two more tables.
@@ -124,7 +128,10 @@ public sealed class TrackedCharacter
         Weapons,
         Spellcasting,
         Feats,
-        Spells);
+        Spells)
+    {
+        StatedMaxHitPoints = StatedMaxHitPoints,
+    };
 
     public SessionState ToSession(IEnumerable<EffectApplication> campaignEffects) => new(
         CurrentHitPoints,
@@ -167,5 +174,6 @@ public sealed class TrackedCharacter
         Spellcasting = build.Spellcasting;
         Feats = build.Feats;
         Spells = build.Spells;
+        StatedMaxHitPoints = build.StatedMaxHitPoints;
     }
 }

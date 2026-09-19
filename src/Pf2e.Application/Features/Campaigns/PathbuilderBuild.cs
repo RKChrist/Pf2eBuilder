@@ -17,7 +17,8 @@ internal sealed record PathbuilderBuild(Character Build, int ArmorPotency)
 {
     const string PasteAdvice =
         "Paste the JSON from Pathbuilder's Export JSON, or open " +
-        "https://pathbuilder2e.com/json.php?id=NNNNNN and copy the page.";
+        "https://pathbuilder2e.com/json.php?id=NNNNNN and copy the page. " +
+        "A Wanderer's Guide export works too: choose Export and pick the JSON.";
 
     // The export has no version field and two stored records differ by six top-level keys, so
     // there is nothing to branch on and every read has to answer "may be absent, may be the
@@ -63,6 +64,12 @@ internal sealed record PathbuilderBuild(Character Build, int ArmorPotency)
             ["heavy"] = "heavy",
         };
 
+    /// <summary>
+    /// The one door both formats come through. A Pathbuilder export is an object with a "build"
+    /// in it; a Wanderer's Guide export is one with a "character" and a "content". They are told
+    /// apart by shape rather than by trying one and catching the failure, so a genuinely broken
+    /// Pathbuilder file is never reported as a Wanderer's Guide file or the other way round.
+    /// </summary>
     public static PathbuilderBuild Parse(string json)
     {
         JsonDocument document;
@@ -72,11 +79,18 @@ internal sealed record PathbuilderBuild(Character Build, int ArmorPotency)
         }
         catch (JsonException failure)
         {
-            throw new PathbuilderFormatException($"That is not a Pathbuilder export. {PasteAdvice}", failure);
+            throw new PathbuilderFormatException(
+                $"That is not a character export this app can read. {PasteAdvice}", failure);
         }
 
         using (document)
         {
+            if (WanderersGuideBuild.Looks(document.RootElement))
+            {
+                var wanderers = WanderersGuideBuild.Parse(document.RootElement);
+                return new PathbuilderBuild(wanderers.Build, wanderers.ArmorPotency);
+            }
+
             var root = document.RootElement;
             var build = Object(root, "build") ?? (root.ValueKind is JsonValueKind.Object ? root : null);
             var name = String(build, "name");

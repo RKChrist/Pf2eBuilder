@@ -142,6 +142,20 @@ public sealed record CampActivityView(string Key, string Name, int Minutes, stri
 
 public sealed record CampActivityRequest(string Activity);
 
+/// <summary>
+/// One activity from the camping rules, as the ruleset holds it.
+/// <para><paramref name="Requires"/> is the sentence the record states, and null where it
+/// states none. <paramref name="Rank"/> and <paramref name="Skills"/> are that sentence read
+/// back, and are null where it is not a plain proficiency phrase: "knowledge of the recipe" is
+/// a real requirement and not one a sheet can check.</para>
+/// </summary>
+public sealed record CampingActivityView(
+    string RuleId,
+    string Name,
+    string? Requires,
+    string? Rank,
+    IReadOnlyList<string> Skills);
+
 /// <summary>One thing a day can be spent on. Skill is the one it is rolled with and null
 /// where the activity has no single skill.</summary>
 public sealed record DowntimeActivityView(string Key, string Name, string? Skill, string What);

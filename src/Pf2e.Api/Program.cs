@@ -62,6 +62,12 @@ builder.Services.AddOptions<HubOptions>()
     });
 builder.Services.AddScoped<ICampaignBroadcaster, CampaignBroadcaster>();
 
+// Kestrel refuses a body over 30 MB before any handler sees it, and a refusal there is a bare
+// 413 with no sentence in it. The validator answers with the size and the format, so it has to
+// be the one that refuses: Kestrel is lifted above it rather than left underneath.
+builder.WebHost.ConfigureKestrel(kestrel =>
+    kestrel.Limits.MaxRequestBodySize = ImportCharacterValidator.MaxPayload + (1024 * 1024));
+
 var app = builder.Build();
 
 // A failed validator is a bad request, not a server fault. Translating it here keeps every

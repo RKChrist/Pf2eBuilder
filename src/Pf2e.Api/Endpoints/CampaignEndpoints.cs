@@ -1,5 +1,6 @@
 using MediatR;
 using Pf2e.Application.Features.Campaigns;
+using Pf2e.Application.Features.Rules;
 using Pf2e.Contracts.Tracker;
 
 namespace Pf2e.Api.Endpoints;
@@ -61,6 +62,11 @@ public static class CampaignEndpoints
         app.MapGet("/downtime-activities", () => Results.Ok(
             Pf2e.Domain.DowntimeActivities.All
                 .Select(a => new DowntimeActivityView(a.Key, a.Name, a.Skill, a.What))));
+
+        // From the ruleset rather than from a table in this codebase: the camping activities are
+        // seeded actions carrying the Camping trait, requirements and all.
+        app.MapGet("/camping-activities", (ISender sender, CancellationToken ct) =>
+            sender.Send(new GetCampingActivities(), ct));
 
         app.MapGet("/camp-activities", () => Results.Ok(
             Pf2e.Domain.CampActivities.All

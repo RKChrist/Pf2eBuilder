@@ -13,7 +13,12 @@ public sealed record ImportCharacter(string Code, string Pathbuilder) : IRequest
 
 public sealed class ImportCharacterValidator : AbstractValidator<ImportCharacter>
 {
-    const int MaxPayload = 512 * 1024;
+    // A Pathbuilder export is a few kilobytes. A Wanderer's Guide one is thirteen megabytes for
+    // a level 13 rogue, because it embeds the full record of every item and spell it touched;
+    // the parts the importer reads come to about 150 KB and the rest is walked past. The cap is
+    // here to stop somebody pasting a film, so it is set above the format that legitimately
+    // needs the room rather than below it.
+    public const int MaxPayload = 24 * 1024 * 1024;
 
     public ImportCharacterValidator()
     {
@@ -25,7 +30,7 @@ public sealed class ImportCharacterValidator : AbstractValidator<ImportCharacter
         RuleFor(c => c.Pathbuilder).Cascade(CascadeMode.Stop)
                                    .NotEmpty()
                                    .Must(payload => payload.Length <= MaxPayload)
-                                   .WithMessage("A Pathbuilder export is smaller than 512 KB.");
+                                   .WithMessage($"A character export is smaller than {MaxPayload / (1024 * 1024)} MB.");
     }
 }
 

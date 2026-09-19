@@ -96,4 +96,15 @@ public sealed record Character(
     public ImmutableArray<SheetEntry> Feats { get; init; } = Feats.IsDefault ? [] : Feats;
 
     public ImmutableArray<SheetEntry> Spells { get; init; } = Spells.IsDefault ? [] : Spells;
+
+    /// <summary>
+    /// The maximum hit points the export stated, when it stated one instead of the parts.
+    /// <para>A Pathbuilder export gives ancestry hit points, class hit points and the bonuses,
+    /// and the engine adds them up. A Wanderer's Guide export gives the total and no split, so
+    /// there is nothing to add up and nothing to be gained by guessing a split that would
+    /// multiply back to the same number.</para>
+    /// <para>Drained still comes off it, because drained is a session effect and this is the
+    /// build's number.</para>
+    /// </summary>
+    public int? StatedMaxHitPoints { get; init; }
 }

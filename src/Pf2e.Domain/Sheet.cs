@@ -61,15 +61,18 @@ public static class CharacterSheet
         // Drained reduces maximum hit points by its value times level, which no modifier can
         // express. The Constitution modifier stays the build's: drained costs hit points and
         // penalises Con-based checks, it does not lower the attribute.
+        // An export that stated the total rather than the parts is taken at its word. Adding up
+        // a split it never gave would mean inventing one.
+        var builtHitPoints = build.StatedMaxHitPoints ?? HitPoints.Max(
+            build.AncestryHitPoints,
+            build.ClassHitPoints,
+            level,
+            build.Attributes.Constitution,
+            build.BonusHitPoints,
+            build.BonusHitPointsPerLevel);
+
         var maxHitPoints = Math.Max(1,
-            HitPoints.Max(
-                build.AncestryHitPoints,
-                build.ClassHitPoints,
-                level,
-                build.Attributes.Constitution,
-                build.BonusHitPoints,
-                build.BonusHitPointsPerLevel)
-            - HitPoints.DrainedLoss(DrainedValue(session), level));
+            builtHitPoints - HitPoints.DrainedLoss(DrainedValue(session), level));
 
         return new Sheet(
             Domain.ArmorClass.Compute(
