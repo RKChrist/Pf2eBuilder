@@ -216,14 +216,22 @@ Demiplane has no terms document of its own. `https://demiplane.com/terms-of-serv
 `https://help.roll20.net/hc/en-us/articles/360037770793-Terms-of-Service-and-Privacy-Policy`, which I
 confirmed first-hand by following the redirect chain. `https://demiplane.com/terms`, `/legal`, `/tos`
 and `https://app.demiplane.com/terms` are all 404. The Roll20 document is stamped 27 February 2026
-and is a combined terms and privacy policy. It never uses the words "Demiplane" or "Nexus"; it
+and is a combined terms and privacy policy. It never uses the words "Demiplane" or "Nexus". It
 reaches Demiplane through its preamble, "When you read Roll20 or 'we' below, it refers to Roll20,
 LLC, its affiliates, and agents."
 
-**There is no anti-scraping, anti-bot or anti-automated-access clause.** A subagent's full-document
-keyword sweep returned zero hits for robot, spider, crawler, scrape, scraping, data mining,
-automated means, automated script, bot, API and aggregation. The nearest clauses that exist are four
-bullets under "Play Nice Clauses", each scoped to other people's data or to server load:
+The help centre page returns HTTP 403 to a plain fetch, so I read the article body through the same
+Zendesk REST route that works for Demiplane's help centre,
+`https://help.roll20.net/api/v2/help_center/en-us/articles/360037770793.json`. It returns 43,742
+characters of text, last edited 27 February 2026. Every quote below is from that fetch and I checked
+each one in context myself.
+
+**There is no anti-scraping, anti-bot or anti-automated-access clause.** A keyword sweep of the full
+text returns zero occurrences of robot, spider, crawler, scrape, data mining, aggregate, API, and
+zero occurrences of "bot" as a word. The single occurrence of "automated" is Roll20 describing its
+own monitoring: "we have set up automated alarms to be notified... when the Roll20 service is under
+stress". The nearest clauses that exist are four bullets under "Play Nice Clauses", introduced by
+"You agree that you shall not:", each scoped to other people's data or to server load:
 
 > "Collect, harvest, mine or engage in any other activity to obtain e-mail addresses, phone numbers,
 > personal information or any other information about others."
@@ -245,10 +253,6 @@ The clause that does bite is reverse engineering, under "Intellectual Property R
 "Roll20 materials" is defined as content "produced by Roll20", and a separate clause says "Roll20
 does not claim intellectual property rights over campaigns or uploaded content on Roll20". The GDPR
 section grants "The right to obtain and reuse your personal information for your own purposes."
-
-Honest limit on this section. I verified the redirect chain and both `robots.txt` files first-hand.
-The clause quotes come from a single subagent fetch of the Roll20 help centre URL, which returned
-HTTP 403 when I tried to re-fetch it to check the wording myself. Treat the quotes as one-source.
 
 `https://www.demiplane.com/robots.txt` is a zero-byte file. `https://app.demiplane.com/robots.txt`,
 which I fetched directly, disallows five paths for all agents and nothing else:
@@ -375,12 +379,12 @@ drifted, the whole of section 2 needs revisiting and the recommendation weakens 
 - Whether a 2026 Pathfinder 2e export still carries the same field names. The sample is from May 2025
   and the cross-system check is Starfinder. Nobody has posted a 2026 Pathfinder dump. The experiment
   above settles it.
+- Whether Pathbuilder's JSON has ever changed shape. No changelog exists for it and I found no dated
+  report of a break. Undocumented is established; unstable is not.
 - Where the PDF's fixed slot counts break. 27 feats and 40 items will not hold a level 20 character,
   and no source says what happens when they overflow.
 - Whether a genuinely shared character UUID returns a populated payload to an anonymous GraphQL
   caller. The third-party README asserts it; no observation confirms it.
-- Whether the Roll20 terms quotes in section 4 are complete. One subagent fetch reached the document;
-  my own re-fetch got HTTP 403.
 - Whether Demiplane ever had its own pre-acquisition terms with scraping language. The Internet
   Archive was offline during this research.
 - Anything from Reddit, and anything from the Chrome or Edge extension stores. All were blocked.
