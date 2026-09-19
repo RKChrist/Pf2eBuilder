@@ -43,10 +43,7 @@
 }
 
 @code {
-    /// <summary>
-    /// Taken from the query string rather than held here, so the phone's back button is what
-    /// closes the sheet: removing the history entry removes the id, and this follows it.
-    /// </summary>
+    /// <summary>Owned by the query string so the phone's back button closes the sheet.</summary>
     [Parameter] public string? RuleId { get; set; }
 
     protected override void OnParametersSet()

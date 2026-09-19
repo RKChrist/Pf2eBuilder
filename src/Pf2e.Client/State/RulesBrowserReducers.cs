@@ -58,10 +58,7 @@ public static class RulesBrowserReducers
     public static RulesBrowserState On(RulesBrowserState state, SearchFailed action) =>
         state with { Results = new RemoteData<RuleSearchResult>.Failed(action.Message) };
 
-    /// <summary>
-    /// Filters are per category. Carrying a trait from feats into spells would show a player an
-    /// empty list and no reason for it.
-    /// </summary>
+    /// <summary>Carrying a trait from feats into spells shows an empty list and no reason for it.</summary>
     static RulesBrowserState Unfiltered(RulesBrowserState state) => state with
     {
         Query = string.Empty,

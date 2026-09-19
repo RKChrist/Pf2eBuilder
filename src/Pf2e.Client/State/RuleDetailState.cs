@@ -6,7 +6,7 @@ namespace Pf2e.Client.State;
 [FeatureState]
 public sealed record RuleDetailState
 {
-    /// <summary>Null means no sheet is open. It is also what the browser's back button restores.</summary>
+    /// <summary>Null means no sheet is open, which is what a back navigation restores.</summary>
     public string? Id { get; init; }
 
     public RemoteData<RuleDetail> Detail { get; init; } = new RemoteData<RuleDetail>.NotAsked();

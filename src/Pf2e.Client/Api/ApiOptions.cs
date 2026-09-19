@@ -6,6 +6,5 @@ public sealed class ApiOptions
 
     public string BaseUrl { get; set; } = string.Empty;
 
-    /// <summary>How long the name filter waits for the player to stop typing.</summary>
     public int SearchDebounceMilliseconds { get; set; }
 }

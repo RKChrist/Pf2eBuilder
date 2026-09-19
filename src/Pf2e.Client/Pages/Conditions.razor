@@ -91,8 +91,7 @@
 
     void Load() => Dispatcher.Dispatch(new ConditionsRequested());
 
-    // The sign, not a colour, says bonus or penalty, and it is the real minus sign rather than a
-    // hyphen so it lines up with the digits beside it.
+    // U+2212, not a hyphen, so the sign keeps the width of a digit under tabular-nums.
     static string Amount(ModifierSummary modifier) =>
         modifier.Value < 0 ? $"−{Math.Abs(modifier.Value)}" : $"+{modifier.Value}";
 

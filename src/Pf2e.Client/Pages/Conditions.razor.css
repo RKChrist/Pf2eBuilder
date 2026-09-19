@@ -84,8 +84,6 @@
     border-top: var(--border-hair) solid var(--line-subtle);
 }
 
-/* The one number the row is about. Right-aligned so signs and digits stack into a column the
-   eye can run down, which is the whole point of drawing this as an instrument. */
 .amount {
     font-size: var(--font-size-stat);
     font-weight: var(--font-weight-bold);
@@ -116,7 +114,6 @@
     background: var(--surface-sunken);
 }
 
-/* Drawn in the muted text colour on purpose. The glyph and the word carry this, not a hue. */
 .unverified {
     display: inline-flex;
     align-items: center;

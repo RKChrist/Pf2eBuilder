@@ -25,10 +25,6 @@ public abstract record Selector
 
     public static Selector Speeds { get; } = new SpeedSelector();
 
-    /// <summary>
-    /// Spelled out per kind rather than split on case, because a splitter turns ClassDc into
-    /// "Class Dc" and the abbreviation is the part a player recognises.
-    /// </summary>
     static readonly Dictionary<StatKind, string> KindNames = new()
     {
         [StatKind.ArmorClass] = "Armor Class",

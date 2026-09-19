@@ -26,10 +26,8 @@ public sealed class GetRuleHandler(IRulesDbContext db) : IRequestHandler<GetRule
         return record is null ? null : new RuleDetail(RuleSummaries.Of(record), Mechanics(record.Mechanics));
     }
 
-    /// <summary>
-    /// Key order is the seed's own, because Archives of Nethys writes a stat block in the order
-    /// a player reads it and re-sorting would throw that away.
-    /// </summary>
+    /// <summary>Key order is the seed's own, which is the only ordering a field this server has
+    /// never heard of can be given.</summary>
     static IReadOnlyList<MechanicField> Mechanics(string json) =>
         JsonNode.Parse(json) is JsonObject fields
             ? [.. fields.Select(field => new MechanicField(field.Key, Flatten(field.Value)))]

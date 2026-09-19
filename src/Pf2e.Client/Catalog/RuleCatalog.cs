@@ -2,10 +2,8 @@ using Pf2e.Client.State;
 
 namespace Pf2e.Client.Catalog;
 
-/// <summary>
-/// <paramref name="Route"/> is what lets one category open a screen of its own without any
-/// renderer learning a category name. Everything that browses records keeps the default.
-/// </summary>
+/// <summary><paramref name="Route"/> is how a category gets a screen of its own without any
+/// renderer learning a category name.</summary>
 public sealed record RuleCategory(string Key, string Label, GroupKey Group, string Route = RuleCatalog.BrowseRoute);
 
 public static class RuleCatalog
@@ -14,7 +12,6 @@ public static class RuleCatalog
 
     public const string ConditionsRoute = "/conditions";
 
-    /// <summary>The seed ships 74 category files, and every one of them is a row here.</summary>
     public const int CategoryCount = 74;
 
     public static IReadOnlyList<RuleCategory> All { get; } =
@@ -106,10 +103,6 @@ public static class RuleCatalog
     public static string LabelOf(string key) =>
         All.FirstOrDefault(category => category.Key == key)?.Label ?? key;
 
-    /// <summary>
-    /// A category with no row is a category no player can reach, and nothing else in the app
-    /// would notice. Called at startup so a dropped row cannot ship quietly.
-    /// </summary>
     public static void EnsureComplete()
     {
         var distinct = All.Select(category => category.Key).ToHashSet(StringComparer.Ordinal).Count;

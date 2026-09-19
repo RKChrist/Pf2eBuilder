@@ -1,5 +1,4 @@
-/* Delayed by a sheet's worth of time and filled backwards, so a response that beats the delay
-   replaces this before a single frame of it is painted. No spinner, no flash. */
+/* The delay is the feature: a response that beats it replaces this before a frame is painted. */
 .skeleton {
     animation: reveal var(--motion-duration-quick) var(--motion-easing-enter) var(--motion-duration-sheet);
     animation-fill-mode: backwards;

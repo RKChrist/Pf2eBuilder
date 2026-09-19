@@ -3,10 +3,8 @@ using Pf2e.Contracts.Rules;
 
 namespace Pf2e.Client.State;
 
-/// <summary>
-/// A null <see cref="ActiveCategory"/> means the group's category list is showing rather than
-/// any records, which is the browse screen's only mode switch.
-/// </summary>
+/// <summary>A null <see cref="ActiveCategory"/> is the browse screen's only mode switch: the
+/// group's category list rather than any records.</summary>
 [FeatureState]
 public sealed record RulesBrowserState
 {
@@ -43,7 +41,6 @@ public sealed record PageSelected(int Page);
 
 public sealed record SearchRetried;
 
-/// <summary>Dispatched by the effect when the request actually leaves, not when the player types.</summary>
 public sealed record SearchStarted;
 
 public sealed record SearchSucceeded(RuleSearchResult Result);

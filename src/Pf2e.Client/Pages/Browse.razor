@@ -54,7 +54,7 @@ else
             <button type="button" class="active-trait" @onclick="@(() => Dispatcher.Dispatch(new TraitSelected(null)))">
                 @activeTrait
                 <span class="dismiss" aria-hidden="true">×</span>
-                <span class="assistive">Remove this trait filter</span>
+                <span class="visually-hidden">Remove this trait filter</span>
             </button>
         }
     </div>

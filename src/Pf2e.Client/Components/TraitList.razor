@@ -10,8 +10,7 @@
 @code {
     [Parameter, EditorRequired] public IReadOnlyList<string> Traits { get; set; } = [];
 
-    // Rarity is already drawn as its own marked tag beside this list, and AoN publishes it as a
-    // trait too. Printing it twice reads as a mistake.
+    // AoN publishes rarity as a trait as well as a field, and RarityTag already draws it.
     [Parameter] public string? AlreadyShown { get; set; }
 
     IEnumerable<string> Shown => Traits.Where(trait =>

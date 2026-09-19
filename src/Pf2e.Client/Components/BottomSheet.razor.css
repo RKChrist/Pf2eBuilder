@@ -19,7 +19,6 @@
     max-width: var(--layout-content-max);
     border-radius: var(--radius-sheet) var(--radius-sheet) var(--radius-grid) var(--radius-grid);
     background: var(--surface-overlay);
-    /* Motion answering a tap: the sheet comes from the edge the thumb pulled it from. */
     animation: rise var(--motion-duration-sheet) var(--motion-easing-enter);
 }
 
@@ -50,7 +49,6 @@
     padding: var(--space-4) var(--layout-gutter) var(--space-2);
 }
 
-/* The one control that dismisses this is at the bottom, inside --layout-thumb-reach. */
 .foot {
     padding: var(--space-3) var(--layout-gutter) calc(var(--space-3) + env(safe-area-inset-bottom));
     border-top: var(--border-hair) solid var(--line-subtle);

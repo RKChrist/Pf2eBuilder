@@ -9,8 +9,8 @@
 })
 
 @code {
-    // The four arms of RemoteData are written once, here. The discard is the NotAsked arm:
-    // RemoteData's constructor is private, so no fifth case exists for it to swallow.
+    // The discard is the NotAsked arm. RemoteData's constructor is private, so there is no
+    // fifth case for it to swallow.
     [Parameter, EditorRequired] public RemoteData<T> Data { get; set; } = new RemoteData<T>.NotAsked();
 
     [Parameter] public RenderFragment? NotAsked { get; set; }

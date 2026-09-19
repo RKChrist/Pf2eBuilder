@@ -4,15 +4,10 @@ namespace Pf2e.Client.Catalog;
 
 public sealed record MechanicRow(string Label, IReadOnlyList<string> Values);
 
-/// <summary>
-/// Turns the seed's snake_case fields into the rows of a stat block. Three tables and no
-/// branching on category: an order, a hidden set, and a fallback that humanises whatever
-/// Archives of Nethys prints next rather than dropping it.
-/// </summary>
+/// <summary>Tables, not a branch on category. Adding a per-category case here is the mistake.</summary>
 public static class MechanicsDisplay
 {
-    /// <summary>The order a player reads a stat block in, not the order the JSON happens to be in.</summary>
-    static readonly (string Key, string Label)[] Known =
+    static readonly (string Key, string Label)[] ReadingOrder =
     [
         ("actions", "Actions"),
         ("component", "Components"),
@@ -110,7 +105,6 @@ public static class MechanicsDisplay
         ("source", "Also Printed In"),
     ];
 
-    /// <summary>Identifiers and bookkeeping that mean nothing at a table.</summary>
     static readonly HashSet<string> Hidden = new(StringComparer.Ordinal)
     {
         "trait_group",
@@ -124,21 +118,18 @@ public static class MechanicsDisplay
         "actions_number",
     };
 
-    /// <summary>
-    /// A field the seed also prints under another name. Dropped only when the two say exactly
-    /// the same thing, so a record printed in a second book still shows that.
-    /// </summary>
+    /// <summary>Keys under which the seed reprints a fact it has already stated elsewhere.</summary>
     static readonly (string Key, string Echoes)[] Repeats =
     [
         ("source_raw", "primary_source_raw"),
     ];
 
     static readonly Dictionary<string, int> Order =
-        Known.Select((entry, index) => (entry.Key, index))
+        ReadingOrder.Select((entry, index) => (entry.Key, index))
              .ToDictionary(entry => entry.Key, entry => entry.index, StringComparer.Ordinal);
 
     static readonly Dictionary<string, string> Labels =
-        Known.GroupBy(entry => entry.Key, StringComparer.Ordinal)
+        ReadingOrder.GroupBy(entry => entry.Key, StringComparer.Ordinal)
              .ToDictionary(group => group.Key, group => group.First().Label, StringComparer.Ordinal);
 
     /// <param name="recordName">

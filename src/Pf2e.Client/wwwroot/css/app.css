@@ -46,14 +46,12 @@ a {
     color: var(--accent-base);
 }
 
-/* One rule, everywhere. A phone still gets plugged into a keyboard at a table. */
 :focus-visible {
     outline: var(--line-focus) solid var(--border-focus);
     outline-offset: var(--border-hair);
 }
 
-/* Names a control for a screen reader when the visible mark is a glyph. */
-.assistive {
+.visually-hidden {
     position: absolute;
     width: var(--border-hair);
     height: var(--border-hair);

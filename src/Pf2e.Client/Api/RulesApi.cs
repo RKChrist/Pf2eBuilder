@@ -4,10 +4,6 @@ using Pf2e.Contracts.Rules;
 
 namespace Pf2e.Client.Api;
 
-/// <summary>
-/// Carries a sentence a player can read. Every way this call can fail is translated here, so no
-/// caller has to know what a <see cref="HttpRequestException"/> is.
-/// </summary>
 public sealed class RulesApiException(string message) : Exception(message);
 
 public sealed class RulesApi(HttpClient http)

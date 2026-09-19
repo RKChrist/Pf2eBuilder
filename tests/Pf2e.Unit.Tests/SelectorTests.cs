@@ -6,10 +6,6 @@ public class SelectorTests
 {
     public static TheoryData<StatKind> EveryKind => [.. Enum.GetValues<StatKind>()];
 
-    /// <summary>
-    /// A selector's description reaches the player through the conditions screen, so a newly
-    /// added statistic with no readable name must fail here rather than at a table.
-    /// </summary>
     [Theory]
     [MemberData(nameof(EveryKind))]
     public void EveryStatisticHasAPlayerReadableName(StatKind kind)
