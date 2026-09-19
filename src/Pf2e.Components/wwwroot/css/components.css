@@ -141,7 +141,7 @@
   cursor: progress;
 }
 
-.pf-btn__full {
+.pf-btn--full {
   display: flex;
   width: 100%;
 }
@@ -524,8 +524,8 @@
   background: var(--line-strong);
 }
 
-/* 56 wide minus two 2px borders and two 4px pads leaves 44 of track; the thumb fills the
-   20 of content height and is square, so its travel is exactly one --space-5. */
+/* The thumb fills the track's content height and is square, so with a --tap-primary track
+   inset by --border-strong and --space-1 its travel comes out at exactly --space-5. */
 .pf-switch__track {
   flex: none;
   display: flex;
@@ -711,10 +711,12 @@
 
 /* The sign is always drawn, and a penalty uses a true minus rather than a hyphen, because
    the failure this component exists to prevent is reading -2 as +2 in bad light. */
+/* Tighter inside than the gap between two of these, because a stat breakdown lists several
+   in a row and the value must bind to its own type name, not to the next one. */
 .pf-mod {
   display: inline-flex;
   align-items: baseline;
-  gap: var(--space-2);
+  gap: var(--space-1);
   font-family: var(--font-family-data);
 }
 
@@ -817,7 +819,10 @@
   background: var(--surface-sunken);
 }
 
-.pf-row:last-child {
+/* Rows sit either directly in a card or wrapped in list items, and the last one drops its
+   rule either way. */
+.pf-row:last-child,
+.pf-card__list > li:last-child > .pf-row {
   border-bottom: none;
 }
 

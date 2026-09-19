@@ -1,0 +1,152 @@
+/* Page chrome for the gallery only: the shell the specimens sit in. No component styling
+   lives here and none is copied from components.css, which the page links directly. */
+
+.g-body {
+  margin: 0;
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font-family: var(--font-family-data);
+  font-size: var(--font-size-body);
+  line-height: var(--font-leading-normal);
+}
+
+.g-page {
+  max-width: var(--layout-content-max);
+  margin-inline: auto;
+  padding: var(--space-0) var(--layout-gutter) var(--space-8);
+}
+
+.g-top {
+  position: sticky;
+  top: var(--space-0);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-inline: calc(var(--layout-gutter) * -1);
+  padding: var(--space-3) var(--layout-gutter);
+  border-bottom: var(--border-hair) solid var(--line-subtle);
+  background: var(--surface-page);
+}
+
+.g-top__title {
+  margin: var(--space-0);
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-subhead);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--font-leading-tight);
+  letter-spacing: var(--font-tracking-tight);
+}
+
+.g-top__note {
+  margin: var(--space-0);
+  color: var(--text-muted);
+  font-size: var(--font-size-chip);
+  line-height: var(--font-leading-snug);
+}
+
+.g-group {
+  margin-block: var(--space-7) var(--space-0);
+}
+
+.g-group__head {
+  margin: var(--space-0) var(--space-0) var(--space-2);
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-section);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--font-leading-tight);
+  letter-spacing: var(--font-tracking-tight);
+}
+
+.g-spec {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-block: var(--space-5);
+  border-top: var(--border-hair) solid var(--line-subtle);
+}
+
+.g-spec__name {
+  margin: var(--space-0);
+  color: var(--text-secondary);
+  font-size: var(--font-size-data);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--font-tracking-wide);
+  text-transform: uppercase;
+}
+
+.g-case {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.g-case__label {
+  color: var(--text-muted);
+  font-size: var(--font-size-chip);
+  letter-spacing: var(--font-tracking-wide);
+}
+
+.g-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tap-separation);
+  align-items: flex-start;
+}
+
+/* Two ActionCost specimens side by side would read as one longer run of diamonds, so
+   they are named in a legend and spaced far wider than the gap inside a single one. */
+.g-legend {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+  margin: var(--space-0);
+}
+
+.g-legend dt,
+.g-legend dd {
+  margin: var(--space-0);
+}
+
+.g-legend dd {
+  color: var(--text-secondary);
+  font-size: var(--font-size-data);
+}
+
+.g-costs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.g-scale--chip {
+  font-size: var(--font-size-chip);
+}
+
+.g-scale--stat {
+  font-size: var(--font-size-stat);
+}
+
+/* A transform makes this element the containing block for the fixed-position sheet, so a
+   component that owns the viewport in the app can be shown in place on this page. */
+.g-frame {
+  position: relative;
+  transform: translate(0);
+  width: 100%;
+  aspect-ratio: 3 / 5;
+  border: var(--border-hair) solid var(--line-subtle);
+  border-radius: var(--radius-card);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.g-frame__filler {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  color: var(--text-muted);
+  font-size: var(--font-size-data);
+}

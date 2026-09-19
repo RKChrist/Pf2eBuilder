@@ -148,7 +148,7 @@
     --rarity-uncommon: #D9963F;
     --rarity-unique: #B48ED2;
     --scrim: #0E151C;
-    --surface-overlay: #2B3B4D;
+    --surface-overlay: #1D2A38; /** Matches raised, as it already does in light. A bottom sheet carries the same rarity chips and stat colours as a card, and at ink.700 five of those roles fell under 4.5:1. The sheet reads as floating from the scrim behind it and its own radius, not from being a lighter grey. */
     --surface-page: #16202B;
     --surface-raised: #1D2A38;
     --surface-sunken: #0E151C;
@@ -180,7 +180,7 @@
   --rarity-uncommon: #D9963F;
   --rarity-unique: #B48ED2;
   --scrim: #0E151C;
-  --surface-overlay: #2B3B4D;
+  --surface-overlay: #1D2A38; /** Matches raised, as it already does in light. A bottom sheet carries the same rarity chips and stat colours as a card, and at ink.700 five of those roles fell under 4.5:1. The sheet reads as floating from the scrim behind it and its own radius, not from being a lighter grey. */
   --surface-page: #16202B;
   --surface-raised: #1D2A38;
   --surface-sunken: #0E151C;
