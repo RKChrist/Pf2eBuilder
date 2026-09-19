@@ -130,5 +130,16 @@ public static class RuleCatalog
                 $"The rule catalog must hold {CategoryCount} distinct categories, one per seed file. " +
                 $"It holds {All.Count} rows with {distinct} distinct keys.");
         }
+
+        var unplaced = All.Where(category =>
+            CategoryNotes.Of(category.Key) is not { } note
+            || !CategoryNotes.SectionOrder(category.Group).Contains(note.Section)).ToList();
+
+        if (unplaced.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "Every category needs a note whose section its group lists, or the board drops it: " +
+                string.Join(", ", unplaced.Select(category => category.Key)));
+        }
     }
 }

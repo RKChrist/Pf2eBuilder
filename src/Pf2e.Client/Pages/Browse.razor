@@ -224,14 +224,12 @@ else
 
     sealed record Section(string Name, IReadOnlyList<RuleCategory> Categories);
 
-    /// <summary>Grouped by our notes' section, in the order a section is first met, so the notes
-    /// alone decide the board's headings. A category the notes do not place yet goes last.</summary>
     IReadOnlyList<Section> Sections =>
     [
-        .. RuleCatalog.InGroup(State.ActiveGroup)
-            .GroupBy(category => CategoryNotes.Of(category.Key)?.Section ?? "More")
-            .OrderBy(section => section.Key == "More" ? 1 : 0)
-            .Select(section => new Section(section.Key, [.. section])),
+        .. CategoryNotes.SectionOrder(State.ActiveGroup)
+            .Select(name => new Section(name, [.. RuleCatalog.InGroup(State.ActiveGroup)
+                .Where(category => CategoryNotes.Of(category.Key)?.Section == name)]))
+            .Where(section => section.Categories.Count > 0),
     ];
 
     RenderFragment CategoryFace(RuleCategory category) => @<text>
