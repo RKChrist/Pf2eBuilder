@@ -1,0 +1,36 @@
+.trait-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--tap-min);
+    min-height: var(--tap-min);
+    padding: var(--space-0);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.trait-link ::deep .pf-trait {
+    transition: border-color var(--motion-duration-quick) var(--motion-easing-exit),
+                color var(--motion-duration-quick) var(--motion-easing-exit);
+}
+
+.trait-link:active ::deep .pf-trait {
+    background: var(--accent-wash);
+}
+
+.trait-link:focus-visible {
+    outline: none;
+}
+
+.trait-link:focus-visible ::deep .pf-trait {
+    outline: var(--border-focus) solid var(--line-focus);
+    outline-offset: var(--space-1);
+}
+
+@media (hover: hover) {
+    .trait-link:hover ::deep .pf-trait {
+        border-color: var(--accent-base);
+        color: var(--accent-press);
+    }
+}

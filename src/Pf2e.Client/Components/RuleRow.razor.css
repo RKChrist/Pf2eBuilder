@@ -80,10 +80,15 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2);
-    margin-top: calc(var(--space-2) * -1);
-    padding: var(--space-0) var(--space-4) var(--space-3);
+    gap: var(--space-0) var(--space-2);
+    margin-top: calc(var(--space-3) * -1);
+    padding: var(--space-0) var(--space-4) var(--space-1);
     pointer-events: none;
+}
+
+/* Only the traits answer inside the marks; the gaps between them still open the row. */
+.marks ::deep .trait-link {
+    pointer-events: auto;
 }
 
 .more {

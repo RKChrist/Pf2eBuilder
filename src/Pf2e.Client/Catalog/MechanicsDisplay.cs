@@ -168,7 +168,7 @@ public static class MechanicsDisplay
                               && present.TryGetValue(repeat.Echoes, out var original)
                               && original.Values.SequenceEqual(field.Values, StringComparer.Ordinal));
 
-    static string LabelOf(string key) =>
+    public static string LabelOf(string key) =>
         Labels.TryGetValue(key, out var label) ? label : Humanised(key);
 
     static string Humanised(string key) =>

@@ -26,7 +26,7 @@
             }
             @foreach (var trait in Traits.Take(TraitsShown))
             {
-                <TraitChip>@trait</TraitChip>
+                <TraitLink Name="@trait" />
             }
             @if (Traits.Count > TraitsShown)
             {

@@ -1,0 +1,13 @@
+@inject NavigationManager Navigation
+
+@* The kit's chip, drawn as it always is, inside a button sized to the tap floor. Propagation is
+   stopped so a chip in a row explains the trait without also opening the row. *@
+<button type="button" class="trait-link" @onclick="Open" @onclick:stopPropagation>
+    <TraitChip>@Name</TraitChip>
+</button>
+
+@code {
+    [Parameter, EditorRequired] public string Name { get; set; } = string.Empty;
+
+    void Open() => Navigation.NavigateTo(Navigation.Trait(Name));
+}

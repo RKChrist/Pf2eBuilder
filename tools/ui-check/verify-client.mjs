@@ -152,6 +152,41 @@ await sleep(200);
 check('the Filters toggle opens them', await page.eval(
   `getComputedStyle(document.querySelector('.refine')).display !== 'none'
     && document.querySelector('.refine-toggle').getAttribute('aria-expanded') === 'true'`));
+
+check.eq('no control sits inside another', await count('button button, button a, a button, a a'), 0);
+const traitName = await text('.rule .trait-link');
+await click('.rule .trait-link');
+check('a trait chip opens the trait sheet', await waitFor('.trait-sheet .pf-sheet__panel'));
+await sleep(300);
+check('the trait is in the address bar', decodeURIComponent(await page.eval('location.search')).toLowerCase()
+  .includes(`trait=${traitName.toLowerCase()}`), await page.eval('location.search'));
+check.eq('the chip does not also open its row', await count('.pf-sheet:not(.trait-sheet) .pf-sheet__panel'), 0);
+check.eq('the trait sheet is titled with the trait', (await text('.trait-sheet .pf-sheet__title')).toLowerCase(), traitName.toLowerCase());
+check('the trait sheet explains it or says it cannot yet',
+  (await text('.trait-sheet .gloss'))?.length > 10, await text('.trait-sheet .gloss'));
+check('the trait sheet says where it is found', await waitFor('.trait-sheet .place'));
+check('each place is counted', await page.eval(
+  `[...document.querySelectorAll('.trait-sheet .place-count')].every(c => /^\\d{1,3}(,\\d{3})*$/.test(c.textContent.trim()))`));
+check('the sheet links the full text', (await page.eval(
+  `document.querySelector('.trait-sheet a.archives')?.href ?? ''`)).startsWith('https://2e.aonprd.com/'));
+await page.eval('history.back()');
+await sleep(600);
+check.eq('back closes the trait sheet', await count('.trait-sheet .pf-sheet__panel'), 0);
+check('back leaves the list where it was', await count('.rule') > 1);
+
+await click('.rule .trait-link');
+await waitFor('.trait-sheet .place');
+await sleep(300);
+const place = await text('.trait-sheet .place-label');
+await click('.trait-sheet .place');
+await sleep(1200);
+check.eq('a place opens that category', await text('.top .heading'), place);
+check.eq('filtered by the trait', (await text('.active-trait'))?.split('\n')[0].trim().toLowerCase(), traitName.toLowerCase());
+check('and the list is only records with it', (await searches()).at(-1).toLowerCase().includes(`trait=${encodeURIComponent(traitName).toLowerCase()}`),
+  (await searches()).at(-1));
+await openFeats();
+await click('.refine-toggle');
+await sleep(200);
 check('the level filter is one dual-thumb range', await count('.pf-slider--range') === 1);
 
 const before = (await searches()).length;
