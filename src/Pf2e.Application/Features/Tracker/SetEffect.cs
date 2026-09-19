@@ -153,10 +153,41 @@ public sealed class SetEffectHandler(ITrackerDbContext db, ITableBroadcaster bro
             }
         }
 
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException)
+        {
+            // A retry arriving twice at once is the case a client-named slot exists to make
+            // safe, and it is the case that breaks a find-then-insert: both requests see the
+            // slot empty and both insert the same key. If the slot now holds what this caller
+            // asked for then this caller succeeded, whoever wrote the row, so answer with what
+            // is there. The request that did the writing has already told the table, which is
+            // why nothing is broadcast here.
+            var settled = await Current(code, command.CharacterId, ct);
+            if (settled is null || (command.Effect is not null && settled.Effects.All(e => e.Id != command.EffectId)))
+            {
+                throw;
+            }
+
+            return settled;
+        }
 
         var sheet = SheetViews.Of(character);
         await broadcaster.CharacterChangedAsync(code, sheet, ct);
         return sheet;
+    }
+
+    async Task<CharacterSheetView?> Current(string code, Guid characterId, CancellationToken ct)
+    {
+        var table = await db.Tables
+            .AsNoTracking()
+            .Include(t => t.Characters).ThenInclude(c => c.Effects)
+            .SingleOrDefaultAsync(t => t.Code == code, ct);
+
+        return table?.Characters.FirstOrDefault(c => c.Id == characterId) is { } character
+            ? SheetViews.Of(character)
+            : null;
     }
 }

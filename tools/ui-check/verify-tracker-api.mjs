@@ -131,12 +131,47 @@ check('and the refusal names the field', noSelector.body.errors.map((e) => e.fie
 const unknown = await send('GET', '/tables/NOBODY');
 check('an unknown code is a table waiting to start', [unknown.status, unknown.body.exists], [200, false]);
 
+
 await new Promise((resolve) => setTimeout(resolve, 600));
 const changed = pushes.filter((p) => p.target === 'CharacterChanged');
 // Ten writes, counting the empty slot emptied again, which answers with the same state.
 check('the hub pushed every change to the group', changed.length, 10);
 check('the last push carries the whole sheet', changed.at(-1).arguments[0].name, 'Tarrow');
 check('a push carries a breakdown, not an identifier', changed.at(-1).arguments[0].armorClass.total, 25);
+
+// The races go last, because they write far more than they read and every count above would
+// have to know how many. design/004 makes hit points a delta so two people applying damage at
+// once sum. A delta on the wire is necessary and not sufficient, and only real parallelism at
+// this layer tells the two apart: a handler that reads, adds and writes back passes every
+// sequential check ever written.
+const race = await send('POST', `/tables/${code}/characters`, { pathbuilder: readFileSync(fixture, 'utf8') });
+const racer = race.body.id;
+const blows = 20;
+const answers = await Promise.all(Array.from({ length: blows }, () =>
+  send('POST', `/tables/${code}/characters/${racer}/hit-points`, { delta: -1 })));
+check('every concurrent delta is answered', answers.every((a) => a.status === 200), true);
+const afterRace = await send('GET', `/tables/${code}`);
+check('twenty concurrent deltas all land',
+  afterRace.body.characters.find((c) => c.id === racer).currentHitPoints,
+  race.body.currentHitPoints - blows);
+
+// Doing that arithmetic in the database leaves the instance the handler holds stale, so the row
+// can be right while the answer is wrong. Reading the table back cannot see that. Comparing the
+// answer to the table can.
+const one = await send('POST', `/tables/${code}/characters/${racer}/hit-points`, { delta: -1 });
+const fresh = await send('GET', `/tables/${code}`);
+check('a command answers with the number the table holds',
+  one.body.currentHitPoints, fresh.body.characters.find((c) => c.id === racer).currentHitPoints);
+
+// The slot id is the client's so a retry converges. A retry is what arrives twice at once, and
+// a find-then-insert lets both requests see the slot empty and both insert the same key.
+const retriedSlot = crypto.randomUUID();
+const retriedSpec = { name: 'Clumsy', kind: 'Seeded', key: 'clumsy', value: 2, duration: null, modifiers: [] };
+const retries = await Promise.all(Array.from({ length: 12 }, () =>
+  send('PUT', `/tables/${code}/characters/${racer}/effects/${retriedSlot}`, { effect: retriedSpec })));
+check('a retried apply never answers with a fault', retries.every((r) => r.status === 200), true);
+check('and fills the slot once, not twelve times',
+  retries.at(-1).body.effects.filter((e) => e.id === retriedSlot).length, 1);
 
 hub.close();
 console.log(failures === 0 ? '\nall checks passed' : `\n${failures} failed`);

@@ -279,4 +279,55 @@ public class TrackerRules(SeededDatabase database) : IClassFixture<SeededDatabas
         Assert.NotEmpty(conditions.Items);
         Assert.All(conditions.Items, item => Assert.False(item.HasModifiers));
     }
+
+    // design/004 makes the hit-point operation a delta precisely so two people applying damage
+    // at the same moment sum instead of clobbering each other. A delta on the wire is necessary
+    // and not sufficient: a handler that reads, adds and writes back puts last-write-wins one
+    // layer lower, where the sequential test above cannot see it.
+    [Fact]
+    public async Task ConcurrentHitPointChangesAllLandRatherThanClobberingEachOther()
+    {
+        var character = await Import("GNIB20", Fixture("gnibbo.json"));
+        const int blows = 20;
+
+        await Task.WhenAll(Enumerable.Range(0, blows)
+            .Select(_ => Task.Run(() => Damage("GNIB20", character.Id, -1))));
+
+        Assert.Equal(
+            character.CurrentHitPoints - blows,
+            Assert.Single((await Read("GNIB20")).Characters).CurrentHitPoints);
+    }
+
+    // Doing the arithmetic in the database leaves the instance the handler holds stale, and a
+    // re-query does not fix it, because identity resolution hands back the object already
+    // tracked. Reading the table afterwards cannot catch that: the row is right and only the
+    // answer is wrong, so this asserts the answer against the row.
+    [Fact]
+    public async Task ACommandAnswersWithTheNumberTheDatabaseEndsUpHolding()
+    {
+        var character = await Import("GNIB21", Fixture("gnibbo.json"));
+
+        var answered = await Damage("GNIB21", character.Id, -9);
+
+        Assert.Equal(
+            Assert.Single((await Read("GNIB21")).Characters).CurrentHitPoints,
+            answered!.CurrentHitPoints);
+    }
+
+    // The slot id is client-generated so a retry over a flaky table connection converges instead
+    // of stacking duplicates. A retry is exactly what arrives twice at once, so two requests can
+    // both find the slot empty and both insert the same key.
+    [Fact]
+    public async Task ConcurrentAppliesToOneSlotAllSucceedAndLeaveOneEffect()
+    {
+        var character = await Import("GNIB22", Fixture("gnibbo.json"));
+        var slot = Guid.NewGuid();
+        var spec = new EffectSpec("Clumsy", "Seeded", "clumsy", 2, null, []);
+
+        var answers = await Task.WhenAll(Enumerable.Range(0, 12)
+            .Select(_ => Task.Run(() => Set("GNIB22", character.Id, slot, spec))));
+
+        Assert.All(answers, answer => Assert.Single(answer!.Effects));
+        Assert.Single(Assert.Single((await Read("GNIB22")).Characters).Effects);
+    }
 }

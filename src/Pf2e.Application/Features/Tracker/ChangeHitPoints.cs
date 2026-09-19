@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Pf2e.Application.Abstractions;
 using Pf2e.Contracts.Tracker;
 using Pf2e.Domain;
+using Pf2e.Domain.Tracking;
 
 namespace Pf2e.Application.Features.Tracker;
 
@@ -30,21 +31,47 @@ public sealed class ChangeHitPointsHandler(ITrackerDbContext db, ITableBroadcast
     {
         var code = TableCode.Normalize(command.TableCode);
 
-        var table = await db.Tables
-            .Include(t => t.Characters).ThenInclude(c => c.Effects)
-            .SingleOrDefaultAsync(t => t.Code == code, ct);
-
-        if (table?.Characters.FirstOrDefault(c => c.Id == command.CharacterId) is not { } character)
+        if (await Load(code, command.CharacterId, ct) is not { } character)
         {
             return null;
         }
 
         var max = CharacterSheet.Compute(character.ToBuild(), character.ToSession()).MaxHitPoints;
-        character.CurrentHitPoints = HitPoints.AfterDelta(character.CurrentHitPoints, command.Delta, max);
-        await db.SaveChangesAsync(ct);
+        var delta = command.Delta;
 
-        var sheet = SheetViews.Of(character);
+        // The arithmetic happens in the database, in one statement, so two people applying damage
+        // at the same moment sum. Reading the value here and writing it back would reinstate
+        // last-write-wins one layer below an API whose whole shape exists to prevent it. The
+        // maximum is safe to carry from the read above: it moves only when the build or drained
+        // changes, and this command changes neither.
+        await db.Characters
+            .Where(c => c.Id == character.Id)
+            .ExecuteUpdateAsync(
+                set => set.SetProperty(
+                    c => c.CurrentHitPoints,
+                    c => Math.Max(0, Math.Min(max, c.CurrentHitPoints + delta))),
+                ct);
+
+        // Read back rather than adjusting the instance above, which the statement left stale.
+        // Both reads are untracked, so this cannot be handed the same stale object by identity
+        // resolution, which is what makes it a real re-read rather than one that looks like one.
+        if (await Load(code, command.CharacterId, ct) is not { } updated)
+        {
+            return null;
+        }
+
+        var sheet = SheetViews.Of(updated);
         await broadcaster.CharacterChangedAsync(code, sheet, ct);
         return sheet;
+    }
+
+    async Task<TrackedCharacter?> Load(string code, Guid characterId, CancellationToken ct)
+    {
+        var table = await db.Tables
+            .AsNoTracking()
+            .Include(t => t.Characters).ThenInclude(c => c.Effects)
+            .SingleOrDefaultAsync(t => t.Code == code, ct);
+
+        return table?.Characters.FirstOrDefault(c => c.Id == characterId);
     }
 }
