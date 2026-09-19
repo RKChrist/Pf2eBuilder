@@ -1,0 +1,25 @@
+@inherits FluxorComponent
+@inject IState<RulesBrowserState> Browser
+@inject IDispatcher Dispatcher
+@inject NavigationManager Navigation
+
+<BottomNav Label="Rule groups" Class="pf-bottomnav--rail">
+    @foreach (var group in RuleGroups.All)
+    {
+        <BottomNavItem Label="@group.Label"
+                       Active="@(Browser.Value.ActiveGroup == group.Key)"
+                       OnClick="() => Open(group.Key)">
+            <Icon>
+                <GroupGlyph Group="group.Key" />
+            </Icon>
+        </BottomNavItem>
+    }
+</BottomNav>
+
+@code {
+    void Open(GroupKey group)
+    {
+        Dispatcher.Dispatch(new GroupSelected(group));
+        Navigation.NavigateTo(RuleCatalog.BrowseRoute);
+    }
+}

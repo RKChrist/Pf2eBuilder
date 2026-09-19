@@ -21,22 +21,9 @@ public static class RulesBrowserReducers
     public static RulesBrowserState On(RulesBrowserState state, QueryChanged action) =>
         state with { Query = action.Query, Page = 1 };
 
-    /// <summary>
-    /// The API rejects a range whose floor is above its ceiling. Ordering the two picks here
-    /// means a player who sets "from 10" after "to 2" gets levels 2 to 10 rather than an error
-    /// about a request they did not knowingly make.
-    /// </summary>
     [ReducerMethod]
-    public static RulesBrowserState On(RulesBrowserState state, LevelRangeChanged action)
-    {
-        var (min, max) = (action.MinLevel, action.MaxLevel) switch
-        {
-            (int low, int high) when low > high => (high, low),
-            var picked => picked,
-        };
-
-        return state with { MinLevel = min, MaxLevel = max, Page = 1 };
-    }
+    public static RulesBrowserState On(RulesBrowserState state, LevelRangeChanged action) =>
+        state with { Levels = action.Levels, Page = 1 };
 
     [ReducerMethod]
     public static RulesBrowserState On(RulesBrowserState state, TraitSelected action) =>
@@ -62,8 +49,7 @@ public static class RulesBrowserReducers
     static RulesBrowserState Unfiltered(RulesBrowserState state) => state with
     {
         Query = string.Empty,
-        MinLevel = null,
-        MaxLevel = null,
+        Levels = LevelScale.Whole,
         Trait = null,
         Page = 1,
         Results = new RemoteData<RuleSearchResult>.NotAsked(),

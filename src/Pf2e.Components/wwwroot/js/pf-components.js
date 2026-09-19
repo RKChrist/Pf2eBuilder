@@ -163,6 +163,9 @@
       if (!handle || event.target.closest('.pf-sheet__close')) return;
       const dragged = handle.closest('.pf-sheet__panel');
       if (!dragged) return;
+      /* Docked at the side, down is not the way out, and the stylesheet is what knows the sheet
+         is docked. Asking it keeps the width that decides this in one place. */
+      if (getComputedStyle(dragged).getPropertyValue('--pf-sheet-docked').trim() === '1') return;
       panel = dragged;
       startY = event.clientY;
       distance = 0;
@@ -195,6 +198,22 @@
 
     sheet.addEventListener('pointerup', release);
     sheet.addEventListener('pointercancel', release);
+
+    /* Escape is the keyboard's dismissal, and it takes the same path as the drag so a host
+       still only handles the one close. It needs the focus the panel takes below: without it
+       the key press goes to whatever is still focused behind the scrim. */
+    sheet.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      sheet.querySelector('.pf-sheet__close')?.click();
+    });
+    return true;
+  }
+
+  /* A dialog that leaves focus on the page behind it is unreachable by keyboard and silent to a
+     screen reader. Blazor renders a new panel each time the sheet opens, so each new element is
+     focused once as it arrives. */
+  function focusPanel(panel) {
+    panel.focus({ preventScroll: true });
     return true;
   }
 
@@ -258,6 +277,7 @@
   const roots = [
     ['.pf-slider', enhanceSlider],
     ['.pf-sheet', enhanceSheet],
+    ['.pf-sheet__panel', focusPanel],
     ['.pf-btn--hold', enhanceHold],
   ];
 

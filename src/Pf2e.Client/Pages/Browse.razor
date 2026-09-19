@@ -9,10 +9,12 @@
 <header class="top">
     @if (State.ActiveCategory is not null)
     {
-        <button type="button" class="back" @onclick="@(() => Dispatcher.Dispatch(new CategoryCleared()))">
-            <span class="chevron" aria-hidden="true">←</span>
+        <Button Class="back"
+                Variant="ButtonVariant.Quiet"
+                OnClick="@(() => Dispatcher.Dispatch(new CategoryCleared()))">
+            <span aria-hidden="true">←</span>
             All @RuleGroups.Of(State.ActiveGroup).Label categories
-        </button>
+        </Button>
     }
 
     <h1 class="heading">@Heading</h1>
@@ -20,34 +22,34 @@
 
 @if (State.ActiveCategory is null)
 {
-    <ul class="categories">
-        @foreach (var category in RuleCatalog.InGroup(State.ActiveGroup))
-        {
-            <li>
-                @if (category.Route == RuleCatalog.BrowseRoute)
-                {
-                    <button type="button" class="category" @onclick="() => Open(category.Key)">
-                        @category.Label
-                        <span class="chevron" aria-hidden="true">→</span>
-                    </button>
-                }
-                else
-                {
-                    <a class="category" href="@category.Route">
-                        @category.Label
-                        <span class="chevron" aria-hidden="true">→</span>
-                    </a>
-                }
-            </li>
-        }
-    </ul>
+    <div class="board">
+        <Card>
+            <ListContent>
+                <div class="categories">
+                    @foreach (var category in RuleCatalog.InGroup(State.ActiveGroup))
+                    {
+                        @if (category.Route == RuleCatalog.BrowseRoute)
+                        {
+                            <ListRow Title="@category.Label" OnClick="() => Open(category.Key)" />
+                        }
+                        else
+                        {
+                            <ListRow Title="@category.Label" Href="@category.Route" />
+                        }
+                    }
+                </div>
+            </ListContent>
+        </Card>
+    </div>
 }
 else
 {
     <div class="filters">
-        <input class="name" type="search" inputmode="search" autocomplete="off"
-               placeholder="Filter by name" aria-label="Filter by name"
-               value="@State.Query" @oninput="OnQuery" />
+        <SearchField Class="name"
+                     Value="@State.Query"
+                     ValueChanged="OnQuery"
+                     Placeholder="Filter by name"
+                     Label="Filter by name" />
 
         @if (State.Trait is { } activeTrait)
         {
@@ -60,42 +62,38 @@ else
     </div>
 
     <RemoteView T="RuleSearchResult" Data="State.Results">
-        <NotAsked>
-            <SkeletonRows />
-        </NotAsked>
-        <Loading>
-            <SkeletonRows />
-        </Loading>
+        <NotAsked>@Waiting</NotAsked>
+        <Loading>@Waiting</Loading>
         <Failed Context="message">
-            <FailureState Message="@message" OnRetry="@(() => Dispatcher.Dispatch(new SearchRetried()))" />
+            <div class="panel">
+                <Card>
+                    <ErrorState Title="@($"Could not load {Heading.ToLowerInvariant()}")">
+                        <ChildContent>@message</ChildContent>
+                        <Action>
+                            <Button Variant="ButtonVariant.Secondary"
+                                    OnClick="@(() => Dispatcher.Dispatch(new SearchRetried()))">
+                                Try again
+                            </Button>
+                        </Action>
+                    </ErrorState>
+                </Card>
+            </div>
         </Failed>
         <Loaded Context="found">
             @* The page's own rows decide whether levels are a thing here, except once a range is
                set: taking away the control that emptied the list is not a kindness. *@
-            @if (found.Items.Any(item => item.Level is not null) || State.MinLevel is not null || State.MaxLevel is not null)
+            @if (found.Items.Any(item => item.Level is not null) || State.Levels != LevelScale.Whole)
             {
                 <div class="levels">
-                    <label class="level-field">
-                        <span class="level-label">Level from</span>
-                        <select value="@Box(State.MinLevel)" @onchange="OnMinLevel">
-                            <option value="">Any</option>
-                            @foreach (var level in Levels)
-                            {
-                                <option value="@level">@level</option>
-                            }
-                        </select>
-                    </label>
-
-                    <label class="level-field">
-                        <span class="level-label">to</span>
-                        <select value="@Box(State.MaxLevel)" @onchange="OnMaxLevel">
-                            <option value="">Any</option>
-                            @foreach (var level in Levels)
-                            {
-                                <option value="@level">@level</option>
-                            }
-                        </select>
-                    </label>
+                    <RangeSlider Label="Level"
+                                 LowLabel="Lowest level"
+                                 HighLabel="Highest level"
+                                 Min="LevelScale.Floor"
+                                 Max="LevelScale.Ceiling"
+                                 TickEvery="1"
+                                 ShowEnds="true"
+                                 Value="State.Levels"
+                                 ValueChanged="@(levels => Dispatcher.Dispatch(new LevelRangeChanged(levels)))" />
                 </div>
             }
 
@@ -116,59 +114,58 @@ else
 
             @if (found.Items.Count == 0)
             {
-                <EmptyState Message="@EmptyMessage">
-                    @if (State.Query.Length > 0)
-                    {
-                        <button type="button" @onclick="@(() => Dispatcher.Dispatch(new QueryChanged(string.Empty)))">
-                            Clear the name filter
-                        </button>
-                    }
-                    @if (State.MinLevel is not null || State.MaxLevel is not null)
-                    {
-                        <button type="button" @onclick="@(() => Dispatcher.Dispatch(new LevelRangeChanged(null, null)))">
-                            Widen to every level
-                        </button>
-                    }
-                    @if (State.Trait is not null)
-                    {
-                        <button type="button" @onclick="@(() => Dispatcher.Dispatch(new TraitSelected(null)))">
-                            Drop the trait filter
-                        </button>
-                    }
-                </EmptyState>
+                <div class="panel">
+                    <Card>
+                        <EmptyState Title="@($"No {Heading.ToLowerInvariant()} match")">
+                            <ChildContent>@EmptyBody</ChildContent>
+                            <Action>
+                                <div class="pf-cluster">
+                                    @if (State.Query.Length > 0)
+                                    {
+                                        <Button Variant="ButtonVariant.Secondary"
+                                                OnClick="@(() => Dispatcher.Dispatch(new QueryChanged(string.Empty)))">
+                                            Clear the name filter
+                                        </Button>
+                                    }
+                                    @if (State.Levels != LevelScale.Whole)
+                                    {
+                                        <Button Variant="ButtonVariant.Secondary"
+                                                OnClick="@(() => Dispatcher.Dispatch(new LevelRangeChanged(LevelScale.Whole)))">
+                                            Widen to every level
+                                        </Button>
+                                    }
+                                    @if (State.Trait is not null)
+                                    {
+                                        <Button Variant="ButtonVariant.Secondary"
+                                                OnClick="@(() => Dispatcher.Dispatch(new TraitSelected(null)))">
+                                            Drop the trait filter
+                                        </Button>
+                                    }
+                                </div>
+                            </Action>
+                        </EmptyState>
+                    </Card>
+                </div>
             }
             else
             {
-                <ul class="records">
-                    @foreach (var item in found.Items)
-                    {
-                        <li>
-                            <button type="button" class="record" @onclick="() => OpenRule(item.Id)">
-                                <span class="record-name">@item.Name</span>
-                                <span class="record-marks">
-                                    @if (item.Level is int level)
-                                    {
-                                        <span class="record-level">Level @level</span>
-                                    }
-                                    <RarityTag Rarity="@item.Rarity" />
-                                </span>
-                                <TraitList Traits="item.Traits" AlreadyShown="@item.Rarity" />
-                            </button>
-                        </li>
-                    }
-                </ul>
+                <div class="panel">
+                    <Card>
+                        <ListContent>
+                            @foreach (var item in found.Items)
+                            {
+                                <ListRow Title="@item.Name" Meta="@Marks(item)" OnClick="() => OpenRule(item.Id)" />
+                            }
+                        </ListContent>
+                    </Card>
+                </div>
 
-                <nav class="pager" aria-label="Pages">
-                    <button type="button" disabled="@(found.Page <= 1)"
-                            @onclick="() => Dispatcher.Dispatch(new PageSelected(found.Page - 1))">
-                        Previous
-                    </button>
-                    <span class="count">Page @found.Page of @PageCount(found)</span>
-                    <button type="button" disabled="@(found.Page >= PageCount(found))"
-                            @onclick="() => Dispatcher.Dispatch(new PageSelected(found.Page + 1))">
-                        Next
-                    </button>
-                </nav>
+                <div class="panel">
+                    <Pager Page="found.Page"
+                           PageCount="PageCount(found)"
+                           PageChanged="@(page => Dispatcher.Dispatch(new PageSelected(page)))"
+                           Label="Pages" />
+                </div>
             }
         </Loaded>
     </RemoteView>
@@ -177,8 +174,6 @@ else
 <RuleSheet RuleId="@OpenRuleId" />
 
 @code {
-    static readonly int[] Levels = [.. Enumerable.Range(-1, 32)];
-
     [Parameter, SupplyParameterFromQuery(Name = "rule")] public string? OpenRuleId { get; set; }
 
     RulesBrowserState State => Browser.Value;
@@ -187,31 +182,37 @@ else
         ? RuleCatalog.LabelOf(category)
         : RuleGroups.Of(State.ActiveGroup).Heading;
 
-    string EmptyMessage => State.Query.Length > 0
-        ? $"No {Heading.ToLowerInvariant()} match “{State.Query}”."
-        : $"No {Heading.ToLowerInvariant()} match these filters.";
+    RenderFragment Waiting => @<div class="pending">
+        <Spinner ShowLabel="true" Label="@($"Loading {Heading.ToLowerInvariant()}")" />
+    </div>;
+
+    string EmptyBody => State.Query.Length > 0
+        ? $"Nothing here matches “{State.Query}”."
+        : "Nothing here matches these filters.";
 
     static int PageCount(RuleSearchResult found) =>
         Math.Max(1, (found.TotalMatching + found.PageSize - 1) / found.PageSize);
 
+    /// <summary>A fragment rather than a &lt;Meta&gt; child element, which Razor refuses to parse
+    /// with content because the name is an HTML void element.</summary>
+    RenderFragment Marks(RuleSummary item) => @<text>
+        @if (item.Level is int level)
+        {
+            <span class="level">Level @level</span>
+        }
+        <RarityBadge Value="RuleDisplay.RarityOf(item.Rarity)" />
+        @foreach (var trait in RuleDisplay.TraitsBeside(item))
+        {
+            <TraitChip>@trait</TraitChip>
+        }
+    </text>;
+
     static IReadOnlyList<string> TraitsOn(RuleSearchResult found) =>
         [.. found.Items.SelectMany(item => item.Traits).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
-
-    static string Box(int? level) => level?.ToString() ?? string.Empty;
 
     void Open(string category) => Dispatcher.Dispatch(new CategorySelected(category));
 
     void OpenRule(string id) => Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("rule", id));
 
-    void OnQuery(ChangeEventArgs args) =>
-        Dispatcher.Dispatch(new QueryChanged(args.Value as string ?? string.Empty));
-
-    void OnMinLevel(ChangeEventArgs args) =>
-        Dispatcher.Dispatch(new LevelRangeChanged(Unbox(args), State.MaxLevel));
-
-    void OnMaxLevel(ChangeEventArgs args) =>
-        Dispatcher.Dispatch(new LevelRangeChanged(State.MinLevel, Unbox(args)));
-
-    static int? Unbox(ChangeEventArgs args) =>
-        int.TryParse(args.Value as string, out var level) ? level : null;
+    void OnQuery(string? query) => Dispatcher.Dispatch(new QueryChanged(query ?? string.Empty));
 }

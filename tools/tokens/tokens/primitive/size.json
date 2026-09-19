@@ -36,8 +36,10 @@
   "layout": {
     "$type": "dimension",
     "viewport-min":   { "$value": "320px", "$description": "Smallest phone we lay out for." },
-    "viewport-target":{ "$value": "390px", "$description": "Design width. Players are on phones; there is no desktop target." },
-    "content-max":    { "$value": "560px", "$description": "Caps line length when a large phone or tablet is used." },
+    "viewport-target":{ "$value": "390px", "$description": "Design width. A player at a table is on a phone, so this is where the layout is decided; design/003 added the two widths below for everyone else." },
+    "viewport-wide":  { "$value": "600px", "$description": "A tablet, or a phone turned sideways. Grids of short labels gain a second column here; prose does not." },
+    "viewport-desk":  { "$value": "1024px", "$description": "A laptop. Navigation stands up as a rail beside the content and a record opens next to the list rather than over it. A media query cannot read a custom property, so this value is repeated literally in every query that uses it; this is where it is decided." },
+    "content-max":    { "$value": "560px", "$description": "Caps line length when a large phone or tablet is used. Around 65 characters at the body size, which is the measure prose keeps at any viewport." },
     "gutter":         { "$value": "16px" },
     "bottom-bar":     { "$value": "64px", "$description": "Primary navigation sits in the thumb arc, not the top of the screen." },
     "thumb-reach":    { "$value": "62%",  "$description": "Fraction of viewport height from the bottom that a thumb covers one-handed. Primary actions live inside it." },

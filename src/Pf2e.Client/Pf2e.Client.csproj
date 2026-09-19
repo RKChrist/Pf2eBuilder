@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Pf2e.Components\Pf2e.Components.csproj" />
     <ProjectReference Include="..\Pf2e.Contracts\Pf2e.Contracts.csproj" />
   </ItemGroup>
 
