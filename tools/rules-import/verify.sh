@@ -10,6 +10,7 @@ POLICY_CS="$ROOT/tools/rules-import/FieldPolicy.cs"
 SEED_DIR="$ROOT/tools/rules-import/out/seed"
 UNMAPPED_DIR="$ROOT/tools/rules-import/out/unmapped"
 OVERSIZE_DIR="$ROOT/tools/rules-import/out/oversize"
+EXCLUDED_DIR="$ROOT/tools/rules-import/out/excluded"
 SNAPSHOT_ROOT="$ROOT/Sources/aon-snapshot"
 
 TMP=$(mktemp -d) || exit 99
@@ -216,7 +217,7 @@ PROSE_PATTERN=""
 MARKDOWN_PATTERN='"[A-Za-z0-9_]+_markdown"[[:space:]]*:'
 
 seed_files_present() {
-  [ -d "$SEED_DIR" ] && [ -n "$(find "$SEED_DIR" -name '*.json' -type f 2>/dev/null | head -n 1)" ]
+  [ -d "$SEED_DIR" ] && [ -n "$(find -L "$SEED_DIR" -name '*.json' -type f 2>/dev/null | head -n 1)" ]
 }
 
 # A search that errors, or a pattern built from an empty list, reports FAIL and never PASS. A
@@ -601,6 +602,63 @@ if [ -n "$SNAPSHOT_DIR" ]; then
     printf '      %-24s %10s bytes\n' "$(basename "$f")" "$size"
   done
   printf '      snapshot on disk: %s bytes\n' "$snap_total"
+fi
+
+cat > "$TMP/sitehidden.js" <<'JS'
+const fs = require('fs');
+const path = require('path');
+const zlib = require('zlib');
+const [snapshotDir, seedDir, excludedDir] = process.argv.slice(2);
+const flagged = new Map();
+for (const f of fs.readdirSync(snapshotDir).filter(n => n.endsWith('.ndjson.gz')).sort()) {
+  const category = f.replace('.ndjson.gz', '');
+  const ids = new Set();
+  for (const line of zlib.gunzipSync(fs.readFileSync(path.join(snapshotDir, f))).toString('utf8').split('\n')) {
+    if (!line) continue;
+    const r = JSON.parse(line);
+    if (r.exclude_from_search === true) ids.add(r.id);
+  }
+  flagged.set(category, ids);
+}
+let survivors = 0, total = 0;
+for (const [category, ids] of flagged) {
+  total += ids.size;
+  const seedFile = path.join(seedDir, category + '.json');
+  const seeded = fs.existsSync(seedFile) ? JSON.parse(fs.readFileSync(seedFile, 'utf8')) : [];
+  for (const r of seeded) {
+    if (ids.has(r.id)) {
+      survivors++;
+      if (survivors <= 20) console.log('SURVIVOR ' + category + ' ' + r.id + ' ' + r.name);
+    }
+  }
+  const excludedFile = path.join(excludedDir, category + '.json');
+  const recorded = fs.existsSync(excludedFile) ? JSON.parse(fs.readFileSync(excludedFile, 'utf8')).length : -1;
+  if (ids.size > 0 || recorded > 0) console.log('CAT ' + category + ' ' + ids.size + ' ' + recorded);
+}
+console.log('TOTAL ' + total + ' ' + survivors);
+JS
+
+heading "10. Records Archives of Nethys excludes from its own search"
+if [ -z "$SNAPSHOT_DIR" ] || [ "$SEED_RECORDS" -eq 0 ] || ! command -v node >/dev/null 2>&1; then
+  fail "check 10 could not run: it needs the snapshot, a parsed seed and node"
+else
+  HIDDEN_OUT=$(node "$(winpath "$TMP/sitehidden.js")" "$(winpath "$SNAPSHOT_DIR")" "$(winpath "$SEED_DIR")" \
+    "$(winpath "$EXCLUDED_DIR")" 2>&1)
+  hidden_total=$(printf '%s\n' "$HIDDEN_OUT" | awk '$1 == "TOTAL" { print $2 }')
+  hidden_left=$(printf '%s\n' "$HIDDEN_OUT" | awk '$1 == "TOTAL" { print $3 }')
+  printf '%s\n' "$HIDDEN_OUT" | awk '$1 == "CAT" { printf "      %-18s %6s flagged %6s recorded in out/excluded\n", $2, $3, $4 }'
+  unrecorded=$(printf '%s\n' "$HIDDEN_OUT" | awk '$1 == "CAT" && $3 != $4 { print $2 }')
+  if [ -z "$hidden_total" ] || [ "$hidden_total" -eq 0 ]; then
+    fail "check 10 found no flagged record in the snapshot, so it checked nothing"
+    printf '%s\n' "$HIDDEN_OUT" | head -n 5 | sed 's/^/      /'
+  elif [ "$hidden_left" -ne 0 ]; then
+    fail "$hidden_left of $hidden_total flagged records reached the seed"
+    printf '%s\n' "$HIDDEN_OUT" | awk '$1 == "SURVIVOR"' | sed 's/^/      /'
+  elif [ -n "$unrecorded" ]; then
+    fail "out/excluded does not record every flagged record: $(printf '%s' "$unrecorded" | tr '\n' ' ')"
+  else
+    pass "none of the $hidden_total flagged records is seeded, and out/excluded records each one"
+  fi
 fi
 
 heading "Summary"

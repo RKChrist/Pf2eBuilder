@@ -219,7 +219,7 @@ public class HandlerRules(SeededDatabase database) : IClassFixture<SeededDatabas
 
         Assert.Equal(await db.RuleRecords.CountAsync(), counts.Total);
         Assert.Equal(74, counts.Categories.Count);
-        Assert.Equal(6390, counts.Categories.Single(c => c.Category == "feat").Count);
+        Assert.Equal(6359, counts.Categories.Single(c => c.Category == "feat").Count);
         Assert.Equal(counts.Total, counts.Categories.Sum(c => c.Count));
     }
 

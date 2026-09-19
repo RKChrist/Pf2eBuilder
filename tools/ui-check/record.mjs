@@ -133,7 +133,7 @@ const scenarios = {
     await frames_over(500, 'Feats group. Two categories.');
     await clickText('li button, .categories button', 'feats');
     await waitFor('.results, [class*=row], article');
-    await frames_over(900, 'All 6,390 feats, paged.', 5);
+    await frames_over(900, 'All 6,359 feats, paged.', 5);
     await typeInto('input[type=search], .pf-search__input', 'power');
     await frames_over(1200, 'Typing filters as you go. The last keystroke wins.', 6);
   },

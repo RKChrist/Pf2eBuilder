@@ -21,7 +21,7 @@ public sealed class RuleRecordConfiguration : IEntityTypeConfiguration<RuleRecor
         rules.Property(r => r.Type).HasMaxLength(64);
         rules.Property(r => r.PrimarySource).HasMaxLength(256);
 
-        // A trait filter runs over one category, and the largest is 6,568 rows. A join table
+        // A trait filter runs over one category, and the largest is 6,469 rows. A join table
         // would add an entity and a join to every query to speed up a scan that is already
         // sub-millisecond. Revisit with a generated column and an index if profiling disagrees.
         rules.Property(r => r.Traits)

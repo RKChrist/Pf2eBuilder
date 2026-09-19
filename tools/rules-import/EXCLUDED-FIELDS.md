@@ -133,7 +133,8 @@ from the allow-list because the builder has no use for them, so the seed stays s
 They fall into four groups.
 
 - AoN site plumbing that means nothing outside the website: `exclude_from_search`, `navigation`,
-  `image`, `icon_image`, `spoilers`.
+  `image`, `icon_image`, `spoilers`. `exclude_from_search` is read before it is dropped; the
+  section below says why.
 - Display-only duplicates of a field the seed already carries in structured form: `rarity_id`,
   `size_id`, `source_raw`, `source_group`, `primary_source_group`, `trait_raw`, `trait_group`,
   `heighten_group`, `item_category`, `item_subcategory`, `archetype_category`,
@@ -145,6 +146,25 @@ They fall into four groups.
 
 Adding any of them later is a one-line change to `FieldPolicy.SeedAllowList`, so the omission costs
 nothing to reverse.
+
+## Records AoN excludes from its own search
+
+Archives of Nethys sets `exclude_from_search: true` on records it does not treat as entries. The
+snapshot holds 3,680 of them. 3,433 are in `action`, and those are not actions. They are the
+activation lines of items, filed as records with names such as "(1 minute) Interact", "command"
+or a stray closing tag. The other 247 are superseded duplicates AoN keeps so that old links still
+resolve, such as the legacy Aphorite heritage beside its Remaster replacement, along with 31 feats,
+25 spells, 46 weapons and 99 pieces of equipment.
+
+The transform drops every flagged record before anything else is decided about it, so a flagged
+record is never seeded and never counted as unmapped. Each drop is written to
+`tools/rules-import/out/excluded/<category>.json` with its `id` and `name`, beside the unmapped and
+oversize lists, and the transform's summary table gains an `excluded` column. `verify.sh` check 10
+reads the flag out of the snapshot and fails if any flagged id reaches the seed or if the excluded
+list for a category disagrees with the snapshot's count.
+
+No category empties. `action` falls from 3,921 records to 551, and the seed from 24,940 records to
+21,323.
 
 ## Length ceiling on the re-included labels (300 characters)
 

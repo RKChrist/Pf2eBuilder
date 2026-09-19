@@ -29,7 +29,7 @@ public sealed class CountRulesHandler(IRulesDbContext db) : IRequestHandler<Coun
         List<CategoryCount> counts;
         if (query.Trait is { Length: > 0 } trait)
         {
-            // Unfiltered, every one of the 25,000 records is a candidate, so only the two
+            // Unfiltered, every one of the 21,000 records is a candidate, so only the two
             // columns the count needs are read and the mechanics document is never touched.
             var rows = await records.Select(r => new { r.Category, r.Traits }).ToListAsync(ct);
             counts =
