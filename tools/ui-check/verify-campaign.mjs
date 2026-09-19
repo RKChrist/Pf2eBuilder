@@ -64,6 +64,21 @@ const type = (page, selector, value) => page.eval(`(() => {
   return true;
 })()`);
 
+// A mode is a page. The DM's tap both moves the table and navigates; a player's only navigates.
+const goMode = async (page, mode) => {
+  // By the mode rather than the label, because the active link carries a dot beside its text
+  // and an exact-text match stopped finding it.
+  const selector = `.shell__mode-link[data-mode="${mode}"]`;
+  const went = await page.eval(`(() => {
+    const link = document.querySelector(${JSON.stringify(selector)});
+    if (!link) return false;
+    link.click();
+    return true;
+  })()`);
+  if (!went) throw new Error(`no mode link for ${mode}`);
+  await sleep(900);
+};
+
 const shot = async (page, name) => {
   if (!shots) return;
   const { data } = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
@@ -114,6 +129,8 @@ await shot(dm, 'dm-08-reference');
 
 
 // Exploration: what everyone is doing, and the one that changes how the fight starts.
+await goMode(dm, 'Exploration');
+await waitFor(dm, '[data-doing]');
 check('exploration asks what each character is doing', await dm.eval(
   `!!document.querySelector('[data-doing]')`));
 const activities = await dm.eval(
@@ -161,7 +178,10 @@ check('and Treat Wounds is not, because they are untrained in Medicine',
 await shot(dm, 'dm-09-attempts');
 
 
-// Camp: the ten-minute activities and the clock they add to.
+// Camp: the ten-minute activities and the clock they add to. Its own page, reachable from every
+// mode, because stopping to Treat Wounds is not a mode the table is in.
+await clickText(dm, '.shell__party', 'Camp');
+await waitFor(dm, '[data-camping]');
 check('the camp panel starts at no time at all', await dm.eval(
   `document.querySelector('.camp__clock-value')?.textContent.trim() ?? ''`).then(t => t === 'no time at all'),
   await dm.eval(`document.querySelector('.camp__clock-value')?.textContent.trim() ?? 'missing'`));
@@ -191,7 +211,7 @@ check('and nobody is still immune in the morning', morning.immune === 'none', mo
 await shot(dm, 'dm-06-camp');
 
 // Downtime: a day counter and one activity each, with the DC the task level comes to.
-await clickText(dm, '.shell__modes button', 'Downtime');
+await goMode(dm, 'Downtime');
 await waitFor(dm, '[data-spending]');
 check('downtime starts on day one', await dm.eval(
   `document.querySelector('.downtime__day-value')?.textContent.trim() ?? ''`).then(t => t === '1'),
@@ -229,7 +249,7 @@ check('and clears what everybody chose', tomorrow.chosen === '' && tomorrow.dc =
 
 
 // Into a fight.
-await clickText(dm, '.shell__modes button', 'Fight');
+await goMode(dm, 'Encounter');
 await waitFor(dm, '.fight');
 check('switching to Fight shows the initiative panel', await dm.eval(`!!document.querySelector('.fight')`));
 check('and says nobody is in it yet', await dm.eval(
@@ -298,9 +318,10 @@ await sleep(900);
 check('undo puts the turn back', await dm.eval(
   `document.querySelector('.turn--now .turn__name').textContent.trim()`) === first, first);
 
-// Editing a character, which is the other half of "campaign" and not "party tracker".
-await clickText(dm, '.shell__modes button', 'Explore');
-await sleep(700);
+// Editing a character, which is the other half of "campaign" and not "party tracker". The cards
+// are on the party page, which every mode links back to.
+await clickText(dm, '.shell__party', 'Party');
+await waitFor(dm, '.character');
 await clickText(dm, '.acts button', 'Edit');
 await waitFor(dm, '.editor');
 const beforeAc = await dm.eval(
@@ -333,19 +354,41 @@ await sleep(400);
 await clickText(player, 'button', 'Join');
 await waitFor(player, '.character');
 check('a player joins with the code alone', await player.eval(`!!document.querySelector('.character')`));
-check('and is not offered the mode switch', !(await player.eval(`!!document.querySelector('.shell__modes')`)));
+
+// The strip is navigation for everybody, so a player gets the links: they can look at the camp
+// page while the party is still walking. What a player does not get is the table moving when
+// they tap one.
+check('a player can navigate the modes too', await player.eval(
+  `document.querySelectorAll('.shell__mode-link').length`).then(n => n === 3),
+  await player.eval(`document.querySelectorAll('.shell__mode-link').length`));
 check('and is not marked as the DM', !(await player.eval(`!!document.querySelector('.shell__dm')`)));
+
+const startedIn = await dm.eval(`document.querySelector('.shell__mode-link .shell__here')
+  ?.closest('.shell__mode-link')?.dataset.mode ?? ''`);
+await goMode(player, 'Downtime');
+await sleep(1200);
+const afterPlayerTap = await dm.eval(`document.querySelector('.shell__mode-link .shell__here')
+  ?.closest('.shell__mode-link')?.dataset.mode ?? ''`);
+check('a player tapping a mode does not move the table', afterPlayerTap === startedIn,
+  `${startedIn} -> ${afterPlayerTap}`);
 await shot(player, 'player-01-exploration');
 
-await clickText(dm, '.shell__modes button', 'Fight');
+await goMode(dm, 'Encounter');
 await sleep(1500);
+
+// The dot marks the mode the table is in, and it is the DM's choice that puts it there. The
+// player is on Downtime by their own tap and still sees where the table went.
+const marked = await player.eval(`document.querySelector('.shell__mode-link .shell__here')
+  ?.closest('.shell__mode-link')?.dataset.mode ?? null`);
+check('the mode the DM chose reaches the player', marked === 'Encounter', String(marked));
+
+await goMode(player, 'Encounter');
+await sleep(1200);
 const seen = await player.eval(`(() => ({
-  mode: document.querySelector('.shell__mode')?.textContent.trim() ?? null,
   names: [...document.querySelectorAll('.turn__name')].map(e => e.textContent.trim()),
   monsterNumbers: [...document.querySelectorAll('.turn__line')].map(e => e.textContent.trim()),
   controls: document.querySelectorAll('.fight__acts button').length,
 }))()`);
-check('the mode the DM chose reaches the player', seen.mode === 'In a fight', String(seen.mode));
 check('the player is not offered the encounter controls', seen.controls === 0, String(seen.controls));
 check('and sees no monster hit points at all', seen.monsterNumbers.length === 0,
   seen.monsterNumbers.join(' | '));

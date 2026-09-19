@@ -1,0 +1,234 @@
+@page "/campaign/encounter"
+@inherits FluxorComponent
+@inject IState<CampaignState> Store
+@inject IState<ConditionsState> ConditionsStore
+@inject IState<ExplorationState> ExplorationStore
+@inject IDispatcher Dispatcher
+@inject NavigationManager Navigation
+
+<PageTitle>Encounter</PageTitle>
+
+<CampaignPage Heading="Encounter" Context="table">
+    <div class="fight">
+        <Card Class="fight__card">
+            <ChildContent>
+                <div class="fight__top">
+                    <h2 class="fight__heading">Initiative</h2>
+                    @if (table.Role == "Dm")
+                    {
+                        <div class="fight__acts">
+                            <Button Variant="ButtonVariant.Secondary"
+                                    OnClick="() => Dispatcher.Dispatch(new CombatantPickerOpened())">
+                                Add
+                            </Button>
+                            <Button Variant="ButtonVariant.Secondary"
+                                    OnClick="() => Dispatcher.Dispatch(new InitiativeRolled())">
+                                Roll
+                            </Button>
+                            <Button Variant="ButtonVariant.Secondary"
+                                    OnClick="() => Dispatcher.Dispatch(new ChangeUndone())">
+                                Undo
+                            </Button>
+                            <Button OnClick="() => Dispatcher.Dispatch(new TurnAdvanced())">Next turn</Button>
+                        </div>
+                    }
+                </div>
+
+                @if (table.Encounter is not { Combatants.Count: > 0 } fight)
+                {
+                    <EmptyState Title="Nobody is in this fight yet">
+                        <ChildContent>
+                            @if (table.Role == "Dm")
+                            {
+                                <text>Add the party and whatever they ran into, then roll initiative.</text>
+                            }
+                            else
+                            {
+                                <text>The GM has not started the fight yet.</text>
+                            }
+                        </ChildContent>
+                    </EmptyState>
+                }
+                else
+                {
+                    <ol class="order">
+                        @foreach (var combatant in fight.Combatants)
+                        {
+                            <li class="turn @(combatant.IsCurrentTurn ? "turn--now" : null)"
+                                data-combatant="@combatant.Id">
+                                <span class="turn__initiative">@combatant.Initiative</span>
+                                <span class="turn__who">
+                                    <span class="turn__name">@combatant.Name</span>
+                                    @if (combatant.Monster is { } monster)
+                                    {
+                                        <span class="turn__line">
+                                            @monster.CurrentHitPoints / @monster.MaxHitPoints HP · AC @monster.ArmorClass
+                                        </span>
+                                    }
+                                    @if (combatant.Effects.Count > 0)
+                                    {
+                                        <span class="turn__chips">
+                                            @foreach (var effect in combatant.Effects)
+                                            {
+                                                <TraitChip>@Named(effect)</TraitChip>
+                                            }
+                                        </span>
+                                    }
+                                </span>
+
+                                @if (combatant.Kind == "Adversary" && table.Role == "Dm")
+                                {
+                                    <span class="turn__dm">
+                                        @* The same typed field the cards use, because a monster
+                                           loses fifty hit points as easily as a player does and a
+                                           combatant id is the creature id either way. *@
+                                        <div class="amount">
+                                            <TextInput Class="amount__field"
+                                                       Label="@($"Hit points to apply to {combatant.Name}")"
+                                                       InputMode="numeric"
+                                                       Placeholder="0"
+                                                       Value="@State.HitPointDraft(combatant.Id)"
+                                                       ValueChanged="typed => Dispatcher.Dispatch(
+                                                           new HitPointDraftChanged(combatant.Id, typed ?? string.Empty))" />
+                                            <Button Variant="ButtonVariant.Secondary"
+                                                    Disabled="@(Typed(combatant.Id) is null)"
+                                                    OnClick='() => Apply(combatant.Id, "Damage")'>
+                                                Damage
+                                            </Button>
+                                            <Button Variant="ButtonVariant.Secondary"
+                                                    Disabled="@(Typed(combatant.Id) is null)"
+                                                    OnClick='() => Apply(combatant.Id, "Heal")'>
+                                                Heal
+                                            </Button>
+                                        </div>
+                                        @* A monster the players have not been shown is not on
+                                           their screen at all, so this is the only way it gets
+                                           there, and a bare toggle would not say so. *@
+                                        <label class="reveal">
+                                            <Switch Checked="combatant.Revealed"
+                                                    CheckedChanged="on => Dispatcher.Dispatch(new MonsterRevealed(combatant.Id, on))" />
+                                            <span class="reveal__label">Players can see it</span>
+                                        </label>
+                                    </span>
+                                }
+                            </li>
+                        }
+                    </ol>
+
+                    @if (fight.Reminders.Count > 0)
+                    {
+                        @* What the turn change left somebody to do. The app does not do these
+                           itself: persistent damage is followed by a flat check, and an app that
+                           takes the hit points without rolling it has decided half a rule. *@
+                        <ul class="reminders">
+                            @foreach (var reminder in fight.Reminders)
+                            {
+                                <li class="reminder">@reminder</li>
+                            }
+                        </ul>
+                    }
+
+                    @if (table.Role == "Dm")
+                    {
+                        <Button Variant="ButtonVariant.Secondary"
+                                Class="fight__end"
+                                OnClick="() => Dispatcher.Dispatch(new EncounterEnded())">
+                            End the fight
+                        </Button>
+                    }
+                }
+            </ChildContent>
+        </Card>
+    </div>
+</CampaignPage>
+
+<BottomSheet Open="@(State.AddingCombatant is not null)"
+             Title="Add to the fight"
+             OnClose="() => Dispatcher.Dispatch(new CombatantPickerClosed())">
+    @if (State.AddingCombatant is { } picker && Table is { } open)
+    {
+        <div class="adding">
+            @if (Absent(open) is { Count: > 0 } roster)
+            {
+                <h3 class="adding__heading">From this campaign</h3>
+                <Card>
+                    <ListContent>
+                        @foreach (var character in roster)
+                        {
+                            <ListRow Title="@character.Name"
+                                     Meta="@Line($"Level {character.Level} {character.AncestryName} {character.ClassName}")"
+                                     OnClick="() => Dispatcher.Dispatch(new CombatantAdded(null, character.Id, null))" />
+                        }
+                    </ListContent>
+                </Card>
+            }
+
+            <h3 class="adding__heading">A monster</h3>
+            <SearchField Value="@picker.Query"
+                         ValueChanged="query => Dispatcher.Dispatch(new MonsterQueryChanged(query ?? string.Empty))"
+                         Placeholder="Search 3,786 creatures"
+                         Label="Search the bestiary" />
+
+            <RemoteView T="RuleSearchResult" Data="picker.Found">
+                <NotAsked>
+                    <p class="hint">Every creature in the ruleset, with the numbers a fight needs.</p>
+                </NotAsked>
+                <Loading>
+                    <div class="pending"><Spinner ShowLabel="true" Label="Searching" /></div>
+                </Loading>
+                <Failed Context="message">
+                    <ErrorState Title="Could not search the bestiary">
+                        <ChildContent>@message</ChildContent>
+                    </ErrorState>
+                </Failed>
+                <Loaded Context="found">
+                    @if (found.Items.Count == 0)
+                    {
+                        <p class="hint">Nothing by that name.</p>
+                    }
+                    else
+                    {
+                        <Card>
+                            <ListContent>
+                                @foreach (var creature in found.Items)
+                                {
+                                    <ListRow Title="@creature.Name"
+                                             Meta="@Line(Glance(creature))"
+                                             OnClick="() => Dispatcher.Dispatch(new CombatantAdded(creature.Id, null, null))" />
+                                }
+                            </ListContent>
+                        </Card>
+                    }
+                </Loaded>
+            </RemoteView>
+        </div>
+    }
+</BottomSheet>
+
+@code {
+    CampaignState State => Store.Value;
+
+    CampaignView? Table =>
+        State.Campaign is RemoteData<CampaignView>.Loaded loaded ? loaded.Value : null;
+
+    static string Signed(int total) => SheetFormat.Signed(total);
+
+    static string Named(ActiveEffectView effect) => SheetFormat.Named(effect);
+
+    static IReadOnlyList<CharacterSheetView> Absent(CampaignView table) => SheetFormat.Absent(table);
+
+    static string Glance(RuleSummary creature) => SheetFormat.Glance(creature);
+
+    static RenderFragment Line(string text) => @<span class="line">@text</span>;
+
+    int? Typed(Guid creatureId) => SheetFormat.Typed(State.HitPointDraft(creatureId));
+
+    void Apply(Guid creatureId, string direction)
+    {
+        if (Typed(creatureId) is { } amount)
+        {
+            Dispatcher.Dispatch(new HitPointsApplied(creatureId, amount, direction));
+        }
+    }
+
+}

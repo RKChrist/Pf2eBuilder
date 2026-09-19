@@ -4,290 +4,246 @@
 @inject IState<CampaignState> Store
 @inject IState<ConditionsState> ConditionsStore
 @inject IState<ExplorationState> ExplorationStore
-@inject IState<RulesBrowserState> Browser
 @inject IDispatcher Dispatcher
 @inject NavigationManager Navigation
 
 <PageTitle>Campaign</PageTitle>
 
-<header class="top">
-    <h1 class="heading">Campaign</h1>
-    @if (State.Code.Length > 0)
+@* The party. Everybody's card, what each of them is carrying, and the form that puts somebody
+   new on the table. The modes have pages of their own; this is the one they all come back to. *@
+<CampaignPage Heading="Campaign" Context="table">
+    @if (table.Characters.Count == 0)
     {
-        <p class="code">
-            <span class="code__label">Campaign</span>
-            <span class="campaign-code">@State.Code</span>
-        </p>
-    }
-</header>
-
-<RemoteView T="CampaignView" Data="State.Campaign">
-    <NotAsked>@Entrance</NotAsked>
-    <Loading>
-        <div class="pending">
-            <Spinner ShowLabel="true" Label="Opening the campaign" />
-        </div>
-    </Loading>
-    <Failed Context="message">
         <div class="panel">
             <Card>
-                <ErrorState Title="Could not open that campaign">
-                    <ChildContent>@message</ChildContent>
-                </ErrorState>
+                <EmptyState Title="Nobody is in this campaign yet">
+                    <ChildContent>
+                        Read out the code @State.Code so everyone joins the same campaign, then paste a
+                        character export below to put somebody on it.
+                    </ChildContent>
+                </EmptyState>
             </Card>
         </div>
-        @Entrance
-    </Failed>
-    <Loaded Context="table">
-        @* The mode is the campaign's, not this screen's, so it reads the same on every phone at
-           the table. A player sees which mode they are in and cannot change it; the server
-           refuses them either way, and drawing a control that always fails is worse than
-           drawing none. *@
-        <div class="shell">
-            @if (table.Role == "Dm")
+    }
+    else
+    {
+        <div class="party">
+            @foreach (var character in table.Characters)
             {
-                <SegmentedControl TValue="string"
-                                  Class="shell__modes"
-                                  Label="Campaign mode"
-                                  Options="Modes"
-                                  Value="@table.Mode"
-                                  ValueChanged="mode => Dispatcher.Dispatch(new ModeChangeRequested(mode))" />
-            }
-            else
-            {
-                <p class="shell__mode" role="status">@ModeName(table.Mode)</p>
-            }
+                <Card Class="character">
+                    <ChildContent>
+                        <div class="identity">
+                            <h2 class="character__name">@character.Name</h2>
+                            <p class="lineage">
+                                Level @character.Level @character.AncestryName @character.ClassName
+                            </p>
+                        </div>
 
-            <p class="shell__where" role="status">
-                @if (table.Encounter is { Round: > 0 } fight)
-                {
-                    <span class="shell__round">Round @fight.Round</span>
-                }
-                @if (table.Role == "Dm")
-                {
-                    <span class="shell__dm">DM</span>
-                }
-            </p>
-        </div>
+                        <div class="stats">
+                            @foreach (var line in StatSlots.For(character))
+                            {
+                                <button type="button"
+                                        class="stat"
+                                        aria-label="@line.Name"
+                                        @onclick="() => Open(character.Id, StatAddress.Fixed(line.Slot))">
+                                    <span class="stat__label">@line.Short</span>
+                                    <span class="stat__value">@(line.IsRoll ? Signed(line.Of(character)!.Total) : line.Of(character)!.Total.ToString())</span>
+                                </button>
+                            }
+                        </div>
 
-        @if (table.Mode == "Encounter")
-        {
-            @Fight(table)
-        }
-        else if (table.Mode == "Exploration" && table.Characters.Count > 0)
-        {
-            @Exploring(table)
-            @Attempts(table)
-            @Camp(table)
-        }
-        else if (table.Mode == "Downtime" && table.Characters.Count > 0)
-        {
-            @Downtime(table)
-        }
-
-        @if (!State.Live)
-        {
-            <p class="offline" role="status">
-                Changes other people make will not arrive until this page can reach the campaign.
-            </p>
-        }
-
-        @if (State.ActionError is { } trouble)
-        {
-            <p class="trouble" role="alert">@trouble</p>
-        }
-
-        @if (table.Characters.Count == 0)
-        {
-            <div class="panel">
-                <Card>
-                    <EmptyState Title="Nobody is in this campaign yet">
-                        <ChildContent>
-                            Read out the code @State.Code so everyone joins the same campaign, then paste a
-                            Pathbuilder export below to put a character on it.
-                        </ChildContent>
-                    </EmptyState>
-                </Card>
-            </div>
-        }
-        else
-        {
-            <div class="party">
-                @foreach (var character in table.Characters)
-                {
-                    <Card Class="character">
-                        <ChildContent>
-                            <div class="identity">
-                                <h2 class="character__name">@character.Name</h2>
-                                <p class="lineage">
-                                    Level @character.Level @character.AncestryName @character.ClassName
-                                </p>
-                            </div>
-
-                            <div class="stats">
-                                @foreach (var line in StatSlots.For(character))
+                        @if (character.Attacks.Count > 0)
+                        {
+                            <h3 class="rolls__heading">Attacks</h3>
+                            <div class="rolls" aria-label="Attacks">
+                                @foreach (var roll in character.Attacks)
                                 {
                                     <button type="button"
-                                            class="stat"
-                                            aria-label="@line.Name"
-                                            @onclick="() => Open(character.Id, StatAddress.Fixed(line.Slot))">
-                                        <span class="stat__label">@line.Short</span>
-                                        <span class="stat__value">@(line.IsRoll ? Signed(line.Of(character)!.Total) : line.Of(character)!.Total.ToString())</span>
+                                            class="roll"
+                                            @onclick="() => Open(character.Id, StatAddress.Weapon(roll.Name))">
+                                        <span class="roll__name">@roll.Name</span>
+                                        <span class="roll__value">@Signed(roll.Value.Total)</span>
+                                    </button>
+                                }
+                            </div>
+                        }
+
+                        @if (character.Skills.Count > 0)
+                        {
+                            @* Trained and better in the open, the rest behind a summary. A
+                               player reads the four they are good at; a DM occasionally asks
+                               for an untrained Nature, and that has to stay reachable. *@
+                            <h3 class="rolls__heading">Skills</h3>
+                            <div class="rolls" aria-label="Trained skills">
+                                @foreach (var roll in Trained(character))
+                                {
+                                    <button type="button"
+                                            class="roll"
+                                            @onclick="() => Open(character.Id, StatAddress.Skilled(roll.Name))">
+                                        <span class="roll__name">@roll.Name</span>
+                                        <span class="roll__value">@Signed(roll.Value.Total)</span>
                                     </button>
                                 }
                             </div>
 
-                            @if (character.Attacks.Count > 0)
+                            @if (Untrained(character).Count > 0)
                             {
-                                <h3 class="rolls__heading">Attacks</h3>
-                                <div class="rolls" aria-label="Attacks">
-                                    @foreach (var roll in character.Attacks)
-                                    {
-                                        <button type="button"
-                                                class="roll"
-                                                @onclick="() => Open(character.Id, StatAddress.Weapon(roll.Name))">
-                                            <span class="roll__name">@roll.Name</span>
-                                            <span class="roll__value">@Signed(roll.Value.Total)</span>
-                                        </button>
-                                    }
-                                </div>
-                            }
-
-                            @if (character.Skills.Count > 0)
-                            {
-                                @* Trained and better in the open, the rest behind a summary. A
-                                   player reads the four they are good at; a DM occasionally asks
-                                   for an untrained Nature, and that has to stay reachable. *@
-                                <h3 class="rolls__heading">Skills</h3>
-                                <div class="rolls" aria-label="Trained skills">
-                                    @foreach (var roll in Trained(character))
-                                    {
-                                        <button type="button"
-                                                class="roll"
-                                                @onclick="() => Open(character.Id, StatAddress.Skilled(roll.Name))">
-                                            <span class="roll__name">@roll.Name</span>
-                                            <span class="roll__value">@Signed(roll.Value.Total)</span>
-                                        </button>
-                                    }
-                                </div>
-
-                                @if (Untrained(character).Count > 0)
+                                <details class="rest">
+                                    <summary class="rest__summary">Untrained skills</summary>
+                            <div class="rolls" aria-label="Untrained skills">
+                                @foreach (var roll in Untrained(character))
                                 {
-                                    <details class="rest">
-                                        <summary class="rest__summary">Untrained skills</summary>
-                                <div class="rolls" aria-label="Untrained skills">
-                                    @foreach (var roll in Untrained(character))
-                                    {
-                                        <button type="button"
-                                                class="roll"
-                                                @onclick="() => Open(character.Id, StatAddress.Skilled(roll.Name))">
-                                            <span class="roll__name">@roll.Name</span>
-                                            <span class="roll__value">@Signed(roll.Value.Total)</span>
-                                        </button>
-                                    }
-                                </div>
-                                    </details>
+                                    <button type="button"
+                                            class="roll"
+                                            @onclick="() => Open(character.Id, StatAddress.Skilled(roll.Name))">
+                                        <span class="roll__name">@roll.Name</span>
+                                        <span class="roll__value">@Signed(roll.Value.Total)</span>
+                                    </button>
                                 }
+                            </div>
+                                </details>
                             }
+                        }
 
-                            <div class="vitals">
-                                <p class="hp">
-                                    <span class="hp__label">Hit points</span>
-                                    <span class="hp__current">@character.CurrentHitPoints</span>
-                                    <span class="hp__of" aria-hidden="true">/</span>
-                                    <span class="hp__max">@character.MaxHitPoints</span>
-                                </p>
-                                @* The primary control, because the stepper alone made losing a hundred
-                                   hit points a hundred taps and a hundred round trips, which is unusable
-                                   in the moment it exists for. The keypad comes up on a phone. *@
-                                <div class="amount">
-                                    <TextInput Class="amount__field"
-                                               Label="@($"Hit points to apply to {character.Name}")"
-                                               InputMode="numeric"
-                                               Placeholder="0"
-                                               Value="@State.HitPointDraft(character.Id)"
-                                               ValueChanged="typed => Dispatcher.Dispatch(
-                                                   new HitPointDraftChanged(character.Id, typed ?? string.Empty))" />
-                                    <Button Variant="ButtonVariant.Secondary"
-                                            Disabled="@(Typed(character.Id) is null)"
-                                            OnClick='() => Apply(character.Id, "Damage")'>
-                                        Damage
-                                    </Button>
-                                    <Button Variant="ButtonVariant.Secondary"
-                                            Disabled="@(Typed(character.Id) is null)"
-                                            OnClick='() => Apply(character.Id, "Heal")'>
-                                        Heal
-                                    </Button>
-                                </div>
-
-                                @* The stepper stays for the nudge case. Zero is the resting value, so the
-                                   minus button is live without a tap to arm it and the card never shows a
-                                   total the server has not sent back. *@
-                                <NumberStepper Class="delta"
-                                               Label="@($"Change {character.Name}'s hit points")"
-                                               DecrementLabel="@($"{character.Name} takes a point of damage")"
-                                               IncrementLabel="@($"{character.Name} recovers a hit point")"
-                                               Min="-99"
-                                               Max="99"
-                                               Value="0"
-                                               ValueChanged="delta => Nudge(character.Id, delta)" />
+                        <div class="vitals">
+                            <p class="hp">
+                                <span class="hp__label">Hit points</span>
+                                <span class="hp__current">@character.CurrentHitPoints</span>
+                                <span class="hp__of" aria-hidden="true">/</span>
+                                <span class="hp__max">@character.MaxHitPoints</span>
+                            </p>
+                            @* The primary control, because the stepper alone made losing a hundred
+                               hit points a hundred taps and a hundred round trips, which is unusable
+                               in the moment it exists for. The keypad comes up on a phone. *@
+                            <div class="amount">
+                                <TextInput Class="amount__field"
+                                           Label="@($"Hit points to apply to {character.Name}")"
+                                           InputMode="numeric"
+                                           Placeholder="0"
+                                           Value="@State.HitPointDraft(character.Id)"
+                                           ValueChanged="typed => Dispatcher.Dispatch(
+                                               new HitPointDraftChanged(character.Id, typed ?? string.Empty))" />
+                                <Button Variant="ButtonVariant.Secondary"
+                                        Disabled="@(Typed(character.Id) is null)"
+                                        OnClick='() => Apply(character.Id, "Damage")'>
+                                    Damage
+                                </Button>
+                                <Button Variant="ButtonVariant.Secondary"
+                                        Disabled="@(Typed(character.Id) is null)"
+                                        OnClick='() => Apply(character.Id, "Heal")'>
+                                    Heal
+                                </Button>
                             </div>
 
-                            @if (character.Effects.Count > 0)
+                            @* The stepper stays for the nudge case. Zero is the resting value, so the
+                               minus button is live without a tap to arm it and the card never shows a
+                               total the server has not sent back. *@
+                            <NumberStepper Class="delta"
+                                           Label="@($"Change {character.Name}'s hit points")"
+                                           DecrementLabel="@($"{character.Name} takes a point of damage")"
+                                           IncrementLabel="@($"{character.Name} recovers a hit point")"
+                                           Min="-99"
+                                           Max="99"
+                                           Value="0"
+                                           ValueChanged="delta => Nudge(character.Id, delta)" />
+                        </div>
+
+                        @if (character.Effects.Count > 0)
+                        {
+                            <div class="chips">
+                                @foreach (var effect in character.Effects)
+                                {
+                                    <TraitChip>@Named(effect)</TraitChip>
+                                }
+                            </div>
+                        }
+
+                        <div class="acts">
+                            <Button Variant="ButtonVariant.Secondary"
+                                    OnClick="() => Dispatcher.Dispatch(new PickerOpened(character.Id))">
+                                Effects
+                            </Button>
+                            @* A level-up between sessions, a number Pathbuilder got wrong and a
+                               homebrew ancestry all need this, and re-exporting is not always
+                               possible at the table. *@
+                            <Button Variant="ButtonVariant.Secondary"
+                                    OnClick="() => Dispatcher.Dispatch(new EditorOpened(character.Id))">
+                                Edit
+                            </Button>
+                        </div>
+                    </ChildContent>
+                </Card>
+            }
+        </div>
+    }
+
+    @if (table.Characters.Any(c => c.Feats.Count > 0 || c.Spells.Count > 0))
+    {
+        <div class="reference">
+            <Card Class="reference__card">
+                <ChildContent>
+                    <h2 class="reference__heading">What the party has</h2>
+
+                    @foreach (var character in table.Characters.Where(c => c.Feats.Count > 0 || c.Spells.Count > 0))
+                    {
+                        <details class="owned" data-owned="@character.Id">
+                            <summary class="owned__summary">
+                                <span class="owned__name">@character.Name</span>
+                                <span class="owned__count">
+                                    @character.Feats.Count feats, @character.Spells.Count spells
+                                </span>
+                            </summary>
+
+                            @foreach (var group in Owned(character))
                             {
-                                <div class="chips">
-                                    @foreach (var effect in character.Effects)
+                                <h3 class="owned__kind">@group.Heading</h3>
+                                <div class="owned__entries">
+                                    @foreach (var entry in group.Entries)
                                     {
-                                        <TraitChip>@Named(effect)</TraitChip>
+                                        @if (entry.RuleId is { } id)
+                                        {
+                                            <a class="owned__entry" href="@Navigation.Rule(id)">
+                                                <span class="owned__entry-name">@entry.Name</span>
+                                                <span class="owned__entry-kind">@entry.Kind</span>
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="owned__entry owned__entry--unknown">
+                                                <span class="owned__entry-name">@entry.Name</span>
+                                                <span class="owned__entry-kind">@entry.Kind · no record under this name</span>
+                                            </span>
+                                        }
                                     }
                                 </div>
                             }
-
-                            <div class="acts">
-                                <Button Variant="ButtonVariant.Secondary"
-                                        OnClick="() => Dispatcher.Dispatch(new PickerOpened(character.Id))">
-                                    Effects
-                                </Button>
-                                @* A level-up between sessions, a number Pathbuilder got wrong and a
-                                   homebrew ancestry all need this, and re-exporting is not always
-                                   possible at the table. *@
-                                <Button Variant="ButtonVariant.Secondary"
-                                        OnClick="() => Dispatcher.Dispatch(new EditorOpened(character.Id))">
-                                    Edit
-                                </Button>
-                            </div>
-                        </ChildContent>
-                    </Card>
-                }
-            </div>
-        }
-
-        @if (table.Characters.Any(c => c.Feats.Count > 0 || c.Spells.Count > 0))
-        {
-            @Reference(table)
-        }
-
-        <div class="panel import">
-            <Card Title="Put a character in the campaign">
-                <ChildContent>
-                    <TextArea Label="Pathbuilder export"
-                              Rows="5"
-                              Placeholder="Paste the export here"
-                              Hint="In Pathbuilder, choose Export JSON. Paste the JSON itself, or open pathbuilder2e.com/json.php?id=NNNNNN with the number it gives you and copy the page."
-                              Error="@State.ImportError"
-                              Value="@State.PasteDraft"
-                              ValueChanged="paste => Dispatcher.Dispatch(new PasteDraftChanged(paste ?? string.Empty))" />
-                    <Button Variant="ButtonVariant.Primary"
-                            Busy="State.Importing"
-                            Disabled="@(State.PasteDraft.Trim().Length == 0)"
-                            OnClick="() => Dispatcher.Dispatch(new ImportRequested())">
-                        Import
-                    </Button>
+                        </details>
+                    }
                 </ChildContent>
             </Card>
         </div>
-    </Loaded>
-</RemoteView>
+    }
+
+    <div class="panel import">
+        <Card Title="Put a character in the campaign">
+            <ChildContent>
+                <TextArea Label="Pathbuilder export"
+                          Rows="5"
+                          Placeholder="Paste the export here"
+                          Hint="In Pathbuilder, choose Export JSON. Paste the JSON itself, or open pathbuilder2e.com/json.php?id=NNNNNN with the number it gives you and copy the page."
+                          Error="@State.ImportError"
+                          Value="@State.PasteDraft"
+                          ValueChanged="paste => Dispatcher.Dispatch(new PasteDraftChanged(paste ?? string.Empty))" />
+                <Button Variant="ButtonVariant.Primary"
+                        Busy="State.Importing"
+                        Disabled="@(State.PasteDraft.Trim().Length == 0)"
+                        OnClick="() => Dispatcher.Dispatch(new ImportRequested())">
+                    Import
+                </Button>
+            </ChildContent>
+        </Card>
+    </div>
+</CampaignPage>
 
 <BottomSheet Open="@(Opened is not null)"
              Title="@BreakdownTitle"
@@ -519,73 +475,6 @@
     }
 </BottomSheet>
 
-@* Who is in the fight. A monster names a creature record and a player names somebody already
-   on the roster, and both are one command on the server. *@
-<BottomSheet Open="@(State.AddingCombatant is not null)"
-             Title="Add to the fight"
-             OnClose="() => Dispatcher.Dispatch(new CombatantPickerClosed())">
-    @if (State.AddingCombatant is { } picker && Table is { } open)
-    {
-        <div class="adding">
-            @if (Absent(open) is { Count: > 0 } roster)
-            {
-                <h3 class="adding__heading">From this campaign</h3>
-                <Card>
-                    <ListContent>
-                        @foreach (var character in roster)
-                        {
-                            <ListRow Title="@character.Name"
-                                     Meta="@Line($"Level {character.Level} {character.AncestryName} {character.ClassName}")"
-                                     OnClick="() => Dispatcher.Dispatch(new CombatantAdded(null, character.Id, null))" />
-                        }
-                    </ListContent>
-                </Card>
-            }
-
-            <h3 class="adding__heading">A monster</h3>
-            <SearchField Value="@picker.Query"
-                         ValueChanged="query => Dispatcher.Dispatch(new MonsterQueryChanged(query ?? string.Empty))"
-                         Placeholder="Search 3,786 creatures"
-                         Label="Search the bestiary" />
-
-            <RemoteView T="RuleSearchResult" Data="picker.Found">
-                <NotAsked>
-                    <p class="hint">Every creature in the ruleset, with the numbers a fight needs.</p>
-                </NotAsked>
-                <Loading>
-                    <div class="pending"><Spinner ShowLabel="true" Label="Searching" /></div>
-                </Loading>
-                <Failed Context="message">
-                    <ErrorState Title="Could not search the bestiary">
-                        <ChildContent>@message</ChildContent>
-                    </ErrorState>
-                </Failed>
-                <Loaded Context="found">
-                    @if (found.Items.Count == 0)
-                    {
-                        <p class="hint">Nothing by that name.</p>
-                    }
-                    else
-                    {
-                        <Card>
-                            <ListContent>
-                                @foreach (var creature in found.Items)
-                                {
-                                    <ListRow Title="@creature.Name"
-                                             Meta="@Line(Glance(creature))"
-                                             OnClick="() => Dispatcher.Dispatch(new CombatantAdded(creature.Id, null, null))" />
-                                }
-                            </ListContent>
-                        </Card>
-                    }
-                </Loaded>
-            </RemoteView>
-        </div>
-    }
-</BottomSheet>
-
-@* The build layer, in the form the calculator reads it. Nothing here touches hit points,
-   effects or the turn: an edit is a re-import from a different source. *@
 <BottomSheet Open="@(State.Editing is not null)"
              Title="@(State.Editing is { } e ? $"Edit {e.Draft.Name}" : "Edit")"
              OnClose="() => Dispatcher.Dispatch(new EditorClosed())">
@@ -722,105 +611,7 @@
 </BottomSheet>
 
 @code {
-    static readonly IReadOnlyList<ChoiceOption<string>> Modes =
-    [
-        new("Exploration", "Explore"),
-        new("Encounter", "Fight"),
-        new("Downtime", "Downtime"),
-    ];
-
-    /// <summary>The label a player reads when they cannot change it. The switcher's labels are
-    /// short because three of them share a phone's width; a sentence has room to be a word.</summary>
-    static string ModeName(string mode) => mode switch
-    {
-        "Encounter" => "In a fight",
-        "Downtime" => "Downtime",
-        _ => "Exploring",
-    };
-
-    CampaignView? Table =>
-        State.Campaign is RemoteData<CampaignView>.Loaded loaded ? loaded.Value : null;
-
-    /// <summary>Everyone on the roster who is not already in the fight. Offering somebody twice
-    /// is offering to give them two turns.</summary>
-    static IReadOnlyList<CharacterSheetView> Absent(CampaignView table) =>
-    [
-        .. table.Characters.Where(character =>
-            table.Encounter is null
-            || !table.Encounter.Combatants.Any(combatant => combatant.Id == character.Id)),
-    ];
-
-    /// <summary>A creature row says what a DM choosing one wants to know, which is how hard it
-    /// hits back rather than which book it is from.</summary>
-    static string Glance(RuleSummary creature)
-    {
-        var facts = creature.Highlights
-            .Where(fact => fact.Key is "ac" or "hp" or "size")
-            .Select(fact => $"{MechanicsDisplay.LabelOf(fact.Key)} {string.Join(", ", fact.Values)}");
-
-        var level = creature.Level is { } value ? $"Level {value}" : null;
-        return string.Join(" · ", new[] { level }.Concat(facts).Where(part => part is { Length: > 0 })!);
-    }
-
-    /// <summary>A row's meta slot takes a fragment, so a sentence has to become one.</summary>
-    static RenderFragment Line(string text) => @<span class="line">@text</span>;
-
     void Edit(CharacterBuildEdit draft) => Dispatcher.Dispatch(new EditDraftChanged(draft));
-
-    /// <summary>
-    /// The party's own feats and spells, in the same records the rest of the app uses.
-    /// <para>Tapping one opens the rule. A name the ruleset does not hold still shows and
-    /// simply does not open: homebrew is somebody's character too, a feat printed after the
-    /// snapshot was taken is not the player's mistake, and an export written before the
-    /// Remaster carries names the current records no longer use. The row says "no record under
-    /// this name" rather than "not in the ruleset", because all three of those are true of a
-    /// name and none of them is true of the thing it names.</para>
-    /// <para>Shown in every mode, because a dispute about somebody's feat does not wait for
-    /// the right mode to be selected.</para>
-    /// </summary>
-    RenderFragment Reference(CampaignView table) => @<div class="reference">
-        <Card Class="reference__card">
-            <ChildContent>
-                <h2 class="reference__heading">What the party has</h2>
-
-                @foreach (var character in table.Characters.Where(c => c.Feats.Count > 0 || c.Spells.Count > 0))
-                {
-                    <details class="owned" data-owned="@character.Id">
-                        <summary class="owned__summary">
-                            <span class="owned__name">@character.Name</span>
-                            <span class="owned__count">
-                                @character.Feats.Count feats, @character.Spells.Count spells
-                            </span>
-                        </summary>
-
-                        @foreach (var group in Owned(character))
-                        {
-                            <h3 class="owned__kind">@group.Heading</h3>
-                            <div class="owned__entries">
-                                @foreach (var entry in group.Entries)
-                                {
-                                    @if (entry.RuleId is { } id)
-                                    {
-                                        <a class="owned__entry" href="@Navigation.Rule(id)">
-                                            <span class="owned__entry-name">@entry.Name</span>
-                                            <span class="owned__entry-kind">@entry.Kind</span>
-                                        </a>
-                                    }
-                                    else
-                                    {
-                                        <span class="owned__entry owned__entry--unknown">
-                                            <span class="owned__entry-name">@entry.Name</span>
-                                            <span class="owned__entry-kind">@entry.Kind · no record under this name</span>
-                                        </span>
-                                    }
-                                }
-                            </div>
-                        }
-                    </details>
-                }
-            </ChildContent>
-        </Card>
-    </div>;
 
     sealed record OwnedGroup(string Heading, IReadOnlyList<SheetEntryView> Entries);
 
@@ -840,406 +631,6 @@
                 [.. group.OrderBy(spell => spell.Name, StringComparer.OrdinalIgnoreCase)])),
     ];
 
-    /// <summary>
-    /// A day counter and one activity per character per day.
-    /// <para>The task level is here because the DC comes from it, and the DC is the number the
-    /// DM would otherwise open the book for. What each activity pays is not here: Earn Income's
-    /// table is a currency per task level, per proficiency rank and per degree of success, and
-    /// this project imports no rule text, so the screen says where the table is rather than
-    /// inventing several hundred numbers.</para>
-    /// </summary>
-    RenderFragment Downtime(CampaignView table) => @<div class="downtime">
-        <Card Class="downtime__card">
-            <ChildContent>
-                <div class="downtime__top">
-                    <h2 class="downtime__heading">Downtime</h2>
-                    <p class="downtime__day" role="status">
-                        <span class="downtime__day-label">Day</span>
-                        <span class="downtime__day-value">@table.Day</span>
-                    </p>
-                </div>
-
-                @foreach (var character in table.Characters)
-                {
-                    <div class="spending" data-spending="@character.Id">
-                        <Select TValue="string"
-                                Label="@character.Name"
-                                Options="ExplorationStore.Value.DowntimeOptions"
-                                Value="@(character.DowntimeActivity ?? string.Empty)"
-                                ValueChanged="key => Dispatcher.Dispatch(
-                                    new DowntimeActivityChosen(
-                                        character.Id,
-                                        string.IsNullOrEmpty(key) ? null : key,
-                                        string.IsNullOrEmpty(key) ? null : character.DowntimeTaskLevel ?? character.Level))" />
-
-                        @if (ExplorationStore.Value.DowntimeNamed(character.DowntimeActivity) is { } chosen)
-                        {
-                            <div class="spending__task">
-                                <div class="spending__level">
-                                    <span class="spending__level-label">Task level</span>
-                                    <NumberStepper Label="@($"Task level for {character.Name}")"
-                                                   Min="0"
-                                                   Max="25"
-                                                   Value="character.DowntimeTaskLevel ?? character.Level"
-                                                   ValueChanged="level => Dispatcher.Dispatch(
-                                                       new DowntimeActivityChosen(character.Id, chosen.Key, level))" />
-                                </div>
-
-                                @if (character.DowntimeDc is { } dc)
-                                {
-                                    <p class="spending__dc">
-                                        <span class="spending__dc-label">DC</span>
-                                        <span class="spending__dc-value">@dc</span>
-                                        @if (chosen.Skill is { } skill)
-                                        {
-                                            <span class="spending__skill">@skill @Signed(SkillOf(character, skill))</span>
-                                        }
-                                    </p>
-                                }
-                            </div>
-
-                            <p class="spending__says">@chosen.What</p>
-                        }
-                    </div>
-                }
-
-                @if (table.Role == "Dm")
-                {
-                    <Button Class="downtime__next"
-                            OnClick="() => Dispatcher.Dispatch(new DayAdvanced())">
-                        Next day
-                    </Button>
-                    <p class="downtime__next-says">
-                        One activity per character per day, so the day turning clears what
-                        everybody chose.
-                    </p>
-                }
-            </ChildContent>
-        </Card>
-    </div>;
-
-    /// <summary>The character's own total in the skill the activity rolls, so the DM can see
-    /// the DC and the modifier side by side rather than opening a card to find one of them.</summary>
-    static int SkillOf(CharacterSheetView character, string skill) =>
-        character.Skills.FirstOrDefault(entry => entry.Name == skill)?.Value.Total ?? 0;
-
-    /// <summary>
-    /// What each character can attempt, and what they cannot.
-    /// <para>The server decides both, from the character's own ranks, so this draws a list and
-    /// holds no rules. What it can do is put the ones they can try first: a player scanning for
-    /// something to do is not scanning for the things they are not trained for.</para>
-    /// <para>The ones they cannot are still shown, behind a summary, because "why can nobody
-    /// here read this?" is a question a table asks and an app that hid the answer would leave
-    /// them guessing.</para>
-    /// </summary>
-    RenderFragment Attempts(CampaignView table) => @<div class="attempts">
-        <Card Class="attempts__card">
-            <ChildContent>
-                <h2 class="attempts__heading">What you can attempt</h2>
-
-                @foreach (var character in table.Characters)
-                {
-                    <details class="trying" data-trying="@character.Id">
-                        <summary class="trying__summary">
-                            <span class="trying__name">@character.Name</span>
-                            <span class="trying__count">
-                                @character.CanAttempt.Count(a => a.Met) of @character.CanAttempt.Count
-                            </span>
-                        </summary>
-
-                        <div class="tries">
-                            @foreach (var attempt in character.CanAttempt.Where(a => a.Met)
-                                .OrderByDescending(a => a.Modifier).ThenBy(a => a.Name, StringComparer.Ordinal))
-                            {
-                                <div class="try" data-try="@attempt.Key">
-                                    <span class="try__name">@attempt.Name</span>
-                                    <span class="try__skill">@attempt.Skill</span>
-                                    <span class="try__value">@Signed(attempt.Modifier)</span>
-                                </div>
-                            }
-                        </div>
-
-                        @if (character.CanAttempt.Any(a => !a.Met))
-                        {
-                            <details class="trying__rest">
-                                <summary class="trying__rest-summary">Not trained enough for</summary>
-                                <div class="tries">
-                                    @foreach (var attempt in character.CanAttempt.Where(a => !a.Met)
-                                        .OrderBy(a => a.Name, StringComparer.Ordinal))
-                                    {
-                                        <div class="try try--barred" data-try="@attempt.Key">
-                                            <span class="try__name">@attempt.Name</span>
-                                            <span class="try__skill">
-                                                needs @attempt.Required.ToLowerInvariant() in @attempt.Skill
-                                            </span>
-                                        </div>
-                                    }
-                                </div>
-                            </details>
-                        }
-                    </details>
-                }
-            </ChildContent>
-        </Card>
-    </div>;
-
-    /// <summary>
-    /// What the party does when they stop, and how long they have been at it.
-    /// <para>None of the ten-minute activities changes a number. Treat Wounds heals dice this
-    /// app does not roll for a table that has dice in front of it; what it keeps is the hour of
-    /// immunity afterwards, which is the half people forget. A full night is different: what it
-    /// restores is arithmetic, so the engine does it.</para>
-    /// </summary>
-    RenderFragment Camp(CampaignView table) => @<div class="camp">
-        <Card Class="camp__card">
-            <ChildContent>
-                <div class="camp__top">
-                    <h2 class="camp__heading">When you stop</h2>
-                    <p class="camp__clock" role="status">
-                        <span class="camp__clock-label">Here</span>
-                        <span class="camp__clock-value">@Duration.Spoken(table.ElapsedMinutes)</span>
-                    </p>
-                </div>
-
-                @foreach (var character in table.Characters)
-                {
-                    <div class="camping" data-camping="@character.Id">
-                        <div class="camping__who">
-                            <span class="camping__name">@character.Name</span>
-                            @if (character.TreatWoundsImmuneFor > 0)
-                            {
-                                <span class="camping__immune">
-                                    Treated. Immune for @Duration.Spoken(character.TreatWoundsImmuneFor).
-                                </span>
-                            }
-                        </div>
-
-                        <div class="camping__acts">
-                            @foreach (var activity in ExplorationStore.Value.Camp)
-                            {
-                                <Button Variant="ButtonVariant.Secondary"
-                                        Class="camping__act"
-                                        Disabled="@(activity.Key == "treat-wounds" && character.TreatWoundsImmuneFor > 0)"
-                                        OnClick="() => Dispatcher.Dispatch(new CampActivityTaken(character.Id, activity.Key))">
-                                    @activity.Name
-                                </Button>
-                            }
-                        </div>
-                    </div>
-                }
-
-                @* Once, under the buttons, rather than four sentences beside every character's
-                   copy of them. Folded away because a table reads them the first session and
-                   never again. *@
-                <details class="camp__what">
-                    <summary class="camp__what-summary">What these do</summary>
-                    <dl class="camp__list">
-                        @foreach (var activity in ExplorationStore.Value.Camp)
-                        {
-                            <div class="camp__entry">
-                                <dt>
-                                    @activity.Name
-                                    <span class="camp__cost">@activity.Minutes min</span>
-                                </dt>
-                                <dd>@activity.What</dd>
-                            </div>
-                        }
-                    </dl>
-                </details>
-
-                @if (table.Role == "Dm")
-                {
-                    <Button Class="camp__rest"
-                            OnClick="() => Dispatcher.Dispatch(new NightRested())">
-                        Rest for the night
-                    </Button>
-                    <p class="camp__rest-says">
-                        Eight hours. Everyone recovers Constitution times level in hit points,
-                        temporary hit points expire, fatigued ends, and drained and doomed each
-                        step down by one.
-                    </p>
-                }
-            </ChildContent>
-        </Card>
-    </div>;
-
-    /// <summary>
-    /// What everyone is doing while the party moves. One row per character, because that is the
-    /// question the DM asks before opening a door and the one nobody remembers the answer to.
-    /// <para>The consequence is printed under the choice rather than left in a rulebook. Three
-    /// of the nine reach the fight and the rest are the table's to play out, and a sentence is
-    /// how a screen tells those apart honestly.</para>
-    /// </summary>
-    RenderFragment Exploring(CampaignView table) => @<div class="explore">
-        <Card Class="explore__card">
-            <ChildContent>
-                <h2 class="explore__heading">While you travel</h2>
-                <p class="explore__blurb">
-                    What each of you is doing. Scouting and sneaking change how the next fight
-                    starts, so this is worth setting before anyone opens a door.
-                </p>
-
-                <div class="doing">
-                    @foreach (var character in table.Characters)
-                    {
-                        <div class="doing__row" data-doing="@character.Id">
-                            <Select TValue="string"
-                                    Label="@character.Name"
-                                    Options="ExplorationStore.Value.Options"
-                                    Value="@(character.ExplorationActivity ?? string.Empty)"
-                                    ValueChanged="key => Dispatcher.Dispatch(
-                                        new ExplorationActivityChosen(
-                                            character.Id,
-                                            string.IsNullOrEmpty(key) ? null : key))" />
-
-                            @if (ExplorationStore.Value.ConsequenceOf(character.ExplorationActivity) is { } says)
-                            {
-                                <p class="doing__says">@says</p>
-                            }
-                        </div>
-                    }
-                </div>
-            </ChildContent>
-        </Card>
-    </div>;
-
-    /// <summary>
-    /// The fight. Initiative order, whose turn it is, and what the last turn change left the DM
-    /// to do. A player gets the same list with the monsters they have been shown and nothing at
-    /// all about the ones they have not; that is the projection's doing, not this screen's, so
-    /// there is no role check inside the loop.
-    /// </summary>
-    RenderFragment Fight(CampaignView table) => @<div class="fight">
-        <Card Class="fight__card">
-            <ChildContent>
-                <div class="fight__top">
-                    <h2 class="fight__heading">Initiative</h2>
-                    @if (table.Role == "Dm")
-                    {
-                        <div class="fight__acts">
-                            <Button Variant="ButtonVariant.Secondary"
-                                    OnClick="() => Dispatcher.Dispatch(new CombatantPickerOpened())">
-                                Add
-                            </Button>
-                            <Button Variant="ButtonVariant.Secondary"
-                                    OnClick="() => Dispatcher.Dispatch(new InitiativeRolled())">
-                                Roll
-                            </Button>
-                            <Button Variant="ButtonVariant.Secondary"
-                                    OnClick="() => Dispatcher.Dispatch(new ChangeUndone())">
-                                Undo
-                            </Button>
-                            <Button OnClick="() => Dispatcher.Dispatch(new TurnAdvanced())">Next turn</Button>
-                        </div>
-                    }
-                </div>
-
-                @if (table.Encounter is not { Combatants.Count: > 0 } fight)
-                {
-                    <EmptyState Title="Nobody is in this fight yet">
-                        <ChildContent>
-                            @if (table.Role == "Dm")
-                            {
-                                <text>Add the party and whatever they ran into, then roll initiative.</text>
-                            }
-                            else
-                            {
-                                <text>The GM has not started the fight yet.</text>
-                            }
-                        </ChildContent>
-                    </EmptyState>
-                }
-                else
-                {
-                    <ol class="order">
-                        @foreach (var combatant in fight.Combatants)
-                        {
-                            <li class="turn @(combatant.IsCurrentTurn ? "turn--now" : null)"
-                                data-combatant="@combatant.Id">
-                                <span class="turn__initiative">@combatant.Initiative</span>
-                                <span class="turn__who">
-                                    <span class="turn__name">@combatant.Name</span>
-                                    @if (combatant.Monster is { } monster)
-                                    {
-                                        <span class="turn__line">
-                                            @monster.CurrentHitPoints / @monster.MaxHitPoints HP · AC @monster.ArmorClass
-                                        </span>
-                                    }
-                                    @if (combatant.Effects.Count > 0)
-                                    {
-                                        <span class="turn__chips">
-                                            @foreach (var effect in combatant.Effects)
-                                            {
-                                                <TraitChip>@Named(effect)</TraitChip>
-                                            }
-                                        </span>
-                                    }
-                                </span>
-
-                                @if (combatant.Kind == "Adversary" && table.Role == "Dm")
-                                {
-                                    <span class="turn__dm">
-                                        @* The same typed field the cards use, because a monster
-                                           loses fifty hit points as easily as a player does and a
-                                           combatant id is the creature id either way. *@
-                                        <div class="amount">
-                                            <TextInput Class="amount__field"
-                                                       Label="@($"Hit points to apply to {combatant.Name}")"
-                                                       InputMode="numeric"
-                                                       Placeholder="0"
-                                                       Value="@State.HitPointDraft(combatant.Id)"
-                                                       ValueChanged="typed => Dispatcher.Dispatch(
-                                                           new HitPointDraftChanged(combatant.Id, typed ?? string.Empty))" />
-                                            <Button Variant="ButtonVariant.Secondary"
-                                                    Disabled="@(Typed(combatant.Id) is null)"
-                                                    OnClick='() => Apply(combatant.Id, "Damage")'>
-                                                Damage
-                                            </Button>
-                                            <Button Variant="ButtonVariant.Secondary"
-                                                    Disabled="@(Typed(combatant.Id) is null)"
-                                                    OnClick='() => Apply(combatant.Id, "Heal")'>
-                                                Heal
-                                            </Button>
-                                        </div>
-                                        @* A monster the players have not been shown is not on
-                                           their screen at all, so this is the only way it gets
-                                           there, and a bare toggle would not say so. *@
-                                        <label class="reveal">
-                                            <Switch Checked="combatant.Revealed"
-                                                    CheckedChanged="on => Dispatcher.Dispatch(new MonsterRevealed(combatant.Id, on))" />
-                                            <span class="reveal__label">Players can see it</span>
-                                        </label>
-                                    </span>
-                                }
-                            </li>
-                        }
-                    </ol>
-
-                    @if (fight.Reminders.Count > 0)
-                    {
-                        @* What the turn change left somebody to do. The app does not do these
-                           itself: persistent damage is followed by a flat check, and an app that
-                           takes the hit points without rolling it has decided half a rule. *@
-                        <ul class="reminders">
-                            @foreach (var reminder in fight.Reminders)
-                            {
-                                <li class="reminder">@reminder</li>
-                            }
-                        </ul>
-                    }
-
-                    @if (table.Role == "Dm")
-                    {
-                        <Button Variant="ButtonVariant.Secondary"
-                                Class="fight__end"
-                                OnClick="() => Dispatcher.Dispatch(new EncounterEnded())">
-                            End the fight
-                        </Button>
-                    }
-                }
-            </ChildContent>
-        </Card>
-    </div>;
     static readonly IReadOnlyList<ChoiceOption<PickerArm>> Arms =
     [
         new(PickerArm.Conditions, "Effects"),
@@ -1291,60 +682,6 @@
         && open.Stat.In(character) is { } breakdown
             ? $"{open.Stat.Label} {breakdown.Total}"
             : "Breakdown";
-
-    RenderFragment Entrance => @<div class="join">
-        <div class="panel">
-            <Card>
-                <EmptyState Title="Join a campaign">
-                    <ChildContent>
-                        A campaign is a short code everyone playing types in. Whoever starts one reads it
-                        out; after that every change anybody makes shows up on everybody's screen.
-                    </ChildContent>
-                    <Action>
-                        <div class="entry">
-                            <TextInput Label="Campaign code"
-                                       Placeholder="ABC234"
-                                       InputMode="text"
-                                       Value="@State.CodeDraft"
-                                       ValueChanged="code => Dispatcher.Dispatch(new CodeDraftChanged(code ?? string.Empty))" />
-                            <div class="pf-cluster">
-                                <Button Variant="ButtonVariant.Primary"
-                                        Disabled="@(State.CodeDraft.Trim().Length == 0)"
-                                        OnClick="() => Dispatcher.Dispatch(new JoinRequested(State.CodeDraft))">
-                                    Join
-                                </Button>
-                                <Button Variant="ButtonVariant.Secondary"
-                                        OnClick="() => Dispatcher.Dispatch(new CampaignCreationRequested())">
-                                    Start a new campaign
-                                </Button>
-                            </div>
-                        </div>
-                    </Action>
-                </EmptyState>
-            </Card>
-        </div>
-    </div>;
-
-    protected override void OnInitialized()
-    {
-        base.OnInitialized();
-
-        if (Browser.Value.ActiveGroup != GroupKey.Play)
-        {
-            Dispatcher.Dispatch(new BoardOpened(GroupKey.Play));
-        }
-
-        if (ConditionsStore.Value.Conditions is RemoteData<IReadOnlyList<ConditionSummary>>.NotAsked)
-        {
-            Dispatcher.Dispatch(new ConditionsRequested());
-        }
-
-        if (ExplorationStore.Value.Activities is RemoteData<IReadOnlyList<ExplorationActivityView>>.NotAsked)
-        {
-            Dispatcher.Dispatch(new ExplorationActivitiesRequested());
-        }
-    }
-
     CharacterSheetView? Character(Guid id) =>
         State.Campaign is RemoteData<CampaignView>.Loaded loaded
             ? loaded.Value.Characters.FirstOrDefault(character => character.Id == id)

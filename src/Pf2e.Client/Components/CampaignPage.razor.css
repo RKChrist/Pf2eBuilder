@@ -1,0 +1,129 @@
+/* The mode strip is navigation now, so it is links rather than a segmented control: a mode is a
+   page you can open, bookmark and go back from. The dot marks the mode the table is actually in,
+   which is not always the page you are looking at. */
+.top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--layout-gutter) 0;
+}
+
+.heading {
+    margin: 0;
+    font-size: var(--font-size-subhead);
+}
+
+.code {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    margin: 0;
+}
+
+.code__label {
+    font-size: var(--font-size-chip);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.campaign-code {
+    font-size: var(--font-size-stat);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.08em;
+}
+
+.shell {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--layout-gutter) 0;
+}
+
+.shell__modes {
+    display: flex;
+    gap: var(--tap-separation);
+    padding: var(--space-1);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-radius: var(--radius-chip);
+    background: var(--surface-sunken);
+}
+
+.shell__mode-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: var(--tap-default);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-chip);
+    font-size: var(--font-size-data);
+    color: var(--text-secondary);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.shell__mode-link.on {
+    background: var(--accent-base);
+    color: var(--text-on-accent);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Where the table is, which is not where you are looking. */
+.shell__here {
+    font-size: var(--font-size-chip);
+    line-height: 1;
+}
+
+.shell__where {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    margin: 0;
+}
+
+.shell__party {
+    min-height: var(--tap-min);
+    display: flex;
+    align-items: center;
+    font-size: var(--font-size-data);
+}
+
+.shell__round {
+    font-size: var(--font-size-data);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+}
+
+.shell__dm {
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-chip);
+    background: var(--surface-raised);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+}
+
+.offline,
+.trouble {
+    margin: var(--space-3) var(--layout-gutter) 0;
+    padding: var(--space-3);
+    border-radius: var(--radius-chip);
+    background: var(--surface-raised);
+    font-size: var(--font-size-data);
+    text-wrap: pretty;
+}
+
+.trouble {
+    color: var(--text-danger, var(--text-primary));
+}
+
+.join,
+.panel {
+    padding: var(--space-3) var(--layout-gutter) 0;
+}

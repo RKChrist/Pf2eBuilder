@@ -1,0 +1,183 @@
+@inherits FluxorComponent
+@inject IState<CampaignState> Store
+@inject IDispatcher Dispatcher
+@inject NavigationManager Navigation
+@inject IState<RulesBrowserState> Browser
+@inject IState<ConditionsState> ConditionsStore
+@inject IState<ExplorationState> ExplorationStore
+
+@*
+    The header, the mode strip and the join form, which every campaign page shares.
+
+    A page renders its own content inside this and never draws the shell itself, so a deep link
+    to /campaign/encounter with no campaign open lands on the join form rather than on an empty
+    fight.
+*@
+
+<header class="top">
+    <h1 class="heading">@Heading</h1>
+    @if (State.Code.Length > 0)
+    {
+        <p class="code">
+            <span class="code__label">Campaign</span>
+            <span class="campaign-code">@State.Code</span>
+        </p>
+    }
+</header>
+
+<RemoteView T="CampaignView" Data="State.Campaign">
+    <NotAsked>@Entrance</NotAsked>
+    <Loading>
+        <div class="pending">
+            <Spinner ShowLabel="true" Label="Opening the campaign" />
+        </div>
+    </Loading>
+    <Failed Context="message">
+        <div class="panel">
+            <Card>
+                <ErrorState Title="Could not open that campaign">
+                    <ChildContent>@message</ChildContent>
+                </ErrorState>
+            </Card>
+        </div>
+        @Entrance
+    </Failed>
+    <Loaded Context="table">
+        @* Where you are is yours and what mode the table is in is the table's. The strip is
+           navigation for everybody, so a player can look at the camp page while the party is
+           still walking; for the DM it also sets the mode, and when the mode changes every
+           screen follows it, because "roll initiative" should not need saying twice. *@
+        <nav class="shell" aria-label="Campaign">
+            <div class="shell__modes">
+                @foreach (var mode in SheetFormat.Modes)
+                {
+                    <a class="shell__mode-link @(Active(mode.Route) ? "on" : null)"
+                       data-mode="@mode.Mode"
+                       href="@mode.Route"
+                       aria-current="@(Active(mode.Route) ? "page" : null)"
+                       @onclick="() => Choose(table, mode.Mode)"
+                       @onclick:preventDefault="@(table.Role == "Dm")">
+                        @mode.Label
+                        @if (table.Mode == mode.Mode)
+                        {
+                            <span class="shell__here" title="The table is in this mode">•</span>
+                        }
+                    </a>
+                }
+            </div>
+
+            <p class="shell__where" role="status">
+                <a class="shell__party" href="/campaign">Party</a>
+                <a class="shell__party" href="/campaign/camp">Camp</a>
+                @if (table.Encounter is { Round: > 0 } fight)
+                {
+                    <span class="shell__round">Round @fight.Round</span>
+                }
+                @if (table.Role == "Dm")
+                {
+                    <span class="shell__dm">DM</span>
+                }
+            </p>
+        </nav>
+
+        @if (!State.Live)
+        {
+            <p class="offline" role="status">
+                Changes other people make will not arrive until this page can reach the campaign.
+            </p>
+        }
+
+        @if (State.ActionError is { } trouble)
+        {
+            <p class="trouble" role="alert">@trouble</p>
+        }
+
+        @ChildContent(table)
+    </Loaded>
+</RemoteView>
+
+@code {
+    [Parameter, EditorRequired] public RenderFragment<CampaignView> ChildContent { get; set; } = default!;
+
+    [Parameter] public string Heading { get; set; } = "Campaign";
+
+    CampaignState State => Store.Value;
+
+    bool Active(string route) => Navigation.IsOn(route);
+
+    /// <summary>A player follows the link and nothing else. The DM also moves the table, and
+    /// the navigation then happens on the answer rather than on the tap, so a refusal leaves
+    /// them where they were.</summary>
+    void Choose(CampaignView table, string mode)
+    {
+        if (table.Role != "Dm")
+        {
+            return;
+        }
+
+        Dispatcher.Dispatch(new ModeChangeRequested(mode));
+        Navigation.NavigateTo(SheetFormat.RouteFor(mode));
+    }
+
+    /// <summary>
+    /// What every campaign page needs on arrival, here rather than on each of the five.
+    /// <para>The bottom bar reads the browser's active group, so a campaign page that did not
+    /// set it left the bar pointing at Build while the reader was in a fight. And the two
+    /// catalogues are asked for here because a deep link to any one of these pages is as likely
+    /// as a walk in from the party page.</para>
+    /// </summary>
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        if (Browser.Value.ActiveGroup != GroupKey.Play)
+        {
+            Dispatcher.Dispatch(new BoardOpened(GroupKey.Play));
+        }
+
+        if (ConditionsStore.Value.Conditions is RemoteData<IReadOnlyList<ConditionSummary>>.NotAsked)
+        {
+            Dispatcher.Dispatch(new ConditionsRequested());
+        }
+
+        if (ExplorationStore.Value.Activities is RemoteData<IReadOnlyList<ExplorationActivityView>>.NotAsked)
+        {
+            Dispatcher.Dispatch(new ExplorationActivitiesRequested());
+        }
+    }
+
+    RenderFragment Entrance => @<text>
+        <div class="join">
+            <div class="panel">
+                <Card>
+                    <EmptyState Title="Join a campaign">
+                        <ChildContent>
+                            A campaign is a short code everyone playing types in. Whoever starts one reads it
+                            out; after that every change anybody makes shows up on everybody's screen.
+                        </ChildContent>
+                        <Action>
+                            <div class="entry">
+                                <TextInput Label="Campaign code"
+                                           Placeholder="ABC234"
+                                           InputMode="text"
+                                           Value="@State.CodeDraft"
+                                           ValueChanged="code => Dispatcher.Dispatch(new CodeDraftChanged(code ?? string.Empty))" />
+                                <div class="pf-cluster">
+                                    <Button Variant="ButtonVariant.Primary"
+                                            Disabled="@(State.CodeDraft.Trim().Length == 0)"
+                                            OnClick="() => Dispatcher.Dispatch(new JoinRequested(State.CodeDraft))">
+                                        Join
+                                    </Button>
+                                    <Button Variant="ButtonVariant.Secondary"
+                                            OnClick="() => Dispatcher.Dispatch(new CampaignCreationRequested())">
+                                        Start a new campaign
+                                    </Button>
+                                </div>
+                            </div>
+                        </Action>
+                    </EmptyState>
+                </Card>
+            </div>
+        </div>
+    </text>;
+}

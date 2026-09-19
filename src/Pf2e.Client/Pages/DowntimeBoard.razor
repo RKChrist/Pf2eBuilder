@@ -1,0 +1,89 @@
+@page "/campaign/downtime"
+@inherits FluxorComponent
+@inject IState<CampaignState> Store
+@inject IState<ConditionsState> ConditionsStore
+@inject IState<ExplorationState> ExplorationStore
+@inject IDispatcher Dispatcher
+@inject NavigationManager Navigation
+
+<PageTitle>Downtime</PageTitle>
+
+<CampaignPage Heading="Downtime" Context="table">
+    <div class="downtime">
+        <Card Class="downtime__card">
+            <ChildContent>
+                <div class="downtime__top">
+                    <h2 class="downtime__heading">Downtime</h2>
+                    <p class="downtime__day" role="status">
+                        <span class="downtime__day-label">Day</span>
+                        <span class="downtime__day-value">@table.Day</span>
+                    </p>
+                </div>
+
+                @foreach (var character in table.Characters)
+                {
+                    <div class="spending" data-spending="@character.Id">
+                        <Select TValue="string"
+                                Label="@character.Name"
+                                Options="ExplorationStore.Value.DowntimeOptions"
+                                Value="@(character.DowntimeActivity ?? string.Empty)"
+                                ValueChanged="key => Dispatcher.Dispatch(
+                                    new DowntimeActivityChosen(
+                                        character.Id,
+                                        string.IsNullOrEmpty(key) ? null : key,
+                                        string.IsNullOrEmpty(key) ? null : character.DowntimeTaskLevel ?? character.Level))" />
+
+                        @if (ExplorationStore.Value.DowntimeNamed(character.DowntimeActivity) is { } chosen)
+                        {
+                            <div class="spending__task">
+                                <div class="spending__level">
+                                    <span class="spending__level-label">Task level</span>
+                                    <NumberStepper Label="@($"Task level for {character.Name}")"
+                                                   Min="0"
+                                                   Max="25"
+                                                   Value="character.DowntimeTaskLevel ?? character.Level"
+                                                   ValueChanged="level => Dispatcher.Dispatch(
+                                                       new DowntimeActivityChosen(character.Id, chosen.Key, level))" />
+                                </div>
+
+                                @if (character.DowntimeDc is { } dc)
+                                {
+                                    <p class="spending__dc">
+                                        <span class="spending__dc-label">DC</span>
+                                        <span class="spending__dc-value">@dc</span>
+                                        @if (chosen.Skill is { } skill)
+                                        {
+                                            <span class="spending__skill">@skill @Signed(SkillOf(character, skill))</span>
+                                        }
+                                    </p>
+                                }
+                            </div>
+
+                            <p class="spending__says">@chosen.What</p>
+                        }
+                    </div>
+                }
+
+                @if (table.Role == "Dm")
+                {
+                    <Button Class="downtime__next"
+                            OnClick="() => Dispatcher.Dispatch(new DayAdvanced())">
+                        Next day
+                    </Button>
+                    <p class="downtime__next-says">
+                        One activity per character per day, so the day turning clears what
+                        everybody chose.
+                    </p>
+                }
+            </ChildContent>
+        </Card>
+    </div>
+</CampaignPage>
+
+
+@code {
+    static string Signed(int total) => SheetFormat.Signed(total);
+
+    static int SkillOf(CharacterSheetView character, string skill) =>
+        SheetFormat.SkillOf(character, skill);
+}

@@ -1,0 +1,100 @@
+@page "/campaign/exploration"
+@inherits FluxorComponent
+@inject IState<CampaignState> Store
+@inject IState<ConditionsState> ConditionsStore
+@inject IState<ExplorationState> ExplorationStore
+@inject IDispatcher Dispatcher
+@inject NavigationManager Navigation
+
+<PageTitle>Exploration</PageTitle>
+
+<CampaignPage Heading="Exploration" Context="table">
+    <div class="explore">
+        <Card Class="explore__card">
+            <ChildContent>
+                <h2 class="explore__heading">While you travel</h2>
+                <p class="explore__blurb">
+                    What each of you is doing. Scouting and sneaking change how the next fight
+                    starts, so this is worth setting before anyone opens a door.
+                </p>
+
+                <div class="doing">
+                    @foreach (var character in table.Characters)
+                    {
+                        <div class="doing__row" data-doing="@character.Id">
+                            <Select TValue="string"
+                                    Label="@character.Name"
+                                    Options="ExplorationStore.Value.Options"
+                                    Value="@(character.ExplorationActivity ?? string.Empty)"
+                                    ValueChanged="key => Dispatcher.Dispatch(
+                                        new ExplorationActivityChosen(
+                                            character.Id,
+                                            string.IsNullOrEmpty(key) ? null : key))" />
+
+                            @if (ExplorationStore.Value.ConsequenceOf(character.ExplorationActivity) is { } says)
+                            {
+                                <p class="doing__says">@says</p>
+                            }
+                        </div>
+                    }
+                </div>
+            </ChildContent>
+        </Card>
+    </div>
+
+    <div class="attempts">
+        <Card Class="attempts__card">
+            <ChildContent>
+                <h2 class="attempts__heading">What you can attempt</h2>
+
+                @foreach (var character in table.Characters)
+                {
+                    <details class="trying" data-trying="@character.Id">
+                        <summary class="trying__summary">
+                            <span class="trying__name">@character.Name</span>
+                            <span class="trying__count">
+                                @character.CanAttempt.Count(a => a.Met) of @character.CanAttempt.Count
+                            </span>
+                        </summary>
+
+                        <div class="tries">
+                            @foreach (var attempt in character.CanAttempt.Where(a => a.Met)
+                                .OrderByDescending(a => a.Modifier).ThenBy(a => a.Name, StringComparer.Ordinal))
+                            {
+                                <div class="try" data-try="@attempt.Key">
+                                    <span class="try__name">@attempt.Name</span>
+                                    <span class="try__skill">@attempt.Skill</span>
+                                    <span class="try__value">@Signed(attempt.Modifier)</span>
+                                </div>
+                            }
+                        </div>
+
+                        @if (character.CanAttempt.Any(a => !a.Met))
+                        {
+                            <details class="trying__rest">
+                                <summary class="trying__rest-summary">Not trained enough for</summary>
+                                <div class="tries">
+                                    @foreach (var attempt in character.CanAttempt.Where(a => !a.Met)
+                                        .OrderBy(a => a.Name, StringComparer.Ordinal))
+                                    {
+                                        <div class="try try--barred" data-try="@attempt.Key">
+                                            <span class="try__name">@attempt.Name</span>
+                                            <span class="try__skill">
+                                                needs @attempt.Required.ToLowerInvariant() in @attempt.Skill
+                                            </span>
+                                        </div>
+                                    }
+                                </div>
+                            </details>
+                        }
+                    </details>
+                }
+            </ChildContent>
+        </Card>
+    </div>
+</CampaignPage>
+
+
+@code {
+    static string Signed(int total) => SheetFormat.Signed(total);
+}
