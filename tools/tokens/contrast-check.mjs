@@ -49,6 +49,13 @@ for (const [theme, t] of [['light', light], ['dark', dark]]) {
   }
   check(`${theme} text-on-accent on accent-base`, t['text-on-accent'], t['accent-base'], 4.5);
   check(`${theme} text-on-danger on danger-base`, t['text-on-danger'], t['danger-base'], 4.5);
+  // The rail is the accent used as a ground, and a selected row sits on a tint of it.
+  check(`${theme} chrome-text on chrome-base`, t['chrome-text'], t['chrome-base'], 4.5);
+  check(`${theme} chrome-muted on chrome-base`, t['chrome-muted'], t['chrome-base'], 4.5);
+  check(`${theme} highlight-text on highlight-base`, t['highlight-text'], t['highlight-base'], 4.5);
+  for (const name of ['text-primary', 'text-secondary', 'text-muted', 'accent-base']) {
+    check(`${theme} ${name} on accent-tint`, t[name], t['accent-tint'], 4.5);
+  }
   check(`${theme} line-strong on surface-page`, t['line-strong'], t['surface-page'], 3.0);
   check(`${theme} line-focus on surface-page`, t['line-focus'], t['surface-page'], 3.0);
   console.log('');

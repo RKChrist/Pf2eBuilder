@@ -12,13 +12,20 @@ light, under time pressure, where misreading a modifier costs something. So it i
 an instrument, not a spellbook. Parchment, gold and fantasy serifs are the obvious answer and
 they are also bad for dense numerals.
 
-The chrome is ink. Every drop of saturation is reserved for game meaning.
+On content, saturation is reserved for game meaning. The frame around it is lit and coloured,
+because an instrument that looks switched off does not get picked up. `design/013` is where that
+was decided.
 
-- **Ground.** Blue-black fountain-pen ink in dark, cool paper in light. Never cream, never a
-  warm grey.
-- **Accent.** A muted petrol teal, chosen by elimination. Red and green belong to degrees of
-  success, and amber, blue and violet belong to Paizo's rarity colours, which players already
-  read fluently. Teal is what was left, and it stays out of the way.
+- **Ground.** Daylight in light, which is the default. Dusk in dark: a slate lifted well clear of
+  black. Never cream, never a warm grey.
+- **Accent.** Lagoon, a teal with the grey taken out, chosen by elimination. Red and green belong
+  to degrees of success, and amber, blue and violet belong to Paizo's rarity colours, which
+  players already read fluently. Teal is what was left.
+- **Chrome.** The navigation rail and bottom bar are the accent used as a ground. It is the one
+  place that happens.
+- **Lantern.** Yellow marks place: where you are, which mode the table is in, whose turn it is.
+  A fill under dark type, never a text colour, and yellow rather than amber so it is not read as
+  uncommon rarity.
 - **Outcome ramp.** Four degrees of success, where a critical result always sits further from
   the page than a plain one. Darker in light, brighter in dark. `contrast-check.mjs` asserts
   that ordering, because if criticals stop outranking plain results the four degrees collapse
@@ -26,8 +33,9 @@ The chrome is ink. Every drop of saturation is reserved for game meaning.
 - **Rank.** Proficiency is drawn as five filled steps, not five colours, because rank is a
   quantity and the structure should say so.
 - **Radius.** Not one value on everything. Data cells are square, because a grid has corners.
-  Chips are barely rounded. Panels and bottom sheets are progressively softer.
-- **Separation is a border.** Shadows are only for things that genuinely float.
+  Chips are lightly rounded, controls a step softer, panels and bottom sheets softer again.
+- **Separation is a border.** A card also casts a small shadow, which says it is a sheet on the
+  desk. The larger elevations are for things that genuinely float.
 
 Colour never carries meaning alone. Every outcome and rarity pairs with a glyph.
 

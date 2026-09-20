@@ -4,12 +4,17 @@
 :root {
   color-scheme: light dark;
 
-  --accent-base: #166E7C;
-  --accent-press: #0F4F5A;
-  --accent-wash: #86D0DC;
+  --accent-base: #0A7486;
+  --accent-press: #085B69;
+  --accent-tint: #E3F4F7; /** The ground under something selected or hovered. A tint of the accent, pale enough that every text role still clears 4.5 on it. */
+  --accent-wash: #C2ECF3;
   --border-focus: 3px;
   --border-hair: 1px; /** Separation is a border, not a shadow. Shadows are only for things that genuinely float. */
   --border-strong: 2px;
+  --chrome-base: #0B4450;
+  --chrome-hover: #085B69;
+  --chrome-muted: #B9DDE3;
+  --chrome-text: #FFFFFF;
   --color-amber-400: #D9963F;
   --color-amber-500: #B8722A;
   --color-amber-600: #96591F;
@@ -22,10 +27,16 @@
   --color-crimson-600: #8E2323;
   --color-crimson-700: #6E1A1A;
   --color-crimson-900: #2E1414; /** As jade.900, the other way. */
+  --color-dusk-700: #3B4760;
+  --color-dusk-800: #29324A;
+  --color-dusk-850: #1E2536;
+  --color-dusk-900: #171D2B;
+  --color-dusk-950: #10141F;
   --color-ink-0: #FFFFFF;
   --color-ink-100: #E6ECF1;
   --color-ink-200: #D2DCE4;
   --color-ink-300: #AEBDC9;
+  --color-ink-350: #9DB0C2; /** The weakest text in dusk. ink.400 fell under 4.5 once the dark surfaces were lifted out of near-black. */
   --color-ink-400: #8397A9;
   --color-ink-50: #F2F5F8;
   --color-ink-500: #5A7186;
@@ -41,6 +52,20 @@
   --color-jade-700: #0B6E3F;
   --color-jade-800: #064E2C; /** Critical success in light. It has to outrank the darkened plain success. */
   --color-jade-900: #0D2A1C; /** The ground under a marked number in dark. A tint of the page, not a green. */
+  --color-lagoon-200: #C2ECF3;
+  --color-lagoon-300: #8DE3EE;
+  --color-lagoon-400: #56CFE0;
+  --color-lagoon-500: #14A3B8;
+  --color-lagoon-600: #0A7486;
+  --color-lagoon-700: #085B69;
+  --color-lagoon-800: #0B4450;
+  --color-lagoon-900: #0A343E;
+  --color-lantern-300: #FFDD85;
+  --color-lantern-400: #F9C440;
+  --color-lantern-500: #D99A12;
+  --color-mist-100: #E9EFF4;
+  --color-mist-200: #D9E2EA;
+  --color-mist-50: #F4F7FA;
   --color-moss-400: #5FB983;
   --color-moss-500: #3D9A63;
   --color-moss-600: #2E7D4F;
@@ -68,6 +93,9 @@
   --effect-down-wash: #F6E2E2;
   --effect-up: #0B6E3F;
   --effect-up-wash: #DDF2E6;
+  --elevation-card: 0 1px 2px rgb(16 32 48 / 0.06), 0 2px 8px rgb(16 32 48 / 0.05);
+  --elevation-float: 0 8px 24px rgb(16 32 48 / 0.14), 0 24px 60px rgb(16 32 48 / 0.16);
+  --elevation-hover: 0 2px 4px rgb(16 32 48 / 0.08), 0 8px 20px rgb(16 32 48 / 0.10);
   --font-family-data: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, sans-serif; /** Everything numeric and structural. Engineered to disambiguate 0/O, 1/l/I and 6/8, which is the exact failure a character sheet must not have. */
   --font-family-display: 'Archivo', 'Archivo Expanded', system-ui, sans-serif; /** Character name and section heads only. Equipment signage, not fantasy. */
   --font-leading-normal: 1.55; /** Prose. */
@@ -88,18 +116,21 @@
   --font-weight-medium: 500;
   --font-weight-regular: 400;
   --font-weight-semibold: 600;
+  --highlight-base: #F9C440;
+  --highlight-text: #0E151C;
   --layout-bottom-bar: 64px; /** Primary navigation sits in the thumb arc, not the top of the screen. */
   --layout-content-max: 560px; /** Caps line length when a large phone or tablet is used. Around 65 characters at the body size, which is the measure prose keeps at any viewport. */
   --layout-gutter: 16px;
+  --layout-rail: 88px; /** The bar stood up beside the content on a laptop. Wider than the bar is thick, because a label under an icon needs room a thumb target does not. */
   --layout-safe-bottom: env(safe-area-inset-bottom); /** Height of the home indicator strip. A token rather than the raw function so every bottom-edge surface reserves the same room and one grep finds them all. */
   --layout-thumb-reach: 62%; /** Fraction of viewport height from the bottom that a thumb covers one-handed. Primary actions live inside it. */
   --layout-viewport-desk: 1024px; /** A laptop. Navigation stands up as a rail beside the content and a record opens next to the list rather than over it. A media query cannot read a custom property, so this value is repeated literally in every query that uses it; this is where it is decided. */
   --layout-viewport-min: 320px; /** Smallest phone we lay out for. */
   --layout-viewport-target: 390px; /** Design width. A player at a table is on a phone, so this is where the layout is decided; design/003 added the two widths below for everyone else. */
   --layout-viewport-wide: 600px; /** A tablet, or a phone turned sideways. Grids of short labels gain a second column here; prose does not. */
-  --line-focus: #166E7C;
+  --line-focus: #0A7486;
   --line-strong: #3E5265; /** A rule is structure and outranks a word. At ink.500 it was the same value as text-muted, which is how a section head and the line under it ended up the same weight. */
-  --line-subtle: #D2DCE4;
+  --line-subtle: #D9E2EA;
   --motion-duration-hold: 600ms; /** How long a destructive action must be held before it fires. A delay, not an animation: reduced motion must not shorten it, or the guard against a mid-session mis-tap disappears for the people who set that preference. */
   --motion-duration-instant: 0ms;
   --motion-duration-quick: 120ms; /** A control answering a tap. */
@@ -111,12 +142,13 @@
   --outcome-critical-success: #064E2C;
   --outcome-failure: #9C4040;
   --outcome-success: #26673F;
-  --radius-card: 10px; /** Panels and drawers. */
-  --radius-chip: 3px; /** Traits and rank pips, small and stamped. */
+  --radius-card: 14px; /** Panels and drawers. */
+  --radius-chip: 6px; /** Traits and rank pips, small and stamped. */
+  --radius-control: 10px; /** Buttons and fields. Softer than a chip, tighter than a panel, so a control never reads as a card. */
   --radius-grid: 0; /** Data cells and the sheet grid. A grid has corners. */
-  --radius-sheet: 18px; /** Bottom sheets, which meet the screen edge. */
-  --rank-empty: #D2DCE4;
-  --rank-filled: #166E7C;
+  --radius-sheet: 22px; /** Bottom sheets, which meet the screen edge. */
+  --rank-empty: #D9E2EA;
+  --rank-filled: #0A7486;
   --rarity-common: #3E5265;
   --rarity-rare: #2F5FA8;
   --rarity-uncommon: #96591F;
@@ -132,9 +164,9 @@
   --space-7: 48px;
   --space-8: 64px;
   --surface-overlay: #FFFFFF;
-  --surface-page: #E6ECF1; /** A desk. Cards are sheets laid on it, so it has to be a step down from them rather than the almost-white it was, where a card and the page behind it read as one surface. */
+  --surface-page: #F4F7FA; /** A desk. Cards are sheets laid on it, so it has to be a step down from them rather than the almost-white it was, where a card and the page behind it read as one surface. */
   --surface-raised: #FFFFFF;
-  --surface-sunken: #D2DCE4;
+  --surface-sunken: #E9EFF4;
   --tap-default: 48px; /** Standard control height on a phone. */
   --tap-min: 44px; /** Absolute floor. Nothing interactive is smaller. */
   --tap-primary: 56px; /** Actions taken repeatedly mid-session, one-handed. */
@@ -148,74 +180,94 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --accent-base: #4FB3C4;
-    --accent-press: #86D0DC;
-    --accent-wash: #0F4F5A;
+    --accent-base: #56CFE0;
+    --accent-press: #8DE3EE;
+    --accent-tint: #223A4C;
+    --accent-wash: #085B69;
+    --chrome-base: #0A343E;
+    --chrome-hover: #0B4450;
+    --chrome-muted: #A9D3DA;
+    --chrome-text: #FFFFFF;
     --danger-base: #E08C8C;
     --danger-press: #C96060;
     --effect-down: #D98585;
     --effect-down-wash: #2E1414;
     --effect-up: #6FD99C;
     --effect-up-wash: #0D2A1C;
-    --line-focus: #4FB3C4;
+    --elevation-card: 0 1px 2px rgb(0 0 0 / 0.25), 0 2px 10px rgb(0 0 0 / 0.18);
+    --elevation-float: 0 8px 24px rgb(0 0 0 / 0.40), 0 24px 60px rgb(0 0 0 / 0.45);
+    --elevation-hover: 0 2px 4px rgb(0 0 0 / 0.30), 0 10px 24px rgb(0 0 0 / 0.30);
+    --highlight-base: #F9C440;
+    --highlight-text: #10141F;
+    --line-focus: #56CFE0;
     --line-strong: #AEBDC9;
-    --line-subtle: #2B3B4D;
+    --line-subtle: #3B4760;
     --outcome-critical-failure: #E08C8C;
     --outcome-critical-success: #6FD99C;
     --outcome-failure: #D98585;
     --outcome-success: #5FB983;
-    --rank-empty: #2B3B4D;
-    --rank-filled: #4FB3C4;
-    --rarity-common: #8397A9;
+    --rank-empty: #3B4760;
+    --rank-filled: #56CFE0;
+    --rarity-common: #9DB0C2;
     --rarity-rare: #7BA3DC;
     --rarity-uncommon: #D9963F;
     --rarity-unique: #B48ED2;
-    --scrim: #0E151C;
-    --surface-overlay: #1D2A38; /** Matches raised, as it already does in light. A bottom sheet carries the same rarity chips and stat colours as a card, and at ink.700 five of those roles fell under 4.5:1. The sheet reads as floating from the scrim behind it and its own radius, not from being a lighter grey. */
-    --surface-page: #0E151C; /** The same relationship as light: the page is the furthest back, and a card sits on it. */
-    --surface-raised: #1D2A38;
-    --surface-sunken: #16202B;
-    --text-muted: #8397A9;
-    --text-on-accent: #0E151C;
-    --text-on-danger: #0E151C;
-    --text-primary: #E6ECF1;
-    --text-secondary: #AEBDC9;
+    --scrim: #10141F;
+    --surface-overlay: #29324A; /** Matches raised, as it already does in light. A bottom sheet carries the same rarity chips and stat colours as a card, and at ink.700 five of those roles fell under 4.5:1. The sheet reads as floating from the scrim behind it and its own radius, not from being a lighter grey. */
+    --surface-page: #1E2536; /** The same relationship as light: the page is the furthest back, and a card sits on it. */
+    --surface-raised: #29324A;
+    --surface-sunken: #171D2B;
+    --text-muted: #9DB0C2;
+    --text-on-accent: #10141F;
+    --text-on-danger: #10141F;
+    --text-primary: #F2F5F8;
+    --text-secondary: #D2DCE4;
   }
 }
 
 :root[data-theme="dark"] {
-  --accent-base: #4FB3C4;
-  --accent-press: #86D0DC;
-  --accent-wash: #0F4F5A;
+  --accent-base: #56CFE0;
+  --accent-press: #8DE3EE;
+  --accent-tint: #223A4C;
+  --accent-wash: #085B69;
+  --chrome-base: #0A343E;
+  --chrome-hover: #0B4450;
+  --chrome-muted: #A9D3DA;
+  --chrome-text: #FFFFFF;
   --danger-base: #E08C8C;
   --danger-press: #C96060;
   --effect-down: #D98585;
   --effect-down-wash: #2E1414;
   --effect-up: #6FD99C;
   --effect-up-wash: #0D2A1C;
-  --line-focus: #4FB3C4;
+  --elevation-card: 0 1px 2px rgb(0 0 0 / 0.25), 0 2px 10px rgb(0 0 0 / 0.18);
+  --elevation-float: 0 8px 24px rgb(0 0 0 / 0.40), 0 24px 60px rgb(0 0 0 / 0.45);
+  --elevation-hover: 0 2px 4px rgb(0 0 0 / 0.30), 0 10px 24px rgb(0 0 0 / 0.30);
+  --highlight-base: #F9C440;
+  --highlight-text: #10141F;
+  --line-focus: #56CFE0;
   --line-strong: #AEBDC9;
-  --line-subtle: #2B3B4D;
+  --line-subtle: #3B4760;
   --outcome-critical-failure: #E08C8C;
   --outcome-critical-success: #6FD99C;
   --outcome-failure: #D98585;
   --outcome-success: #5FB983;
-  --rank-empty: #2B3B4D;
-  --rank-filled: #4FB3C4;
-  --rarity-common: #8397A9;
+  --rank-empty: #3B4760;
+  --rank-filled: #56CFE0;
+  --rarity-common: #9DB0C2;
   --rarity-rare: #7BA3DC;
   --rarity-uncommon: #D9963F;
   --rarity-unique: #B48ED2;
-  --scrim: #0E151C;
-  --surface-overlay: #1D2A38; /** Matches raised, as it already does in light. A bottom sheet carries the same rarity chips and stat colours as a card, and at ink.700 five of those roles fell under 4.5:1. The sheet reads as floating from the scrim behind it and its own radius, not from being a lighter grey. */
-  --surface-page: #0E151C; /** The same relationship as light: the page is the furthest back, and a card sits on it. */
-  --surface-raised: #1D2A38;
-  --surface-sunken: #16202B;
-  --text-muted: #8397A9;
-  --text-on-accent: #0E151C;
-  --text-on-danger: #0E151C;
-  --text-primary: #E6ECF1;
-  --text-secondary: #AEBDC9;
+  --scrim: #10141F;
+  --surface-overlay: #29324A; /** Matches raised, as it already does in light. A bottom sheet carries the same rarity chips and stat colours as a card, and at ink.700 five of those roles fell under 4.5:1. The sheet reads as floating from the scrim behind it and its own radius, not from being a lighter grey. */
+  --surface-page: #1E2536; /** The same relationship as light: the page is the furthest back, and a card sits on it. */
+  --surface-raised: #29324A;
+  --surface-sunken: #171D2B;
+  --text-muted: #9DB0C2;
+  --text-on-accent: #10141F;
+  --text-on-danger: #10141F;
+  --text-primary: #F2F5F8;
+  --text-secondary: #D2DCE4;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -17,6 +17,10 @@
       "300": {
         "$value": "#AEBDC9"
       },
+      "350": {
+        "$value": "#9DB0C2",
+        "$description": "The weakest text in dusk. ink.400 fell under 4.5 once the dark surfaces were lifted out of near-black."
+      },
       "400": {
         "$value": "#8397A9"
       },
@@ -171,6 +175,75 @@
         "$description": "The ground under a marked number in dark. A tint of the page, not a green."
       }
     },
-    "$description": "Saturation is reserved for game meaning. Chrome is ink. Within the outcome ramp, a critical result always sits further from the page than a plain one, which means darker in light and brighter in dark."
+    "$description": "Saturation is reserved for game meaning. Chrome is ink. Within the outcome ramp, a critical result always sits further from the page than a plain one, which means darker in light and brighter in dark.",
+    "mist": {
+      "50": {
+        "$value": "#F4F7FA"
+      },
+      "100": {
+        "$value": "#E9EFF4"
+      },
+      "200": {
+        "$value": "#D9E2EA"
+      },
+      "$description": "Daylight. The light ground, a step brighter and cleaner than ink.100, so the screen reads as lit rather than overcast."
+    },
+    "dusk": {
+      "700": {
+        "$value": "#3B4760"
+      },
+      "800": {
+        "$value": "#29324A"
+      },
+      "850": {
+        "$value": "#1E2536"
+      },
+      "900": {
+        "$value": "#171D2B"
+      },
+      "950": {
+        "$value": "#10141F"
+      },
+      "$description": "The dark ground. A slate with some blue left in it, lifted well clear of black: the old ink.950 page read as a switched-off screen."
+    },
+    "lagoon": {
+      "200": {
+        "$value": "#C2ECF3"
+      },
+      "300": {
+        "$value": "#8DE3EE"
+      },
+      "400": {
+        "$value": "#56CFE0"
+      },
+      "500": {
+        "$value": "#14A3B8"
+      },
+      "600": {
+        "$value": "#0A7486"
+      },
+      "700": {
+        "$value": "#085B69"
+      },
+      "800": {
+        "$value": "#0B4450"
+      },
+      "900": {
+        "$value": "#0A343E"
+      },
+      "$description": "The accent, still the hue that rarity and the outcome ramp left free, with the grey taken out of it. teal.600 was petrol; this is water with light in it."
+    },
+    "lantern": {
+      "300": {
+        "$value": "#FFDD85"
+      },
+      "400": {
+        "$value": "#F9C440"
+      },
+      "500": {
+        "$value": "#D99A12"
+      },
+      "$description": "Where you are and whose turn it is. A fill under dark type, never a text colour, and yellow rather than amber so it cannot be read as uncommon rarity."
+    }
   }
 }

@@ -14,9 +14,10 @@
   "radius": {
     "$type": "dimension",
     "grid":  { "$value": "0",   "$description": "Data cells and the sheet grid. A grid has corners." },
-    "chip":  { "$value": "3px", "$description": "Traits and rank pips, small and stamped." },
-    "card":  { "$value": "10px", "$description": "Panels and drawers." },
-    "sheet": { "$value": "18px", "$description": "Bottom sheets, which meet the screen edge." }
+    "chip":  { "$value": "6px", "$description": "Traits and rank pips, small and stamped." },
+    "control": { "$value": "10px", "$description": "Buttons and fields. Softer than a chip, tighter than a panel, so a control never reads as a card." },
+    "card":  { "$value": "14px", "$description": "Panels and drawers." },
+    "sheet": { "$value": "22px", "$description": "Bottom sheets, which meet the screen edge." }
   },
   "tap": {
     "$type": "dimension",
@@ -42,6 +43,7 @@
     "content-max":    { "$value": "560px", "$description": "Caps line length when a large phone or tablet is used. Around 65 characters at the body size, which is the measure prose keeps at any viewport." },
     "gutter":         { "$value": "16px" },
     "bottom-bar":     { "$value": "64px", "$description": "Primary navigation sits in the thumb arc, not the top of the screen." },
+    "rail":           { "$value": "88px", "$description": "The bar stood up beside the content on a laptop. Wider than the bar is thick, because a label under an icon needs room a thumb target does not." },
     "thumb-reach":    { "$value": "62%",  "$description": "Fraction of viewport height from the bottom that a thumb covers one-handed. Primary actions live inside it." },
     "safe-bottom":    { "$value": "env(safe-area-inset-bottom)", "$description": "Height of the home indicator strip. A token rather than the raw function so every bottom-edge surface reserves the same room and one grep finds them all." }
   },

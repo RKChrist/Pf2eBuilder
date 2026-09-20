@@ -2,60 +2,63 @@
   "surface": {
     "$type": "color",
     "page": {
-      "$value": "{color.ink.950}",
+      "$value": "{color.dusk.850}",
       "$description": "The same relationship as light: the page is the furthest back, and a card sits on it."
     },
     "raised": {
-      "$value": "{color.ink.800}"
+      "$value": "{color.dusk.800}"
     },
     "sunken": {
-      "$value": "{color.ink.900}"
+      "$value": "{color.dusk.900}"
     },
     "overlay": {
       "$description": "Matches raised, as it already does in light. A bottom sheet carries the same rarity chips and stat colours as a card, and at ink.700 five of those roles fell under 4.5:1. The sheet reads as floating from the scrim behind it and its own radius, not from being a lighter grey.",
-      "$value": "{color.ink.800}"
+      "$value": "{color.dusk.800}"
     }
   },
   "text": {
     "$type": "color",
     "primary": {
-      "$value": "{color.ink.100}"
+      "$value": "{color.ink.50}"
     },
     "secondary": {
-      "$value": "{color.ink.300}"
+      "$value": "{color.ink.200}"
     },
     "muted": {
-      "$value": "{color.ink.400}"
+      "$value": "{color.ink.350}"
     },
     "on-accent": {
-      "$value": "{color.ink.950}"
+      "$value": "{color.dusk.950}"
     },
     "on-danger": {
-      "$value": "{color.ink.950}"
+      "$value": "{color.dusk.950}"
     }
   },
   "line": {
     "$type": "color",
     "subtle": {
-      "$value": "{color.ink.700}"
+      "$value": "{color.dusk.700}"
     },
     "strong": {
       "$value": "{color.ink.300}"
     },
     "focus": {
-      "$value": "{color.teal.400}"
+      "$value": "{color.lagoon.400}"
     }
   },
   "accent": {
     "$type": "color",
     "base": {
-      "$value": "{color.teal.400}"
+      "$value": "{color.lagoon.400}"
     },
     "press": {
-      "$value": "{color.teal.300}"
+      "$value": "{color.lagoon.300}"
     },
     "wash": {
-      "$value": "{color.teal.700}"
+      "$value": "{color.lagoon.700}"
+    },
+    "tint": {
+      "$value": "#223A4C"
     }
   },
   "danger": {
@@ -69,12 +72,12 @@
   },
   "scrim": {
     "$type": "color",
-    "$value": "{color.ink.950}"
+    "$value": "{color.dusk.950}"
   },
   "rarity": {
     "$type": "color",
     "common": {
-      "$value": "{color.ink.400}"
+      "$value": "{color.ink.350}"
     },
     "uncommon": {
       "$value": "{color.amber.400}"
@@ -104,10 +107,10 @@
   "rank": {
     "$type": "color",
     "filled": {
-      "$value": "{color.teal.400}"
+      "$value": "{color.lagoon.400}"
     },
     "empty": {
-      "$value": "{color.ink.700}"
+      "$value": "{color.dusk.700}"
     }
   },
   "effect": {
@@ -124,6 +127,42 @@
     },
     "down-wash": {
       "$value": "{color.crimson.900}"
+    }
+  },
+  "chrome": {
+    "$type": "color",
+    "base": {
+      "$value": "{color.lagoon.900}"
+    },
+    "text": {
+      "$value": "{color.ink.0}"
+    },
+    "muted": {
+      "$value": "#A9D3DA"
+    },
+    "hover": {
+      "$value": "{color.lagoon.800}"
+    }
+  },
+  "highlight": {
+    "$type": "color",
+    "base": {
+      "$value": "{color.lantern.400}"
+    },
+    "text": {
+      "$value": "{color.dusk.950}"
+    }
+  },
+  "elevation": {
+    "$type": "shadow",
+    "card": {
+      "$value": "0 1px 2px rgb(0 0 0 / 0.25), 0 2px 10px rgb(0 0 0 / 0.18)"
+    },
+    "hover": {
+      "$value": "0 2px 4px rgb(0 0 0 / 0.30), 0 10px 24px rgb(0 0 0 / 0.30)"
+    },
+    "float": {
+      "$value": "0 8px 24px rgb(0 0 0 / 0.40), 0 24px 60px rgb(0 0 0 / 0.45)"
     }
   }
 }

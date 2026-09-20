@@ -2,14 +2,14 @@
   "surface": {
     "$type": "color",
     "page": {
-      "$value": "{color.ink.100}",
+      "$value": "{color.mist.50}",
       "$description": "A desk. Cards are sheets laid on it, so it has to be a step down from them rather than the almost-white it was, where a card and the page behind it read as one surface."
     },
     "raised": {
       "$value": "{color.ink.0}"
     },
     "sunken": {
-      "$value": "{color.ink.200}"
+      "$value": "{color.mist.100}"
     },
     "overlay": {
       "$value": "{color.ink.0}"
@@ -37,26 +37,30 @@
   "line": {
     "$type": "color",
     "subtle": {
-      "$value": "{color.ink.200}"
+      "$value": "{color.mist.200}"
     },
     "strong": {
       "$value": "{color.ink.600}",
       "$description": "A rule is structure and outranks a word. At ink.500 it was the same value as text-muted, which is how a section head and the line under it ended up the same weight."
     },
     "focus": {
-      "$value": "{color.teal.600}"
+      "$value": "{color.lagoon.600}"
     }
   },
   "accent": {
     "$type": "color",
     "base": {
-      "$value": "{color.teal.600}"
+      "$value": "{color.lagoon.600}"
     },
     "press": {
-      "$value": "{color.teal.700}"
+      "$value": "{color.lagoon.700}"
     },
     "wash": {
-      "$value": "{color.teal.300}"
+      "$value": "{color.lagoon.200}"
+    },
+    "tint": {
+      "$value": "#E3F4F7",
+      "$description": "The ground under something selected or hovered. A tint of the accent, pale enough that every text role still clears 4.5 on it."
     }
   },
   "danger": {
@@ -107,10 +111,10 @@
   "rank": {
     "$type": "color",
     "filled": {
-      "$value": "{color.teal.600}"
+      "$value": "{color.lagoon.600}"
     },
     "empty": {
-      "$value": "{color.ink.200}"
+      "$value": "{color.mist.200}"
     }
   },
   "effect": {
@@ -127,6 +131,44 @@
     },
     "down-wash": {
       "$value": "{color.rose.100}"
+    }
+  },
+  "chrome": {
+    "$type": "color",
+    "$description": "The navigation rail and bottom bar. The one place the accent is a ground rather than a mark, so the app has a colour of its own before any content loads.",
+    "base": {
+      "$value": "{color.lagoon.800}"
+    },
+    "text": {
+      "$value": "{color.ink.0}"
+    },
+    "muted": {
+      "$value": "#B9DDE3"
+    },
+    "hover": {
+      "$value": "{color.lagoon.700}"
+    }
+  },
+  "highlight": {
+    "$type": "color",
+    "base": {
+      "$value": "{color.lantern.400}"
+    },
+    "text": {
+      "$value": "{color.ink.950}"
+    }
+  },
+  "elevation": {
+    "$type": "shadow",
+    "$description": "Cards are sheets laid on a desk, and a sheet casts a little shadow. Borders still do the separating; this only lifts.",
+    "card": {
+      "$value": "0 1px 2px rgb(16 32 48 / 0.06), 0 2px 8px rgb(16 32 48 / 0.05)"
+    },
+    "hover": {
+      "$value": "0 2px 4px rgb(16 32 48 / 0.08), 0 8px 20px rgb(16 32 48 / 0.10)"
+    },
+    "float": {
+      "$value": "0 8px 24px rgb(16 32 48 / 0.14), 0 24px 60px rgb(16 32 48 / 0.16)"
     }
   }
 }
