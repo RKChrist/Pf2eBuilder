@@ -288,5 +288,9 @@ public sealed record CharacterBuildEdit(
     int AncestryHitPoints,
     int ClassHitPoints,
     int BonusHitPoints,
-    int BonusHitPointsPerLevel);
+    int BonusHitPointsPerLevel,
+    // Set when the export stated a total instead of the parts, which Wanderer's Guide does.
+    // The calculator then takes it at its word, so this is the only one of the four hit point
+    // fields that changes anything for such a character, and the screen offers that one alone.
+    int? StatedMaxHitPoints);
 

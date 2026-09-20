@@ -25,3 +25,14 @@
     font-size: var(--font-size-chip);
     color: var(--text-secondary);
 }
+
+/* A field that has a sentence under it needs the width to hold one, and the grid gives every
+   cell eleven rems. */
+.editor__field--wide {
+    grid-column: 1 / -1;
+}
+
+.editor__note {
+    font-size: var(--font-size-chip);
+    color: var(--text-muted);
+}

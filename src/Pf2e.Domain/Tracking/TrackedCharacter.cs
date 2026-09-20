@@ -158,7 +158,6 @@ public sealed class TrackedCharacter
         Spellcasting = build.Spellcasting;
         Feats = build.Feats;
         Spells = build.Spells;
-        StatedMaxHitPoints = build.StatedMaxHitPoints;
     }
 
     /// <summary>
@@ -195,5 +194,10 @@ public sealed class TrackedCharacter
         ClassHitPoints = build.ClassHitPoints;
         BonusHitPoints = build.BonusHitPoints;
         BonusHitPointsPerLevel = build.BonusHitPointsPerLevel;
+
+        // Written here rather than in Apply, because the edit screen can express it now: for a
+        // character whose export stated the total, it is the one hit point field that changes
+        // anything. One writer, so an edit and a re-import cannot disagree about it.
+        StatedMaxHitPoints = build.StatedMaxHitPoints;
     }
 }

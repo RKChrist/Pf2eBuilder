@@ -133,6 +133,31 @@ public class WanderersGuideRules(SeededDatabase database) : IClassFixture<Seeded
         Assert.Equal(151, einar.CurrentHitPoints);
     }
 
+    // The screen asked for the two parts and this export states neither: both moved, both
+    // saved, and the maximum stayed where it was. What the screen offers now is the number the
+    // calculator actually reads.
+    [Fact]
+    public async Task TheStatedMaximumIsWhatAnEditCanMove()
+    {
+        var campaign = await NewCampaign();
+        var einar = await ImportInto(campaign.Code);
+
+        Assert.Equal(151, einar.Build.StatedMaxHitPoints);
+
+        var parts = await Edit(campaign.Code, einar.Id,
+            einar.Build with { AncestryHitPoints = 8, ClassHitPoints = 8 });
+        Assert.Equal(151, parts.MaxHitPoints);
+
+        var corrected = await Edit(campaign.Code, einar.Id,
+            einar.Build with { StatedMaxHitPoints = 160 });
+        Assert.Equal(160, corrected.MaxHitPoints);
+        Assert.Equal(160, corrected.Build.StatedMaxHitPoints);
+
+        // The session layer is not what was edited, so the damage a character is carrying
+        // survives a correction to their maximum.
+        Assert.Equal(151, corrected.CurrentHitPoints);
+    }
+
     [Fact]
     public async Task ArmourCarriesItsOwnBonusAndCap()
     {
@@ -208,5 +233,36 @@ public class WanderersGuideRules(SeededDatabase database) : IClassFixture<Seeded
         Assert.Equal("Gnibbo", gnibbo.Name);
         Assert.Equal(76, gnibbo.MaxHitPoints);
         Assert.Equal(25, gnibbo.ArmorClass.Total);
+
+        // Pathbuilder states the parts, so there is no total to take and the two fields the
+        // screen offers such a character are the two that feed it.
+        Assert.Null(gnibbo.Build.StatedMaxHitPoints);
+
+        await using var edits = database.NewContext();
+        var thicker = await new EditCharacterHandler(edits, Broadcaster).Handle(
+            new EditCharacter(campaign.Code, gnibbo.Id, gnibbo.Build with { ClassHitPoints = 10 }),
+            default);
+
+        Assert.Equal(90, thicker.MaxHitPoints);
+    }
+
+    async Task<CreatedCampaignView> NewCampaign()
+    {
+        await using var db = database.NewContext();
+        return await new CreateCampaignHandler(db).Handle(new CreateCampaign(), default);
+    }
+
+    async Task<CharacterSheetView> ImportInto(string code)
+    {
+        await using var db = database.NewContext();
+        return await new ImportCharacterHandler(db, db, Broadcaster)
+            .Handle(new ImportCharacter(code, Fixture("einar-wanderers-guide.json")), default);
+    }
+
+    async Task<CharacterSheetView> Edit(string code, Guid id, CharacterBuildEdit build)
+    {
+        await using var db = database.NewContext();
+        return await new EditCharacterHandler(db, Broadcaster)
+            .Handle(new EditCharacter(code, id, build), default);
     }
 }

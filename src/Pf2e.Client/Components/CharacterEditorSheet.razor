@@ -106,16 +106,35 @@
                     <NumberStepper Label="Dex cap" Min="0" Max="10" Value="draft.ArmorDexCap ?? 10"
                                    ValueChanged="v => Edit(draft with { ArmorDexCap = v })" />
                 </div>
-                <div class="editor__field">
-                    <span class="editor__label">Ancestry HP</span>
-                    <NumberStepper Label="Ancestry HP" Min="0" Max="20" Value="draft.AncestryHitPoints"
-                                   ValueChanged="v => Edit(draft with { AncestryHitPoints = v })" />
-                </div>
-                <div class="editor__field">
-                    <span class="editor__label">Class HP</span>
-                    <NumberStepper Label="Class HP" Min="0" Max="20" Value="draft.ClassHitPoints"
-                                   ValueChanged="v => Edit(draft with { ClassHitPoints = v })" />
-                </div>
+                @* An export that states the total is taken at its word, so for that character
+                   the parts feed nothing. They were here anyway: both moved, both saved, and the
+                   maximum never shifted. The screen now asks for whatever the number is actually
+                   made of. *@
+                @if (draft.StatedMaxHitPoints is { } stated)
+                {
+                    <div class="editor__field editor__field--wide">
+                        <span class="editor__label">Maximum hit points</span>
+                        <NumberStepper Label="Maximum hit points" Min="1" Max="999" Value="stated"
+                                       ValueChanged="v => Edit(draft with { StatedMaxHitPoints = v })" />
+                        <span class="editor__note">
+                            The export states this total rather than the ancestry and class parts,
+                            so it is the number to correct.
+                        </span>
+                    </div>
+                }
+                else
+                {
+                    <div class="editor__field">
+                        <span class="editor__label">Ancestry HP</span>
+                        <NumberStepper Label="Ancestry HP" Min="0" Max="20" Value="draft.AncestryHitPoints"
+                                       ValueChanged="v => Edit(draft with { AncestryHitPoints = v })" />
+                    </div>
+                    <div class="editor__field">
+                        <span class="editor__label">Class HP</span>
+                        <NumberStepper Label="Class HP" Min="0" Max="20" Value="draft.ClassHitPoints"
+                                       ValueChanged="v => Edit(draft with { ClassHitPoints = v })" />
+                    </div>
+                }
             </div>
 
             <div class="editor__acts">

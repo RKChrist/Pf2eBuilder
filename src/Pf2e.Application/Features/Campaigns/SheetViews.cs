@@ -126,7 +126,8 @@ internal static class SheetViews
         build.AncestryHitPoints,
         build.ClassHitPoints,
         build.BonusHitPoints,
-        build.BonusHitPointsPerLevel);
+        build.BonusHitPointsPerLevel,
+        build.StatedMaxHitPoints);
 
     public static BreakdownSummary Of(Breakdown breakdown) => new(
         breakdown.Base,

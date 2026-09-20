@@ -13,6 +13,7 @@ const client = process.argv[2] ?? 'http://localhost:5173/';
 const api = process.argv[3] ?? 'http://localhost:5092';
 const shots = process.env.SHOTS;
 const pathbuilder = readFileSync('tests/Pf2e.Persistence.Tests/Fixtures/gnibbo.json', 'utf8');
+const wanderers = readFileSync('tests/Pf2e.Persistence.Tests/Fixtures/einar-wanderers-guide.json', 'utf8');
 
 const check = reporter();
 const browser = await launch({ headless: process.env.HEADED !== '1' });
@@ -531,6 +532,61 @@ const errors = [...dm.consoleErrors(), ...player.consoleErrors()]
   .filter(e => !e.includes('ERR_BLOCKED_BY_CLIENT'));
 check('no console errors', errors.length === 0, errors.join(' | ').slice(0, 300));
 
+// Wanderer's Guide states a total where Pathbuilder states the parts, so the editor asked this
+// character for an ancestry and a class number that fed nothing: both moved, both saved, and the
+// maximum never shifted. The screen now asks for whatever the number is made of.
+await clickText(dm, '.shell__party', 'Party');
+await waitFor(dm, '.pf-textarea');
+await type(dm, '.pf-textarea', wanderers);
+await clickText(dm, 'button', 'Import');
+await until(dm, `document.querySelectorAll('.character').length === 2`, 25000);
+
+const einar = `[...document.querySelectorAll('.character')]
+  .find(c => c.querySelector('.character__name')?.textContent.includes('Einar'))`;
+check("a Wanderer's Guide export imports beside a Pathbuilder one",
+  await dm.eval(`!!${einar}`));
+
+const before = await dm.eval(`${einar}?.querySelector('.hits__of')?.textContent.trim() ?? ''`);
+await dm.eval(`[...${einar}.querySelectorAll('.acts button')]
+  .find(b => b.textContent.trim() === 'Edit')?.click()`);
+await waitFor(dm, '.editor');
+
+const fields = await dm.eval(
+  `[...document.querySelectorAll('.editor__label')].map(e => e.textContent.trim())`);
+check('the editor asks such a character for the maximum itself',
+  fields.includes('Maximum hit points'), fields.join(', '));
+check('and not for the two parts that feed nothing',
+  !fields.includes('Ancestry HP') && !fields.includes('Class HP'), fields.join(', '));
+check('and says why', await dm.eval(
+  `document.querySelector('.editor__note')?.textContent.trim() ?? ''`)
+  .then(note => note.includes('states this total')),
+  await dm.eval(`document.querySelector('.editor__note')?.textContent.trim() ?? 'nothing'`));
+
+await dm.eval(`[...document.querySelectorAll('.editor__field')]
+  .find(f => f.querySelector('.editor__label')?.textContent.trim() === 'Maximum hit points')
+  ?.querySelector('.pf-stepper__btn--plus')?.click()`);
+await sleep(400);
+await clickText(dm, '.editor__acts button', 'Save');
+await sleep(1200);
+
+const after = await dm.eval(`${einar}?.querySelector('.hits__of')?.textContent.trim() ?? ''`);
+check('and moving it moves the maximum on the card',
+  Number(after.replace('/', '')) === Number(before.replace('/', '')) + 1, `${before} -> ${after}`);
+
+const gnibbo = `[...document.querySelectorAll('.character')]
+  .find(c => c.querySelector('.character__name')?.textContent.trim() === 'Gnibbo')`;
+await dm.eval(`[...${gnibbo}.querySelectorAll('.acts button')]
+  .find(b => b.textContent.trim() === 'Edit')?.click()`);
+await waitFor(dm, '.editor');
+check('a Pathbuilder character is still asked for the parts, because those are what it states',
+  await dm.eval(`[...document.querySelectorAll('.editor__label')].map(e => e.textContent.trim())`)
+    .then(labels => labels.includes('Ancestry HP') && !labels.includes('Maximum hit points')));
+await clickText(dm, '.editor__acts button', 'Cancel');
+await sleep(500);
+
+const party = await dm.eval(
+  `[...document.querySelectorAll('.character__name')].map(e => e.textContent.trim()).join()`);
+
 // Every JSON file with a name in it used to be a character. This one arrived as a level 1
 // "pf2e-tokens" with AC 10 and one hit point, and could be put in a fight.
 await clickText(dm, '.shell__party', 'Party');
@@ -550,8 +606,8 @@ check('a file that is not a character export is refused by name',
   refusal.includes('pf2e-tokens') && refusal.includes('no class, ancestry'), refusal);
 check('and nobody joined the party',
   await dm.eval(`[...document.querySelectorAll('.character__name')].map(e => e.textContent.trim()).join()`)
-    .then(names => names === 'Gnibbo'),
-  await dm.eval(`[...document.querySelectorAll('.character__name')].map(e => e.textContent.trim()).join()`));
+    .then(names => names === party),
+  party);
 
 await type(dm, '.pf-textarea', '');
 

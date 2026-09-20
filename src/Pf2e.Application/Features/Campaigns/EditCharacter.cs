@@ -75,6 +75,12 @@ public sealed class CharacterBuildEditValidator : AbstractValidator<CharacterBui
         RuleFor(b => b.ClassHitPoints).InclusiveBetween(0, 20);
         RuleFor(b => b.BonusHitPoints).InclusiveBetween(0, 200);
         RuleFor(b => b.BonusHitPointsPerLevel).InclusiveBetween(0, 20);
+
+        // A stated total is the whole maximum rather than a part of it, so its range is the
+        // range of a maximum. Null is a character whose parts add up, which is every
+        // Pathbuilder import.
+        RuleFor(b => b.StatedMaxHitPoints).InclusiveBetween(1, 999)
+                                          .When(b => b.StatedMaxHitPoints is not null);
     }
 
     static bool Named<T>(string value) where T : struct, Enum =>
@@ -127,5 +133,8 @@ public sealed class EditCharacterHandler(ITrackerDbContext db, ICampaignBroadcas
         edit.AncestryHitPoints,
         edit.ClassHitPoints,
         edit.BonusHitPoints,
-        edit.BonusHitPointsPerLevel);
+        edit.BonusHitPointsPerLevel)
+    {
+        StatedMaxHitPoints = edit.StatedMaxHitPoints,
+    };
 }
