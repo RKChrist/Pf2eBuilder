@@ -21,8 +21,21 @@ public sealed class AuthCookieOptions
 {
     public string Name { get; set; } = "pf2e.auth";
 
+    /// <summary>
+    /// How long the cookie lives. Not how long a session lasts, and today that difference is
+    /// real. The token inside the cookie is minted once at sign-in and never re-minted, and a
+    /// session read signs the browser out the moment that token expires, so the session ends
+    /// after <see cref="AuthJwtOptions.AccessTokenMinutes"/> however long the cookie was told to
+    /// live. With the shipped defaults that is one hour, not twelve.
+    /// <para>Closing the gap means re-minting on a sliding renewal, which is what
+    /// <see cref="AuthJwtOptions.RefreshTokenMinutes"/> is there for and what nothing does yet.
+    /// Until then, treat this and <see cref="SlidingExpiration"/> as an upper bound the process
+    /// does not reach.</para>
+    /// </summary>
     public int ExpireMinutes { get; set; } = 720;
 
+    /// <summary>Renews the cookie on activity. It does not renew the token inside it, so see
+    /// <see cref="ExpireMinutes"/> for what that is worth today.</summary>
     public bool SlidingExpiration { get; set; } = true;
 
     /// <summary>A member of <see cref="SameSiteMode"/>, by name.</summary>
@@ -49,6 +62,10 @@ public sealed class AuthJwtOptions
 
     public int AccessTokenMinutes { get; set; } = 60;
 
+    /// <summary>Configured ahead of the thing that will read it. Nothing mints or honours a
+    /// refresh token yet, so today this is validated and read by nothing. See
+    /// <see cref="AuthCookieOptions.ExpireMinutes"/> for what its absence currently costs.
+    /// </summary>
     public int RefreshTokenMinutes { get; set; } = 20160;
 
     public int ClockSkewSeconds { get; set; } = 30;

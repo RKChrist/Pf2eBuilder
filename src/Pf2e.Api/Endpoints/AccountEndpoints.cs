@@ -81,9 +81,11 @@ public static class AccountEndpoints
     /// the issuer, the audience and the clock on every single read. That is what makes it
     /// load-bearing rather than decoration.
     /// <para>A ticket this cannot answer from signs the browser out on the way to answering
-    /// nobody. A tab holding a token that is expired, tampered with or signed with a key this
-    /// process no longer has will present it again on every page load forever, and clearing it
-    /// is the only thing that ends that.</para>
+    /// nobody, because a tab holding a token that is expired, tampered with or signed with a key
+    /// this process no longer has would present it again on every page load until the cookie
+    /// itself expired. That covers a ticket that decrypts. One that does not, which is what a
+    /// changed Data Protection key ring leaves behind, fails before this and is not cleared
+    /// here; the browser carries it until <c>Auth:Cookie:ExpireMinutes</c> is up.</para>
     /// </summary>
     static async Task<AccountView?> WhoAsync(
         ISender sender, HttpContext context, AuthOptions auth, CancellationToken ct)
