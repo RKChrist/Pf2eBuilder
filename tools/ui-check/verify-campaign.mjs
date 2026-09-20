@@ -353,7 +353,7 @@ await waitFor(dm, '.condition');
 await dm.eval(`(() => {
   const row = [...document.querySelectorAll('.condition')]
     .find(c => c.dataset.condition === 'clumsy');
-  row?.querySelector('button:last-of-type')?.click();
+  row?.querySelector('.pf-stepper__btn:last-of-type')?.click();
 })()`);
 await sleep(1200);
 await dm.eval(`document.querySelector('.pf-sheet__close')?.click()`);
@@ -529,7 +529,7 @@ await dm.eval(`${ogreRow}?.querySelector('.chip--add')?.click()`);
 await waitFor(dm, '.condition');
 await dm.eval(`[...document.querySelectorAll('.condition')]
   .find(c => c.dataset.condition === 'frightened')
-  ?.querySelector('button:last-of-type')?.click()`);
+  ?.querySelector('.pf-stepper__btn:last-of-type')?.click()`);
 await sleep(1200);
 await dm.eval(`document.querySelector('.pf-sheet__close')?.click()`);
 await sleep(800);

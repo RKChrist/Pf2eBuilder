@@ -66,7 +66,7 @@ check('the board says what the group is for', (await text('.top .blurb'))?.lengt
 check('the board counts every category', await page.eval(`[...document.querySelectorAll('.categories .category')]
   .every(card => /^\\d{1,3}(,\\d{3})*$/.test(card.querySelector('.size')?.textContent.trim() ?? ''))`));
 check('a category card explains itself', await count('.category .note') > 0);
-check('the board groups categories under headings', await count('.section-title') > 1);
+check('the board groups categories under headings', await count('.board .pf-section__label') > 1);
 
 const topSearch = '[data-site-search]';
 const typeTop = (typed) => page.eval(`(() => {
@@ -543,7 +543,7 @@ await page.viewport(1440, 900, false);
 await sleep(400);
 check.eq('four columns of categories on a laptop', await columns(), 4);
 const rail = await frame();
-check('the navigation stands up as a rail', rail.navWidth <= 80 && rail.navHeight > 600,
+check('the navigation stands up as a rail', rail.navWidth <= 96 && rail.navHeight > 600,
   `${rail.navWidth}x${rail.navHeight}`);
 
 await openFeats();

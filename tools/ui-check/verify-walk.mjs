@@ -322,7 +322,7 @@ await p.eval(`[...document.querySelectorAll('.turn')]
 await wait('.condition', 12000);
 await p.eval(`(() => {
   const row = [...document.querySelectorAll('.condition')].find(c => c.dataset.condition === 'frightened');
-  row?.querySelector('.pf-stepper__btn:last-of-type, button:last-of-type')?.click();
+  row?.querySelector('.pf-stepper__btn:last-of-type')?.click();
 })()`);
 await sleep(1300);
 await p.eval(`document.querySelector('.pf-sheet__close')?.click()`);
