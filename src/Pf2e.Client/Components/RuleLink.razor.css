@@ -1,0 +1,40 @@
+/* A name, not a boxed control. It takes the size and weight of the heading, sentence or row it
+   stands in and marks itself as a link with colour and a hairline underline, so a rules text
+   reads as a rules text and not as a strip of buttons. */
+.rule-link {
+    padding: var(--space-0);
+    border: none;
+    border-radius: var(--radius-chip);
+    background: transparent;
+    color: var(--accent-base);
+    font: inherit;
+    letter-spacing: inherit;
+    text-align: inherit;
+    text-decoration: underline;
+    text-decoration-thickness: var(--border-hair);
+    text-underline-offset: 0.2em;
+    cursor: pointer;
+}
+
+.rule-link:active {
+    color: var(--accent-press);
+}
+
+.rule-link:focus-visible {
+    outline: var(--border-focus) solid var(--line-focus);
+    outline-offset: var(--space-1);
+}
+
+/* The tap floor, for a link that is the whole content of its own row or heading. A link inside
+   a sentence must not have it, or every paragraph holding one grows a line. */
+.rule-link--alone {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+}
+
+@media (hover: hover) {
+    .rule-link:hover {
+        color: var(--accent-press);
+    }
+}
