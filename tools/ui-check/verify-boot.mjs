@@ -48,6 +48,7 @@ const run = (command, args, options) => new Promise((done) => {
   let output = '';
   child.stdout.on('data', (d) => (output += d));
   child.stderr.on('data', (d) => (output += d));
+  child.on('error', (failure) => done({ code: null, output: `${output}\n${failure.message}` }));
   child.on('close', (code) => done({ code, output }));
 });
 
@@ -89,6 +90,15 @@ const boot = (env) => new Promise((done) => {
   child.stderr.on('data', watch);
 
   const giveUp = setTimeout(stop, 60000);
+
+  // A binary that is not there fails to spawn, and an unhandled error event would take the whole
+  // script down with a stack trace instead of the failure count it promises. Reported as a boot
+  // that did not refuse, which is what it is: nothing ran.
+  child.on('error', (failure) => {
+    clearTimeout(giveUp);
+    done({ code: null, output: `${output}\n${failure.message}`, listening: false, killed: false });
+  });
+
   child.on('close', (code) => {
     clearTimeout(giveUp);
     done({ code, output, listening, killed });
