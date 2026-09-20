@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Pf2e.Application.Abstractions;
 using Pf2e.Infrastructure.Configuration;
 using Pf2e.Infrastructure.Persistence;
+using Pf2e.Infrastructure.Security;
 
 namespace Pf2e.Infrastructure;
 
@@ -32,7 +33,9 @@ public static class DependencyInjection
 
         services.AddScoped<IRulesDbContext>(provider => provider.GetRequiredService<RulesDbContext>());
         services.AddScoped<ITrackerDbContext>(provider => provider.GetRequiredService<RulesDbContext>());
+        services.AddScoped<IAccountsDbContext>(provider => provider.GetRequiredService<RulesDbContext>());
         services.AddSingleton<IUndoStack, MemoryUndoStack>();
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddScoped<RulesSeeder>();
         return services;
     }
