@@ -252,6 +252,11 @@ public sealed record InitiativeRoll(Guid CombatantId, int Initiative);
 /// <summary>A combatant the rolls do not name has its initiative rolled by the server.</summary>
 public sealed record RollInitiativeRequest(IReadOnlyList<InitiativeRoll> Rolls);
 
+/// <summary>Correcting one number, which is not the same command as rolling: rolling gives
+/// everybody a number and starts the round, and doing that to fix a misheard twelve would
+/// re-roll the whole fight.</summary>
+public sealed record SetInitiativeRequest(int Initiative);
+
 public sealed record RevealMonsterRequest(bool Revealed);
 
 /// <summary>

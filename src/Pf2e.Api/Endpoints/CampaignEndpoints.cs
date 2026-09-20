@@ -114,6 +114,15 @@ public static class CampaignEndpoints
             (ISender sender, HttpRequest request, string code, CancellationToken ct) =>
                 sender.Send(new NextTurn(code, DmKeyOf(request)), ct));
 
+        app.MapPut("/campaigns/{code}/encounter/combatants/{id:guid}/initiative",
+            (ISender sender, HttpRequest request, string code, Guid id,
+             SetInitiativeRequest body, CancellationToken ct) =>
+                sender.Send(new SetInitiative(code, DmKeyOf(request), id, body.Initiative), ct));
+
+        app.MapDelete("/campaigns/{code}/encounter/combatants/{id:guid}",
+            (ISender sender, HttpRequest request, string code, Guid id, CancellationToken ct) =>
+                sender.Send(new RemoveCombatant(code, DmKeyOf(request), id), ct));
+
         app.MapPost("/campaigns/{code}/encounter/combatants/{id:guid}/reveal",
             (ISender sender, HttpRequest request, string code, Guid id,
              RevealMonsterRequest body, CancellationToken ct) =>

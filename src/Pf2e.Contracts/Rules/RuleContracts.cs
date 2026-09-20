@@ -66,7 +66,19 @@ public sealed record BreakdownSummary(
     int Base,
     int Total,
     IReadOnlyList<ModifierSummary> Applied,
-    IReadOnlyList<SuppressedSummary> Suppressed);
+    IReadOnlyList<SuppressedSummary> Suppressed,
+    /// <summary>What the number would be with only what the character is carrying: no condition,
+    /// no buff, nothing anybody did to them.</summary>
+    int Bare)
+{
+    /// <summary>How far the effects on this creature have moved the number, and zero when
+    /// nothing is moving it.
+    /// <para>Not the sum of the applied effect modifiers. An anthem's status bonus can suppress
+    /// a worn one, and taking the anthem off gives the worn bonus back rather than losing both,
+    /// so a screen that summed the list would say the anthem is worth more than it is.</para>
+    /// </summary>
+    public int Swing => Total - Bare;
+}
 
 public sealed record SuppressedSummary(ModifierSummary Modifier, string Reason);
 

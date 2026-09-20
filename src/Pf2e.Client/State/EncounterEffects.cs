@@ -42,6 +42,16 @@ public sealed class EncounterEffects
         RunAsync(dispatcher, code => _tracker.RollInitiativeAsync(code, [], CancellationToken.None));
 
     [EffectMethod]
+    public Task Handle(InitiativeSet action, IDispatcher dispatcher) =>
+        RunAsync(dispatcher, code => _tracker.SetInitiativeAsync(
+            code, action.CombatantId, action.Initiative, CancellationToken.None));
+
+    [EffectMethod]
+    public Task Handle(CombatantRemoved action, IDispatcher dispatcher) =>
+        RunAsync(dispatcher, code => _tracker.RemoveCombatantAsync(
+            code, action.CombatantId, CancellationToken.None));
+
+    [EffectMethod]
     public Task Handle(TurnAdvanced _, IDispatcher dispatcher) =>
         RunAsync(dispatcher, code => _tracker.NextTurnAsync(code, CancellationToken.None));
 

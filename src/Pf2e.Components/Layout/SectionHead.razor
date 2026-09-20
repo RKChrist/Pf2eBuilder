@@ -1,0 +1,57 @@
+@* A section of a sheet.
+
+   The label sits on a rule that runs to the edge of whatever holds it, which is how a character
+   sheet is ruled and how a stat block separates its parts. It is the one structural device this
+   product repeats, and it encodes something true rather than decorating: everything under this
+   line belongs to this heading and stops at the next one.
+
+   The rule is the reason this is a component and not an h2 with a class. A heading with a
+   border-bottom puts the line under the words; this puts the words on the line with the rest of
+   it running past them, and that difference is the whole look. *@
+<div class="pf-section @Class" @attributes="Attributes">
+    @if (Level == 3)
+    {
+        <h3 class="pf-section__label">@Label</h3>
+    }
+    else
+    {
+        <h2 class="pf-section__label">@Label</h2>
+    }
+    <span class="pf-section__rule" aria-hidden="true"></span>
+    @if (Aside is not null)
+    {
+        <div class="pf-section__aside">@Aside</div>
+    }
+</div>
+
+@code {
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter] public string? Text { get; set; }
+
+    /// <summary>An icon for what this section is about, and null for none.</summary>
+    [Parameter] public string? Glyph { get; set; }
+
+    /// <summary>Which heading this is. A page has one h1 already, so a section inside it is an
+    /// h2 and a section inside that is an h3. The rule looks the same either way.</summary>
+    [Parameter] public int Level { get; set; } = 2;
+
+    /// <summary>What belongs at the far end of the rule: a clock, a round, a day. It rides the
+    /// same line rather than sitting in a row of its own above or below it.</summary>
+    [Parameter] public RenderFragment? Aside { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    RenderFragment Label => @<text>
+        @if (Glyph is { Length: > 0 })
+        {
+            <Icon Name="@Glyph" Class="pf-section__glyph" />
+        }
+        @(ChildContent ?? Words())
+    </text>;
+
+    RenderFragment Words() => @<text>@Text</text>;
+}

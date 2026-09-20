@@ -89,7 +89,7 @@ await shot('01-party');
 
 const read = `(() => {
   const stat = label => {
-    const el = [...document.querySelectorAll('.stat')].find(e => e.getAttribute('aria-label') === label);
+    const el = [...document.querySelectorAll('.stat')].find(e => e.getAttribute('aria-label')?.startsWith(label));
     return el ? el.querySelector('.stat__value').textContent.trim() : null;
   };
   const roll = name => {
@@ -102,7 +102,7 @@ const read = `(() => {
     spellAttack: stat('Spell Attack'),
     rapier: roll('+1 Striking Rapier'),
     performance: roll('Performance'),
-    labels: [...document.querySelectorAll('.stat')].map(e => e.getAttribute('aria-label')),
+    labels: [...document.querySelectorAll('.stat')].map(e => e.getAttribute('aria-label').replace(/ [+-]?\\d.*$/, '')),
     rolls: [...document.querySelectorAll('.roll__name')].filter(e => !e.closest('details')).map(e => e.textContent.trim()),
     hidden: [...document.querySelectorAll('details .roll__name')].map(e => e.textContent.trim()),
   };
@@ -128,7 +128,7 @@ await waitFor('.conditions');
 await shot('02-picker');
 
 const picker = await page.eval(`(() => {
-  const kinds = [...document.querySelectorAll('.effects__kind')].map(h => h.textContent.trim());
+  const kinds = [...document.querySelectorAll('[data-effect-group]')].map(g => g.dataset.effectGroup);
   const rows = [...document.querySelectorAll('.condition')].map(el => ({
     key: el.dataset.condition,
     reads: el.querySelector('.condition__reads')?.textContent.trim() ?? '',

@@ -1,0 +1,174 @@
+.strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.strip__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* One number, and a way to ask what made it that. Every one of these is a button, because the
+   question "why is my armour class 26" is asked at the table far more often than it is asked of
+   a character sheet, and the fight is where it is asked. */
+.num {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-1);
+    min-height: var(--tap-min);
+    padding: var(--space-1);
+    border: var(--border-hair) solid transparent;
+    border-radius: var(--radius-grid);
+    background: var(--surface-sunken);
+    font: inherit;
+    cursor: pointer;
+}
+
+.num:hover {
+    border-color: var(--accent-base);
+}
+
+.num:focus-visible {
+    outline: var(--line-focus) solid var(--border-focus);
+    outline-offset: 2px;
+}
+
+.num__label {
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+    letter-spacing: var(--font-tracking-wide);
+    text-transform: uppercase;
+}
+
+.num__value {
+    font-family: var(--font-family-data);
+    font-size: var(--font-size-data);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+/* Armour class is the number a fight asks about most and the only one of the five that is not a
+   roll, so it is the only one drawn differently. Weight and a neutral rule rather than the
+   accent: the accent already means "an effect is on this number", and two meanings sharing one
+   colour is two meanings nobody can read. */
+.num[data-stat="AC"] {
+    border-color: var(--line-strong);
+    background: var(--surface-raised);
+}
+
+.num[data-stat="AC"] .num__label {
+    color: var(--text-secondary);
+}
+
+.num[data-stat="AC"] .num__value {
+    font-size: var(--font-size-stat);
+    line-height: var(--font-leading-tight);
+}
+
+/* An attack is a name rather than a four-letter label, so it keeps its capitals. */
+.num--attack .num__label {
+    letter-spacing: var(--font-tracking-normal);
+    text-transform: none;
+}
+
+/* ---------------------------------------------------------------- what moved it */
+
+/* The answer to "is the anthem on", without opening anything. The number already reads +16;
+   what this adds is that one of it is something somebody did, and which way.
+
+   Its own pair rather than the accent. The accent means "you can interact with this", and while
+   a buff wore it a marked armour class read as a link and a link read as a buff. */
+.num[data-moved="up"] {
+    border-color: var(--effect-up);
+    background: var(--effect-up-wash);
+}
+
+.num[data-moved="up"] .num__label,
+.num[data-moved="up"] .num__value {
+    color: var(--effect-up);
+}
+
+.num[data-moved="down"] {
+    border-color: var(--effect-down);
+    background: var(--effect-down-wash);
+}
+
+.num[data-moved="down"] .num__label,
+.num[data-moved="down"] .num__value {
+    color: var(--effect-down);
+}
+
+.num__moved {
+    font-family: var(--font-family-data);
+    font-size: var(--font-size-chip);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-semibold);
+}
+
+.num__moved[data-moved="up"] {
+    color: var(--effect-up);
+}
+
+.num__moved[data-moved="down"] {
+    color: var(--effect-down);
+}
+
+/* ---------------------------------------------------------------- what is on them */
+
+.on {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: var(--tap-min);
+    padding: var(--space-1) var(--space-3);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-radius: var(--radius-chip);
+    background: var(--surface-raised);
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--font-size-chip);
+    cursor: pointer;
+}
+
+.chip:hover {
+    border-color: var(--danger-base);
+    color: var(--danger-base);
+}
+
+.chip:focus-visible {
+    outline: var(--line-focus) solid var(--border-focus);
+    outline-offset: 2px;
+}
+
+.chip__off {
+    color: var(--text-muted);
+}
+
+.chip:hover .chip__off {
+    color: var(--danger-base);
+}
+
+.chip--add {
+    border-style: dashed;
+    background: none;
+    color: var(--accent-base);
+}
+
+.chip--add:hover {
+    border-color: var(--accent-base);
+    border-style: solid;
+    color: var(--accent-press);
+}

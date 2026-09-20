@@ -1,0 +1,32 @@
+/* Two fields across a phone and as many as fit on anything wider. A build is twenty short
+   fields; one column of twenty is a scroll, and a fixed two columns wastes a laptop. */
+.editor__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+    gap: var(--space-3);
+}
+
+.editor__acts {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--tap-separation);
+    margin-top: var(--space-5);
+}
+
+.line {
+    font-size: var(--font-size-chip);
+    color: var(--text-secondary);
+}
+
+/* A stepper names itself only to a screen reader, which is enough beside a hit point readout
+   and not enough in a grid of twelve. */
+.editor__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.editor__label {
+    font-size: var(--font-size-chip);
+    color: var(--text-secondary);
+}

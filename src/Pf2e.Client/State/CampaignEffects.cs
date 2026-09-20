@@ -85,6 +85,14 @@ public sealed class CampaignEffects
         {
             await _hub.JoinAsync(action.Campaign.Code, _state.Value.DmKey, CancellationToken.None);
             dispatcher.Dispatch(new LiveJoined());
+
+            // The campaign this screen is showing was fetched before the hub was connected, and
+            // anything that changed in between was broadcast to a group this browser had not
+            // joined yet. At a table that is a player who joins as the GM applies damage and
+            // then sits on a stale number until the next thing happens. One read closes the
+            // window; every change after this one arrives as a push.
+            dispatcher.Dispatch(new CampaignRefreshed(
+                await _tracker.GetCampaignAsync(action.Campaign.Code, CancellationToken.None)));
         }
         catch (Exception failure) when (failure is not OperationCanceledException)
         {
@@ -100,7 +108,7 @@ public sealed class CampaignEffects
         try
         {
             dispatcher.Dispatch(new CharacterUpdated(
-                await _tracker.ImportAsync(now.Code, now.PasteDraft, CancellationToken.None)));
+                await _tracker.ImportAsync(now.Code, now.Offered, CancellationToken.None)));
             dispatcher.Dispatch(new ImportSucceeded());
         }
         catch (CampaignApiException failure)
@@ -143,7 +151,7 @@ public sealed class CampaignEffects
     public Task Handle(EffectSet action, IDispatcher dispatcher) =>
         ApplyToCampaignAsync(dispatcher, code => _tracker.ApplyEffectAsync(
             code, action.Slot, action.Effect,
-            [new EffectTargetSpec("Character", action.CharacterId)],
+            [new EffectTargetSpec(action.Subject.Kind, action.Subject.Id)],
             CancellationToken.None));
 
     [EffectMethod]
@@ -156,7 +164,7 @@ public sealed class CampaignEffects
 
         return ApplyToCampaignAsync(dispatcher, code => _tracker.ApplyEffectAsync(
             code, Guid.NewGuid(), effect,
-            [new EffectTargetSpec("Character", action.CharacterId)],
+            [new EffectTargetSpec(action.Subject.Kind, action.Subject.Id)],
             CancellationToken.None));
     }
 
@@ -185,7 +193,7 @@ public sealed class CampaignEffects
         var effect = new EffectSpec(action.Name, "Rule", action.RuleId, 0, null, rule.Modifiers);
         await ApplyToCampaignAsync(dispatcher, code => _tracker.ApplyEffectAsync(
             code, Guid.NewGuid(), effect,
-            [new EffectTargetSpec("Character", action.CharacterId)],
+            [new EffectTargetSpec(action.Subject.Kind, action.Subject.Id)],
             CancellationToken.None));
     }
 

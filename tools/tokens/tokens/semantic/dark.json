@@ -2,13 +2,14 @@
   "surface": {
     "$type": "color",
     "page": {
-      "$value": "{color.ink.900}"
+      "$value": "{color.ink.950}",
+      "$description": "The same relationship as light: the page is the furthest back, and a card sits on it."
     },
     "raised": {
       "$value": "{color.ink.800}"
     },
     "sunken": {
-      "$value": "{color.ink.950}"
+      "$value": "{color.ink.900}"
     },
     "overlay": {
       "$description": "Matches raised, as it already does in light. A bottom sheet carries the same rarity chips and stat colours as a card, and at ink.700 five of those roles fell under 4.5:1. The sheet reads as floating from the scrim behind it and its own radius, not from being a lighter grey.",
@@ -39,7 +40,7 @@
       "$value": "{color.ink.700}"
     },
     "strong": {
-      "$value": "{color.ink.400}"
+      "$value": "{color.ink.300}"
     },
     "focus": {
       "$value": "{color.teal.400}"
@@ -107,6 +108,22 @@
     },
     "empty": {
       "$value": "{color.ink.700}"
+    }
+  },
+  "effect": {
+    "$type": "color",
+    "$description": "What an effect is doing to a number, and which way. Separate from accent because accent means \"you can interact with this\": when a raised shield and a hyperlink were the same teal, a marked armour class read as a link and a link read as a buff. Separate from the outcome ramp because a bonus is not a successful roll.",
+    "up": {
+      "$value": "{color.jade.300}"
+    },
+    "up-wash": {
+      "$value": "{color.jade.900}"
+    },
+    "down": {
+      "$value": "{color.rose.300}"
+    },
+    "down-wash": {
+      "$value": "{color.crimson.900}"
     }
   }
 }

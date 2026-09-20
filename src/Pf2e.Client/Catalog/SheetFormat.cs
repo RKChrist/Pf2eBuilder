@@ -84,4 +84,28 @@ public static class SheetFormat
     /// both hit point buttons disabled rather than sending a request the server will refuse.</summary>
     public static int? Typed(string draft) =>
         int.TryParse(draft, out var amount) && amount is > 0 and <= 999 ? amount : null;
+
+    /// <summary>The ranks in order, so one is comparable with another. Untrained is the absence
+    /// of a rank rather than the first of them, and compares as less than all the rest.</summary>
+    static readonly string[] Ranks = ["Untrained", "Trained", "Expert", "Master", "Legendary"];
+
+    static int Depth(string? rank) => Math.Max(0, Array.IndexOf(Ranks, rank ?? "Untrained"));
+
+    /// <summary>Whether this character is trained enough for a requirement the ruleset stated as
+    /// a proficiency phrase. Any one of the named skills at the named rank is enough, which is
+    /// how "trained in Survival or Nature" reads. A requirement with no rank is not one a sheet
+    /// can check, and nobody is said to meet it.</summary>
+    public static bool Meets(CharacterSheetView character, string? rank, IReadOnlyList<string> skills)
+    {
+        if (rank is not { Length: > 0 } || skills.Count == 0)
+        {
+            return false;
+        }
+
+        var wanted = Depth(rank);
+        return skills.Any(skill =>
+            character.Skills.Any(held =>
+                string.Equals(held.Name, skill, StringComparison.OrdinalIgnoreCase)
+                && Depth(held.Rank) >= wanted));
+    }
 }

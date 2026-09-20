@@ -96,6 +96,13 @@
     </Loaded>
 </RemoteView>
 
+@* Both sheets belong to the shell rather than to a page, because a number is asked about and an
+   effect is applied from whichever mode the table is in. Deciding that once here is what stops
+   the fight page being the only one that can answer a question every page raises. *@
+<BreakdownSheet />
+
+<EffectSheet />
+
 @code {
     [Parameter, EditorRequired] public RenderFragment<CampaignView> ChildContent { get; set; } = default!;
 

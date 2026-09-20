@@ -28,7 +28,7 @@ const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
 const TEXT_ON_PAGE = ['text-primary', 'text-secondary', 'text-muted', 'accent-base', 'danger-base',
   'rarity-common', 'rarity-uncommon', 'rarity-rare', 'rarity-unique',
   'outcome-critical-failure', 'outcome-failure', 'outcome-success', 'outcome-critical-success',
-  'rank-filled'];
+  'rank-filled', 'effect-up', 'effect-down'];
 
 let failures = 0;
 const check = (label, fg, bg, min) => {

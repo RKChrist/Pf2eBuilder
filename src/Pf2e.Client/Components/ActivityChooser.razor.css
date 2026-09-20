@@ -1,0 +1,93 @@
+.choose {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3) 0;
+}
+
+.choose + .choose {
+    border-top: var(--border-hair) solid var(--line-subtle);
+}
+
+.choose__who {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+}
+
+.choose__name {
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* What the chosen one does, under the row it explains. Beside the name it read as a fact about
+   the character rather than about the chip that is lit. */
+.choose__says {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: var(--font-size-chip);
+    text-wrap: pretty;
+}
+
+/* A rule between the numbers and the choices, because a chip reading "AC 25" and a chip reading
+   "Avoid Notice" are two different kinds of thing and were sitting in one run. */
+.choose__numbers {
+    padding-bottom: var(--space-2);
+    border-bottom: var(--border-hair) solid var(--line-subtle);
+}
+
+.choose__options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+}
+
+.pick {
+    min-height: var(--tap-min);
+    padding: var(--space-1) var(--space-3);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-radius: var(--radius-chip);
+    background: var(--surface-page);
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--font-size-chip);
+    cursor: pointer;
+}
+
+.pick:hover {
+    border-color: var(--accent-base);
+    color: var(--accent-press);
+}
+
+.pick:focus-visible {
+    outline: var(--line-focus) solid var(--border-focus);
+    outline-offset: 2px;
+}
+
+/* Filled, not merely outlined. Across four characters the question the GM is answering is which
+   of forty chips are on, and an outline does not survive being scanned at that speed. */
+.pick--on {
+    border-color: var(--accent-base);
+    background: var(--accent-base);
+    color: var(--text-on-accent);
+    font-weight: var(--font-weight-semibold);
+}
+
+.pick--on:hover {
+    background: var(--accent-press);
+    color: var(--text-on-accent);
+}
+
+/* Nobody having decided is a state, not a choice, so it is marked and not celebrated. Filling
+   it in the accent made "nothing in particular" the loudest thing on the exploration page. */
+.pick--none.pick--on {
+    border-color: var(--line-strong);
+    background: var(--surface-sunken);
+    color: var(--text-primary);
+}
+
+.pick--none.pick--on:hover {
+    background: var(--surface-sunken);
+    color: var(--text-primary);
+}

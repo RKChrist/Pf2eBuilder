@@ -72,3 +72,34 @@ public sealed record StatAddress(StatSlot? Slot = null, string? Skill = null, st
         : Attack is { } attack ? character.Attacks.FirstOrDefault(a => a.Name == attack)?.Value
         : null;
 }
+
+/// <summary>
+/// One number on a combatant's row, with the accessor for each of the two shapes that can carry
+/// it. A character's defences are on the sheet in the same payload and a monster's are on its
+/// stat line; reading them through one row is what stops the initiative order printing a
+/// player's numbers in one order and a monster's in another.
+/// </summary>
+public sealed record DefenceLine(
+    StatSlot Slot,
+    Func<CharacterSheetView, BreakdownSummary?> OfCharacter,
+    Func<MonsterStatLineView, int> OfMonster)
+{
+    public StatLine Line => StatSlots.Of(Slot);
+
+    /// <summary>A difficulty reads 25 and a roll reads +11, because one is compared against and
+    /// the other is added to a die.</summary>
+    public string Write(int total) => Line.IsRoll ? (total >= 0 ? $"+{total}" : total.ToString()) : total.ToString();
+}
+
+/// <summary>What a fight asks about a creature, in the order a stat block prints it.</summary>
+public static class Defences
+{
+    public static readonly IReadOnlyList<DefenceLine> All =
+    [
+        new(StatSlot.ArmorClass, c => c.ArmorClass, m => m.ArmorClass),
+        new(StatSlot.Fortitude, c => c.Fortitude, m => m.Fortitude),
+        new(StatSlot.Reflex, c => c.Reflex, m => m.Reflex),
+        new(StatSlot.Will, c => c.Will, m => m.Will),
+        new(StatSlot.Perception, c => c.Perception, m => m.Perception),
+    ];
+}

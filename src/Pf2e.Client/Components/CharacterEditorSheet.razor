@@ -1,0 +1,146 @@
+@inherits FluxorComponent
+@inject IState<CampaignState> Store
+@inject IDispatcher Dispatcher
+
+@* The numbers a sheet is computed from, in the shape an edit sends back. Opened wherever a
+   character is shown, because a GM who spots a wrong Reflex fixes it where they saw it. *@
+<BottomSheet Open="@(State.Editing is not null)"
+             Title="@(State.Editing is { } e ? $"Edit {e.Draft.Name}" : "Edit")"
+             OnClose="() => Dispatcher.Dispatch(new EditorClosed())">
+    @if (State.Editing is { } editor)
+    {
+        var draft = editor.Draft;
+
+        <div class="editor">
+            @if (editor.Trouble is { } wrong)
+            {
+                <p class="trouble" role="alert">@wrong</p>
+            }
+
+            <div class="editor__grid">
+                <TextInput Label="Name" Value="@draft.Name"
+                           ValueChanged="v => Edit(draft with { Name = v ?? string.Empty })" />
+                <div class="editor__field">
+                    <span class="editor__label" id="edit-Level">Level</span>
+                    <NumberStepper Label="Level" Min="1" Max="20" Value="draft.Level"
+                                   ValueChanged="v => Edit(draft with { Level = v })" />
+                </div>
+                <TextInput Label="Class" Value="@draft.ClassName"
+                           ValueChanged="v => Edit(draft with { ClassName = v ?? string.Empty })" />
+                <TextInput Label="Ancestry" Value="@draft.AncestryName"
+                           ValueChanged="v => Edit(draft with { AncestryName = v ?? string.Empty })" />
+            </div>
+
+            <h3 class="editor__heading">Attributes</h3>
+            @* Modifiers, not scores. The sheet says Dexterity +3, so this says +3 too rather
+               than making somebody convert 16 in their head to mean the same thing. *@
+            <div class="editor__grid">
+                <div class="editor__field">
+                    <span class="editor__label" id="edit-Strength">Str</span>
+                    <NumberStepper Label="Str" Min="-5" Max="10" Value="draft.Strength"
+                                   ValueChanged="v => Edit(draft with { Strength = v })" />
+                </div>
+                <div class="editor__field">
+                    <span class="editor__label" id="edit-Dexterity">Dex</span>
+                    <NumberStepper Label="Dex" Min="-5" Max="10" Value="draft.Dexterity"
+                                   ValueChanged="v => Edit(draft with { Dexterity = v })" />
+                </div>
+                <div class="editor__field">
+                    <span class="editor__label" id="edit-Constitution">Con</span>
+                    <NumberStepper Label="Con" Min="-5" Max="10" Value="draft.Constitution"
+                                   ValueChanged="v => Edit(draft with { Constitution = v })" />
+                </div>
+                <div class="editor__field">
+                    <span class="editor__label" id="edit-Intelligence">Int</span>
+                    <NumberStepper Label="Int" Min="-5" Max="10" Value="draft.Intelligence"
+                                   ValueChanged="v => Edit(draft with { Intelligence = v })" />
+                </div>
+                <div class="editor__field">
+                    <span class="editor__label" id="edit-Wisdom">Wis</span>
+                    <NumberStepper Label="Wis" Min="-5" Max="10" Value="draft.Wisdom"
+                                   ValueChanged="v => Edit(draft with { Wisdom = v })" />
+                </div>
+                <div class="editor__field">
+                    <span class="editor__label" id="edit-Charisma">Cha</span>
+                    <NumberStepper Label="Cha" Min="-5" Max="10" Value="draft.Charisma"
+                                   ValueChanged="v => Edit(draft with { Charisma = v })" />
+                </div>
+            </div>
+
+            <h3 class="editor__heading">Proficiencies</h3>
+            <div class="editor__grid">
+                <Select TValue="string" Label="Key attribute" Options="CharacterEdits.Attributes"
+                        Value="@draft.KeyAttribute"
+                        ValueChanged="v => Edit(draft with { KeyAttribute = v ?? draft.KeyAttribute })" />
+                <Select TValue="string" Label="Fortitude" Options="CharacterEdits.Ranks"
+                        Value="@draft.Fortitude"
+                        ValueChanged="v => Edit(draft with { Fortitude = v ?? draft.Fortitude })" />
+                <Select TValue="string" Label="Reflex" Options="CharacterEdits.Ranks"
+                        Value="@draft.Reflex"
+                        ValueChanged="v => Edit(draft with { Reflex = v ?? draft.Reflex })" />
+                <Select TValue="string" Label="Will" Options="CharacterEdits.Ranks"
+                        Value="@draft.Will"
+                        ValueChanged="v => Edit(draft with { Will = v ?? draft.Will })" />
+                <Select TValue="string" Label="Perception" Options="CharacterEdits.Ranks"
+                        Value="@draft.Perception"
+                        ValueChanged="v => Edit(draft with { Perception = v ?? draft.Perception })" />
+                <Select TValue="string" Label="Class DC" Options="CharacterEdits.Ranks"
+                        Value="@draft.ClassDc"
+                        ValueChanged="v => Edit(draft with { ClassDc = v ?? draft.ClassDc })" />
+            </div>
+
+            <h3 class="editor__heading">Armour and hit points</h3>
+            <div class="editor__grid">
+                <TextInput Label="Armour" Value="@draft.ArmorName"
+                           ValueChanged="v => Edit(draft with { ArmorName = v ?? string.Empty })" />
+                <Select TValue="string" Label="Armour proficiency" Options="CharacterEdits.Ranks"
+                        Value="@draft.ArmorRank"
+                        ValueChanged="v => Edit(draft with { ArmorRank = v ?? draft.ArmorRank })" />
+                <div class="editor__field">
+                    <span class="editor__label" id="edit-ArmorItemBonus">Armour bonus</span>
+                    <NumberStepper Label="Armour bonus" Min="0" Max="10" Value="draft.ArmorItemBonus"
+                                   ValueChanged="v => Edit(draft with { ArmorItemBonus = v })" />
+                </div>
+                <div class="editor__field">
+                    <span class="editor__label">Dex cap</span>
+                    <NumberStepper Label="Dex cap" Min="0" Max="10" Value="draft.ArmorDexCap ?? 10"
+                                   ValueChanged="v => Edit(draft with { ArmorDexCap = v })" />
+                </div>
+                <div class="editor__field">
+                    <span class="editor__label" id="edit-AncestryHitPoints">Ancestry HP</span>
+                    <NumberStepper Label="Ancestry HP" Min="0" Max="20" Value="draft.AncestryHitPoints"
+                                   ValueChanged="v => Edit(draft with { AncestryHitPoints = v })" />
+                </div>
+                <div class="editor__field">
+                    <span class="editor__label" id="edit-ClassHitPoints">Class HP</span>
+                    <NumberStepper Label="Class HP" Min="0" Max="20" Value="draft.ClassHitPoints"
+                                   ValueChanged="v => Edit(draft with { ClassHitPoints = v })" />
+                </div>
+            </div>
+
+            <div class="editor__acts">
+                <Button Variant="ButtonVariant.Secondary"
+                        OnClick="() => Dispatcher.Dispatch(new EditorClosed())">
+                    Cancel
+                </Button>
+                <Button Disabled="editor.Saving"
+                        OnClick="() => Dispatcher.Dispatch(new EditSubmitted())">
+                    @if (editor.Saving)
+                    {
+                        <text>Saving</text>
+                    }
+                    else
+                    {
+                        <text>Save</text>
+                    }
+                </Button>
+            </div>
+        </div>
+    }
+</BottomSheet>
+
+@code {
+    CampaignState State => Store.Value;
+
+    void Edit(CharacterBuildEdit draft) => Dispatcher.Dispatch(new EditDraftChanged(draft));
+}

@@ -1,0 +1,71 @@
+@inherits FluxorComponent
+@inject IState<CampaignState> Store
+@inject IDispatcher Dispatcher
+
+@* Why a number is what it is. Every stat on every screen opens this, so the answer to "why is
+   my armour class 23" is one sheet and not one per page. *@
+<BottomSheet Open="@(Opened is not null)"
+             Title="@BreakdownTitle"
+             OnClose="() => Dispatcher.Dispatch(new BreakdownClosed())">
+    @if (Opened is { } open && Character(open.CharacterId) is { } character
+        && open.Stat.In(character) is { } breakdown)
+    {
+
+        <div class="breakdown">
+            <p class="breakdown__base">
+                <span class="breakdown__what">Before any effect</span>
+                <span class="breakdown__number">@breakdown.Base</span>
+            </p>
+
+            <h3 class="breakdown__heading">Applied</h3>
+            <ul class="breakdown__applied">
+                @foreach (var modifier in breakdown.Applied)
+                {
+                    <li class="row">
+                        <ModifierValue Value="modifier.Value" Kind="RuleDisplay.KindOf(modifier.Type)" />
+                        <span class="row__source">@modifier.Source</span>
+                        <span class="row__applies">to @string.Join(" and ", modifier.Applies)</span>
+                    </li>
+                }
+                @if (breakdown.Applied.Count == 0)
+                {
+                    <li class="row row--none">Nothing is changing this number.</li>
+                }
+            </ul>
+
+            <h3 class="breakdown__heading">Suppressed</h3>
+            <ul class="breakdown__suppressed">
+                @foreach (var suppressed in breakdown.Suppressed)
+                {
+                    <li class="row row--off">
+                        <ModifierValue Value="suppressed.Modifier.Value"
+                                       Kind="RuleDisplay.KindOf(suppressed.Modifier.Type)" />
+                        <span class="row__source">@suppressed.Modifier.Source</span>
+                        <span class="row__reason">@suppressed.Reason</span>
+                    </li>
+                }
+                @if (breakdown.Suppressed.Count == 0)
+                {
+                    <li class="row row--none">The stacking rule is holding nothing back.</li>
+                }
+            </ul>
+        </div>
+    }
+</BottomSheet>
+
+@code {
+    CampaignState State => Store.Value;
+
+    OpenBreakdown? Opened => State.Breakdown;
+
+    string BreakdownTitle =>
+        Opened is { } open && Character(open.CharacterId) is { } character
+        && open.Stat.In(character) is { } breakdown
+            ? $"{open.Stat.Label} {breakdown.Total}"
+            : "Breakdown";
+
+    CharacterSheetView? Character(Guid id) =>
+        State.Campaign is RemoteData<CampaignView>.Loaded loaded
+            ? loaded.Value.Characters.FirstOrDefault(character => character.Id == id)
+            : null;
+}

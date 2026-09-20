@@ -1,0 +1,73 @@
+.breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.breakdown__base {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-bottom: var(--space-3);
+    border-bottom: var(--border-hair) solid var(--line-subtle);
+}
+
+.breakdown__what {
+    color: var(--text-secondary);
+    font-size: var(--font-size-data);
+}
+
+.breakdown__number {
+    font-family: var(--font-family-data);
+    font-size: var(--font-size-stat);
+    font-weight: var(--font-weight-semibold);
+}
+
+.breakdown__heading {
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: var(--font-tracking-wide);
+}
+
+.breakdown__applied,
+.breakdown__suppressed {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: var(--space-0);
+    padding: var(--space-0);
+    list-style: none;
+}
+
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+    color: var(--text-secondary);
+    font-size: var(--font-size-data);
+    line-height: var(--font-leading-snug);
+}
+
+.row__source {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.row--off {
+    color: var(--text-muted);
+}
+
+/* A suppressed modifier has to read as struck out rather than as a second applied one, and the
+   reason it was struck out is the part that has to stay readable. */
+.row--off .row__source {
+    color: var(--text-muted);
+    text-decoration: line-through var(--line-strong);
+}
+
+.row--none {
+    color: var(--text-muted);
+}

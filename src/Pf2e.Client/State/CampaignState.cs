@@ -16,8 +16,18 @@ public sealed record OpenBreakdown(Guid CharacterId, StatAddress Stat);
 /// <summary>The rules arm's search lives here rather than beside the browse screen's, because
 /// looking for a buff must not disturb whatever the player had filtered on the other screen,
 /// and because the search is over the moment the sheet closes.</summary>
+/// <summary>Who an effect is being put on: the kind the server resolves it against and the id
+/// it resolves. Two kinds rather than one widened id, because the server checks the stated kind
+/// against what is actually there and answers a monster named as a character with a refusal.</summary>
+public sealed record EffectSubject(string Kind, Guid Id)
+{
+    public static EffectSubject Character(Guid id) => new("Character", id);
+
+    public static EffectSubject Monster(Guid id) => new("Monster", id);
+}
+
 public sealed record EffectPicker(
-    Guid CharacterId,
+    EffectSubject Subject,
     PickerArm Arm,
     string Query,
     RemoteData<RuleSearchResult> Found);
@@ -44,6 +54,16 @@ public sealed record CampaignState
 
     public string PasteDraft { get; init; } = string.Empty;
 
+    /// <summary>A chosen file, held whole rather than poured into the paste box. A Wanderer's
+    /// Guide export is twelve megabytes because it embeds every item and spell record it
+    /// mentions, and a textarea bound to that re-renders the whole party on every keystroke
+    /// anywhere on the page.</summary>
+    public ChosenFile? File { get; init; }
+
+    /// <summary>What an import would send: the file when one is chosen, and otherwise whatever
+    /// was pasted. One reading, so the button and the request cannot disagree about which.</summary>
+    public string Offered => File?.Json ?? PasteDraft;
+
     /// <summary>Separate from <see cref="Campaign"/> on purpose: a paste that will not import must
     /// not blank the campaign everyone in it is reading.</summary>
     public bool Importing { get; init; }
@@ -68,6 +88,15 @@ public sealed record CampaignState
     public string HitPointDraft(Guid characterId) =>
         HitPointDrafts.TryGetValue(characterId, out var typed) ? typed : string.Empty;
 
+    /// <summary>What each initiative box holds while it is being typed, keyed by combatant.
+    /// Separate from the initiative on the campaign, which is what the server last confirmed:
+    /// a box showing "1" on the way to "12" must not be mistaken for a committed number.</summary>
+    public IReadOnlyDictionary<Guid, string> InitiativeDrafts { get; init; } =
+        new Dictionary<Guid, string>();
+
+    public string InitiativeDraft(Guid combatantId) =>
+        InitiativeDrafts.TryGetValue(combatantId, out var typed) ? typed : string.Empty;
+
     /// <summary>Open while the DM is choosing somebody to put in the fight. Null the rest of
     /// the time, which is what keeps the sheet shut.</summary>
     public CombatantPicker? AddingCombatant { get; init; }
@@ -86,6 +115,10 @@ public sealed record CombatantPicker(
     bool Busy = false);
 
 public sealed record CharacterEditor(Guid CharacterId, CharacterBuildEdit Draft, bool Saving, string? Trouble);
+
+/// <summary>A file as it was read, with the name to show for it. Bytes rather than characters
+/// for the size, because that is the number the upload limit is written in.</summary>
+public sealed record ChosenFile(string Name, long Bytes, string Json);
 
 public sealed record CodeDraftChanged(string Draft);
 
@@ -110,6 +143,15 @@ public sealed record ModeChanged(CampaignModeView Mode);
 
 public sealed record PasteDraftChanged(string Draft);
 
+/// <summary>A file was read off the disk. Wanderer's Guide only offers a download, so pasting
+/// its export means finding the file, opening it in something that can show twelve megabytes of
+/// JSON, and selecting all of it.</summary>
+public sealed record FileChosen(ChosenFile File);
+
+public sealed record FileRejected(string Message);
+
+public sealed record FileCleared;
+
 public sealed record ImportRequested;
 
 public sealed record ImportSucceeded;
@@ -133,13 +175,13 @@ public sealed record HitPointDraftChanged(Guid CharacterId, string Draft);
 /// </summary>
 public sealed record HitPointsApplied(Guid CharacterId, int Amount, string Direction);
 
-public sealed record EffectSet(Guid CharacterId, Guid Slot, EffectSpec? Effect);
+public sealed record EffectSet(EffectSubject Subject, Guid Slot, EffectSpec? Effect);
 
 /// <summary>The draft travels with the action because its reducer empties the form, and a
 /// reducer runs before the effect that has to send what was in it.</summary>
-public sealed record CustomEffectAdded(Guid CharacterId, EffectDraft Draft);
+public sealed record CustomEffectAdded(EffectSubject Subject, EffectDraft Draft);
 
-public sealed record RuleEffectRequested(Guid CharacterId, string RuleId, string Name);
+public sealed record RuleEffectRequested(EffectSubject Subject, string RuleId, string Name);
 
 public sealed record ActionFailed(string Message);
 
@@ -151,7 +193,7 @@ public sealed record BreakdownOpened(Guid CharacterId, StatAddress Stat);
 
 public sealed record BreakdownClosed;
 
-public sealed record PickerOpened(Guid CharacterId);
+public sealed record PickerOpened(EffectSubject Subject);
 
 public sealed record PickerClosed;
 
@@ -213,13 +255,27 @@ public static class CampaignReducers
     public static CampaignState On(CampaignState state, PasteDraftChanged action) =>
         state with { PasteDraft = action.Draft };
 
+    // Choosing a file clears whatever was pasted and the other way round, because two half
+    // filled ways to say the same thing is a screen that cannot say which one it will send.
+    [ReducerMethod]
+    public static CampaignState On(CampaignState state, FileChosen action) =>
+        state with { File = action.File, PasteDraft = string.Empty, ImportError = null };
+
+    [ReducerMethod]
+    public static CampaignState On(CampaignState state, FileRejected action) =>
+        state with { File = null, ImportError = action.Message };
+
+    [ReducerMethod]
+    public static CampaignState On(CampaignState state, FileCleared _) =>
+        state with { File = null, ImportError = null };
+
     [ReducerMethod]
     public static CampaignState On(CampaignState state, ImportRequested _) =>
         state with { Importing = true, ImportError = null };
 
     [ReducerMethod]
     public static CampaignState On(CampaignState state, ImportSucceeded _) =>
-        state with { Importing = false, ImportError = null, PasteDraft = string.Empty };
+        state with { Importing = false, ImportError = null, PasteDraft = string.Empty, File = null };
 
     [ReducerMethod]
     public static CampaignState On(CampaignState state, ImportFailed action) =>
@@ -296,7 +352,7 @@ public static class CampaignReducers
     public static CampaignState On(CampaignState state, PickerOpened action) => state with
     {
         Picker = new EffectPicker(
-            action.CharacterId,
+            action.Subject,
             PickerArm.Conditions,
             string.Empty,
             new RemoteData<RuleSearchResult>.NotAsked()),

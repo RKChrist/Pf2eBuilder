@@ -12,29 +12,39 @@
     <div class="downtime">
         <Card Class="downtime__card">
             <ChildContent>
-                <div class="downtime__top">
-                    <h2 class="downtime__heading">Downtime</h2>
-                    <p class="downtime__day" role="status">
-                        <span class="downtime__day-label">Day</span>
-                        <span class="downtime__day-value">@table.Day</span>
-                    </p>
-                </div>
+                <SectionHead Text="What everyone is spending the day on" Glyph="sun">
+                    <Aside>
+                        <span class="clock" role="status">
+                            <Icon Name="sun" />
+                            <span class="clock__label">Day</span>
+                            <span class="clock__value">@table.Day</span>
+                        </span>
+                    </Aside>
+                </SectionHead>
 
                 @foreach (var character in table.Characters)
                 {
-                    <div class="spending" data-spending="@character.Id">
-                        <Select TValue="string"
-                                Label="@character.Name"
-                                Options="ExplorationStore.Value.DowntimeOptions"
-                                Value="@(character.DowntimeActivity ?? string.Empty)"
-                                ValueChanged="key => Dispatcher.Dispatch(
-                                    new DowntimeActivityChosen(
-                                        character.Id,
-                                        string.IsNullOrEmpty(key) ? null : key,
-                                        string.IsNullOrEmpty(key) ? null : character.DowntimeTaskLevel ?? character.Level))" />
-
+                    <ActivityChooser Name="@character.Name"
+                                     Options="Spending"
+                                     Nothing="Nothing today"
+                                     Chosen="@character.DowntimeActivity"
+                                     Says="@ExplorationStore.Value.DowntimeNamed(character.DowntimeActivity)?.What"
+                                     ChosenChanged="key => Dispatcher.Dispatch(
+                                         new DowntimeActivityChosen(
+                                             character.Id,
+                                             key,
+                                             key is null ? null : character.DowntimeTaskLevel ?? character.Level))">
+                        <Numbers>
+                            @* A day's work is a skill roll, so whatever is on the character
+                               belongs on the page that chooses the work. *@
+                            <StatStrip Character="character" ShowAttacks="false" />
+                        </Numbers>
+                        <ChildContent>
                         @if (ExplorationStore.Value.DowntimeNamed(character.DowntimeActivity) is { } chosen)
                         {
+                            @* The task level and the DC it comes to, side by side. Picking a task
+                               is choosing how hard it is, and the DC is the only reason the
+                               number matters, so the two belong on one line. *@
                             <div class="spending__task">
                                 <div class="spending__level">
                                     <span class="spending__level-label">Task level</span>
@@ -53,37 +63,45 @@
                                         <span class="spending__dc-value">@dc</span>
                                         @if (chosen.Skill is { } skill)
                                         {
-                                            <span class="spending__skill">@skill @Signed(SkillOf(character, skill))</span>
+                                            <span class="spending__skill">
+                                                @skill @Signed(SkillOf(character, skill))
+                                            </span>
                                         }
                                     </p>
                                 }
                             </div>
-
-                            <p class="spending__says">@chosen.What</p>
                         }
-                    </div>
+                        </ChildContent>
+                    </ActivityChooser>
                 }
+
+                <ActivityGuide Options="Spending" Glyph="sun"
+                               Title="What each of these does" />
 
                 @if (table.Role == "Dm")
                 {
-                    <Button Class="downtime__next"
-                            OnClick="() => Dispatcher.Dispatch(new DayAdvanced())">
-                        Next day
-                    </Button>
-                    <p class="downtime__next-says">
-                        One activity per character per day, so the day turning clears what
-                        everybody chose.
-                    </p>
+                    <div class="downtime__turn">
+                        <Button Class="downtime__next"
+                                OnClick="() => Dispatcher.Dispatch(new DayAdvanced())">
+                            <Icon Name="moon" Class="pf-icon--lead" />Next day
+                        </Button>
+                        <p class="downtime__next-says">
+                            One activity per character per day, so the day turning clears what
+                            everybody chose.
+                        </p>
+                    </div>
                 }
             </ChildContent>
         </Card>
     </div>
 </CampaignPage>
 
-
 @code {
     static string Signed(int total) => SheetFormat.Signed(total);
 
     static int SkillOf(CharacterSheetView character, string skill) =>
         SheetFormat.SkillOf(character, skill);
+
+    IReadOnlyList<ActivityChooser.Choice> Spending =>
+        [.. ExplorationStore.Value.Downtime.Select(a => new ActivityChooser.Choice(a.Key, a.Name, a.What))];
 }

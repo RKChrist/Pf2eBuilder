@@ -8,29 +8,65 @@
 
 <PageTitle>Encounter</PageTitle>
 
+@* The initiative order, and everything a fight asks about a creature on the row for it.
+
+   Every combatant carries the same five numbers, players included. A GM resolving "does a 24
+   hit Gnibbo" was previously told Gnibbo's name and nothing else, and had to leave the fight for
+   the party page to find out. A player's numbers were never secret; they were just somewhere
+   else. *@
 <CampaignPage Heading="Encounter" Context="table">
     <div class="fight">
         <Card Class="fight__card">
             <ChildContent>
-                <div class="fight__top">
-                    <h2 class="fight__heading">Initiative</h2>
-                    @if (table.Role == "Dm")
-                    {
-                        <div class="fight__acts">
-                            <Button Variant="ButtonVariant.Secondary"
+                <SectionHead Text="Initiative" Glyph="swords">
+                    <Aside>
+                        @if (table.Role == "Dm")
+                        {
+                            <div class="fight__acts">
+                            <Button Variant="ButtonVariant.Quiet"
                                     OnClick="() => Dispatcher.Dispatch(new CombatantPickerOpened())">
-                                Add
+                                <Icon Name="plus" Class="pf-icon--lead" />Add
                             </Button>
-                            <Button Variant="ButtonVariant.Secondary"
+                            <Button Variant="ButtonVariant.Quiet"
                                     OnClick="() => Dispatcher.Dispatch(new InitiativeRolled())">
-                                Roll
+                                <Icon Name="dice" Class="pf-icon--lead" />Roll
                             </Button>
-                            <Button Variant="ButtonVariant.Secondary"
+                            <Button Variant="ButtonVariant.Quiet"
                                     OnClick="() => Dispatcher.Dispatch(new ChangeUndone())">
-                                Undo
+                                <Icon Name="undo" Class="pf-icon--lead" />Undo
                             </Button>
-                            <Button OnClick="() => Dispatcher.Dispatch(new TurnAdvanced())">Next turn</Button>
-                        </div>
+                            @* The button pressed more than every other control in the app put
+                               together, so it is the only filled one on the screen. *@
+                            <Button Class="fight__next"
+                                        Disabled="@(table.Encounter is not { Round: > 0 })"
+                                        OnClick="() => Dispatcher.Dispatch(new TurnAdvanced())">
+                                    <Icon Name="chevron" Class="pf-icon--lead" />Next turn
+                                </Button>
+                            </div>
+                        }
+                    </Aside>
+                </SectionHead>
+
+                @* Whose turn and which round, in a sentence, directly above the order. The
+                   rule down the current row's edge says the same thing, but only once you have
+                   found the row, and on a phone with twelve creatures in the order that means
+                   scrolling. This is the one fact a GM reads most often in a session. *@
+                <div class="now @(Turn(table) is null ? "now--idle" : null)" role="status">
+                    <Icon Name="flag" Class="now__glyph" />
+                    <span class="now__who">
+                        @if (Turn(table) is { } current)
+                        {
+                            <strong class="now__name">@current.Name</strong>
+                            <text> is up</text>
+                        }
+                        else
+                        {
+                            <text>Nobody has rolled initiative yet</text>
+                        }
+                    </span>
+                    @if (table.Encounter is { Round: > 0 } started)
+                    {
+                        <span class="now__round">Round @started.Round</span>
                     }
                 </div>
 
@@ -54,34 +90,137 @@
                     <ol class="order">
                         @foreach (var combatant in fight.Combatants)
                         {
-                            <li class="turn @(combatant.IsCurrentTurn ? "turn--now" : null)"
-                                data-combatant="@combatant.Id">
-                                <span class="turn__initiative">@combatant.Initiative</span>
-                                <span class="turn__who">
-                                    <span class="turn__name">@combatant.Name</span>
-                                    @if (combatant.Monster is { } monster)
-                                    {
-                                        <span class="turn__line">
-                                            @monster.CurrentHitPoints / @monster.MaxHitPoints HP · AC @monster.ArmorClass
-                                        </span>
-                                    }
-                                    @if (combatant.Effects.Count > 0)
-                                    {
-                                        <span class="turn__chips">
-                                            @foreach (var effect in combatant.Effects)
-                                            {
-                                                <TraitChip>@Named(effect)</TraitChip>
-                                            }
-                                        </span>
-                                    }
-                                </span>
+                            var vitals = Vitals(table, combatant);
+                            var adversary = combatant.Kind == "Adversary";
+                            var mine = !adversary || table.Role == "Dm";
 
-                                @if (combatant.Kind == "Adversary" && table.Role == "Dm")
+                            <li class="turn @(combatant.IsCurrentTurn ? "turn--now" : null)"
+                                data-combatant="@combatant.Id"
+                                aria-current="@(combatant.IsCurrentTurn ? "true" : null)">
+
+                                <div class="turn__head">
+                                    @if (table.Role == "Dm")
+                                    {
+                                        @* Typed, not only rolled. At a real table the players
+                                           roll their own dice and read the number out, and a
+                                           misheard twenty-one used to be fixable only by rolling
+                                           the whole fight again. *@
+                                        <input class="turn__initiative turn__initiative--typed"
+                                               type="text"
+                                               inputmode="numeric"
+                                               aria-label="@($"{combatant.Name}'s initiative")"
+                                               value="@Shown(combatant)"
+                                               @onchange="e => Commit(combatant, e.Value?.ToString())" />
+                                    }
+                                    else
+                                    {
+                                        <span class="turn__initiative">@combatant.Initiative</span>
+                                    }
+
+                                    <Icon Name="@(adversary ? "skull" : "person")"
+                                          Class="turn__kind"
+                                          Label="@(adversary ? "Adversary" : "Player character")" />
+                                    <span class="turn__called">@combatant.Name</span>
+                                    @if (vitals?.Level is { } level)
+                                    {
+                                        <span class="turn__level">Level @level</span>
+                                    }
+                                    @if (adversary && !combatant.Revealed && table.Role == "Dm")
+                                    {
+                                        <span class="turn__hidden">
+                                            <Icon Name="eye-off" />Hidden
+                                        </span>
+                                    }
+                                    @if (table.Role == "Dm")
+                                    {
+                                        <Button Variant="ButtonVariant.Quiet"
+                                                Class="turn__out"
+                                                OnClick="() => Dispatcher.Dispatch(new CombatantRemoved(combatant.Id))">
+                                            <Icon Name="close" Label="@($"Take {combatant.Name} out of the fight")" />
+                                        </Button>
+                                    }
+                                </div>
+
+                                <div class="turn__body">
+                                    @if (vitals is { } seen)
+                                    {
+                                        @* Hit points as a bar and as a number. The bar answers
+                                           "who is in trouble" across the whole order at a glance;
+                                           the number answers "how much is left" for one creature,
+                                           and a fight asks both. *@
+                                        <div class="hits @(seen.Current <= 0 ? "hits--down" : null)">
+                                            <span class="hits__track" aria-hidden="true">
+                                                <span class="hits__fill" style="width: @seen.Percent%"></span>
+                                            </span>
+                                            <span class="hits__count">
+                                                <Icon Name="heart" /><span class="hits__now">@seen.Current</span><span class="hits__of">/@seen.Max</span>
+                                            </span>
+                                            @if (seen.Temporary > 0)
+                                            {
+                                                <span class="hits__temp">+@seen.Temporary temp</span>
+                                            }
+                                            @if (seen.Current <= 0)
+                                            {
+                                                <span class="hits__state">Down</span>
+                                            }
+                                        </div>
+
+                                        @* A character's numbers come from the strip the other
+                                           mode pages use, so every one of them opens the sheet
+                                           that explains it and is marked while something is
+                                           moving it. A monster's stat line is a printed number
+                                           with nothing behind it, so it stays a plain list. *@
+                                        @if (Sheet(table, combatant) is { } sheet)
+                                        {
+                                            <StatStrip Character="sheet" ShowEffects="false" />
+                                        }
+                                        else
+                                        {
+                                            <ul class="defences">
+                                                @foreach (var defence in seen.Defences)
+                                                {
+                                                    <li class="defence" data-defence="@defence.Short">
+                                                        <span class="defence__label">@defence.Short</span>
+                                                        <span class="defence__value">@defence.Value</span>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        }
+                                    }
+
+                                    @* Conditions where the fight is, not on another page. Tapping
+                                       one takes it off; Undo puts it back, which is what makes a
+                                       one-tap removal safe enough to be worth the speed. *@
+                                    <div class="turn__chips">
+                                        @foreach (var effect in combatant.Effects)
+                                        {
+                                            <button type="button"
+                                                    class="chip"
+                                                    data-effect="@effect.Id"
+                                                    aria-label="@($"Remove {Named(effect)} from {combatant.Name}")"
+                                                    @onclick="() => Clear(combatant, effect)">
+                                                <span class="chip__name">@Named(effect)</span>
+                                                <Icon Name="close" Class="chip__off" />
+                                            </button>
+                                        }
+                                        @if (mine)
+                                        {
+                                            <button type="button"
+                                                    class="chip chip--add"
+                                                    @onclick="() => Dispatcher.Dispatch(new PickerOpened(Subject(combatant)))">
+                                                <Icon Name="spark" Class="chip__glyph" />
+                                                <span class="chip__name">Effect</span>
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+
+                                @* Damage and healing. A player's hit points were only ever
+                                   changeable from the party page, which is the one page nobody
+                                   is looking at during a fight. *@
+                                @if (vitals is not null && mine)
                                 {
-                                    <span class="turn__dm">
-                                        @* The same typed field the cards use, because a monster
-                                           loses fifty hit points as easily as a player does and a
-                                           combatant id is the creature id either way. *@
+                                    <div class="turn__dm">
                                         <div class="amount">
                                             <TextInput Class="amount__field"
                                                        Label="@($"Hit points to apply to {combatant.Name}")"
@@ -91,25 +230,34 @@
                                                        ValueChanged="typed => Dispatcher.Dispatch(
                                                            new HitPointDraftChanged(combatant.Id, typed ?? string.Empty))" />
                                             <Button Variant="ButtonVariant.Secondary"
+                                                    Class="amount__act"
                                                     Disabled="@(Typed(combatant.Id) is null)"
                                                     OnClick='() => Apply(combatant.Id, "Damage")'>
-                                                Damage
+                                                <Icon Name="minus" Class="pf-icon--lead" />Damage
                                             </Button>
                                             <Button Variant="ButtonVariant.Secondary"
+                                                    Class="amount__act"
                                                     Disabled="@(Typed(combatant.Id) is null)"
                                                     OnClick='() => Apply(combatant.Id, "Heal")'>
-                                                Heal
+                                                <Icon Name="plus" Class="pf-icon--lead" />Heal
                                             </Button>
                                         </div>
-                                        @* A monster the players have not been shown is not on
-                                           their screen at all, so this is the only way it gets
-                                           there, and a bare toggle would not say so. *@
-                                        <label class="reveal">
-                                            <Switch Checked="combatant.Revealed"
-                                                    CheckedChanged="on => Dispatcher.Dispatch(new MonsterRevealed(combatant.Id, on))" />
-                                            <span class="reveal__label">Players can see it</span>
-                                        </label>
-                                    </span>
+
+                                        @if (adversary)
+                                        {
+                                            @* A monster the players have not been shown is not on
+                                               their screen at all, so this is the only way it gets
+                                               there, and a bare toggle would not say so. *@
+                                            <label class="reveal">
+                                                <Switch Checked="combatant.Revealed"
+                                                        CheckedChanged="on => Dispatcher.Dispatch(new MonsterRevealed(combatant.Id, on))" />
+                                                <span class="reveal__label">
+                                                    <Icon Name="@(combatant.Revealed ? "eye" : "eye-off")" />
+                                                    Players can see it
+                                                </span>
+                                            </label>
+                                        }
+                                    </div>
                                 }
                             </li>
                         }
@@ -123,7 +271,9 @@
                         <ul class="reminders">
                             @foreach (var reminder in fight.Reminders)
                             {
-                                <li class="reminder">@reminder</li>
+                                <li class="reminder">
+                                    <Icon Name="bolt" Class="reminder__glyph" />@reminder
+                                </li>
                             }
                         </ul>
                     }
@@ -150,7 +300,9 @@
         <div class="adding">
             @if (Absent(open) is { Count: > 0 } roster)
             {
-                <h3 class="adding__heading">From this campaign</h3>
+                <h3 class="adding__heading">
+                    <Icon Name="person" Class="pf-icon--lead" />From this campaign
+                </h3>
                 <Card>
                     <ListContent>
                         @foreach (var character in roster)
@@ -163,7 +315,9 @@
                 </Card>
             }
 
-            <h3 class="adding__heading">A monster</h3>
+            <h3 class="adding__heading">
+                <Icon Name="skull" Class="pf-icon--lead" />A monster
+            </h3>
             <SearchField Value="@picker.Query"
                          ValueChanged="query => Dispatcher.Dispatch(new MonsterQueryChanged(query ?? string.Empty))"
                          Placeholder="Search 3,786 creatures"
@@ -211,7 +365,96 @@
     CampaignView? Table =>
         State.Campaign is RemoteData<CampaignView>.Loaded loaded ? loaded.Value : null;
 
-    static string Signed(int total) => SheetFormat.Signed(total);
+    static CombatantView? Turn(CampaignView table) =>
+        table.Encounter is { Round: > 0 } fight
+            ? fight.Combatants.FirstOrDefault(c => c.IsCurrentTurn)
+            : null;
+
+    /// <summary>What the box shows: what is being typed into it, or the number the server last
+    /// confirmed. Not both, and never the server's number over a half-typed one.</summary>
+    string Shown(CombatantView combatant) =>
+        State.InitiativeDraft(combatant.Id) is { Length: > 0 } typed
+            ? typed
+            : combatant.Initiative.ToString();
+
+    /// <summary>Sent on the way out of the box rather than per keystroke. Anything that is not a
+    /// number a fight could produce puts the confirmed one back rather than sending a request
+    /// the server would refuse.</summary>
+    void Commit(CombatantView combatant, string? typed)
+    {
+        if (int.TryParse(typed, out var initiative) && initiative is >= -20 and <= 60)
+        {
+            if (initiative != combatant.Initiative)
+            {
+                Dispatcher.Dispatch(new InitiativeSet(combatant.Id, initiative));
+                return;
+            }
+        }
+
+        Dispatcher.Dispatch(new InitiativeDrafted(combatant.Id, string.Empty));
+    }
+
+    /// <summary>One defence on a row, already written the way it reads.</summary>
+    sealed record Reading(string Short, string Value);
+
+    /// <summary>
+    /// What a row can say about a creature. Null where the viewer is not shown the numbers at
+    /// all, which is every monster in a player's copy: the projection has already left the stat
+    /// line out, so this is reading what arrived rather than deciding what to hide.
+    /// </summary>
+    sealed record Seen(
+        int Current, int Max, int Temporary, int? Level, IReadOnlyList<Reading> Defences)
+    {
+        public int Percent => Max <= 0 ? 0 : Math.Clamp(Current * 100 / Max, 0, 100);
+    }
+
+    /// <summary>A character's numbers are on the sheet in the same payload and a monster's are on
+    /// its stat line. Both go through the one defence table, so the order never differs by row.</summary>
+    static Seen? Vitals(CampaignView table, CombatantView combatant)
+    {
+        if (combatant.Monster is { } monster)
+        {
+            return new Seen(
+                monster.CurrentHitPoints,
+                monster.MaxHitPoints,
+                monster.TemporaryHitPoints,
+                monster.Level,
+                [.. Defences.All.Select(d => new Reading(d.Line.Short, d.Write(d.OfMonster(monster))))]);
+        }
+
+        if (table.Characters.FirstOrDefault(c => c.Id == combatant.Id) is not { } character)
+        {
+            return null;
+        }
+
+        return new Seen(
+            character.CurrentHitPoints,
+            character.MaxHitPoints,
+            character.TemporaryHitPoints,
+            character.Level,
+            [
+                .. Defences.All
+                    .Select(d => (d, Value: d.OfCharacter(character)))
+                    .Where(pair => pair.Value is not null)
+                    .Select(pair => new Reading(pair.d.Line.Short, pair.d.Write(pair.Value!.Total))),
+            ]);
+    }
+
+    /// <summary>The sheet behind a combatant, and null for a monster and for every monster in
+    /// a player's copy. A sheet is what a breakdown is read off, so its absence is what
+    /// decides whether the numbers on the row can be opened at all.</summary>
+    static CharacterSheetView? Sheet(CampaignView table, CombatantView combatant) =>
+        combatant.Kind == "Adversary"
+            ? null
+            : table.Characters.FirstOrDefault(c => c.Id == combatant.Id);
+
+    static EffectSubject Subject(CombatantView combatant) =>
+        combatant.Kind == "Adversary"
+            ? EffectSubject.Monster(combatant.Id)
+            : EffectSubject.Character(combatant.Id);
+
+    void Clear(CombatantView combatant, ActiveEffectView effect) =>
+        Dispatcher.Dispatch(new EffectSet(Subject(combatant), effect.Id, null));
 
     static string Named(ActiveEffectView effect) => SheetFormat.Named(effect);
 
@@ -230,5 +473,4 @@
             Dispatcher.Dispatch(new HitPointsApplied(creatureId, amount, direction));
         }
     }
-
 }

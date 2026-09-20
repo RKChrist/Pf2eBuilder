@@ -105,9 +105,17 @@
       },
       "700": {
         "$value": "#6E1A1A"
+      },
+      "900": {
+        "$value": "#2E1414",
+        "$description": "As jade.900, the other way."
       }
     },
     "rose": {
+      "100": {
+        "$value": "#F6E2E2",
+        "$description": "As jade.100, the other way."
+      },
       "300": {
         "$value": "#D98585"
       },
@@ -116,6 +124,10 @@
       },
       "500": {
         "$value": "#B14A4A"
+      },
+      "600": {
+        "$value": "#9C4040",
+        "$description": "Dark enough to read on the page surface, which the 500 no longer is."
       }
     },
     "moss": {
@@ -127,9 +139,17 @@
       },
       "600": {
         "$value": "#2E7D4F"
+      },
+      "700": {
+        "$value": "#26673F",
+        "$description": "As above. The 600 cleared 4.5 only against the old, paler page."
       }
     },
     "jade": {
+      "100": {
+        "$value": "#DDF2E6",
+        "$description": "The ground under a marked number in light. A tint: the number is the content."
+      },
       "300": {
         "$value": "#6FD99C"
       },
@@ -141,6 +161,14 @@
       },
       "700": {
         "$value": "#0B6E3F"
+      },
+      "800": {
+        "$value": "#064E2C",
+        "$description": "Critical success in light. It has to outrank the darkened plain success."
+      },
+      "900": {
+        "$value": "#0D2A1C",
+        "$description": "The ground under a marked number in dark. A tint of the page, not a green."
       }
     },
     "$description": "Saturation is reserved for game meaning. Chrome is ink. Within the outcome ramp, a critical result always sits further from the page than a plain one, which means darker in light and brighter in dark."

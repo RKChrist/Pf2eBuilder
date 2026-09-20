@@ -21,6 +21,7 @@
   --color-crimson-500: #A93838;
   --color-crimson-600: #8E2323;
   --color-crimson-700: #6E1A1A;
+  --color-crimson-900: #2E1414; /** As jade.900, the other way. */
   --color-ink-0: #FFFFFF;
   --color-ink-100: #E6ECF1;
   --color-ink-200: #D2DCE4;
@@ -33,16 +34,22 @@
   --color-ink-800: #1D2A38;
   --color-ink-900: #16202B;
   --color-ink-950: #0E151C;
+  --color-jade-100: #DDF2E6; /** The ground under a marked number in light. A tint: the number is the content. */
   --color-jade-300: #6FD99C;
   --color-jade-400: #35BC74;
   --color-jade-500: #1E9E5A;
   --color-jade-700: #0B6E3F;
+  --color-jade-800: #064E2C; /** Critical success in light. It has to outrank the darkened plain success. */
+  --color-jade-900: #0D2A1C; /** The ground under a marked number in dark. A tint of the page, not a green. */
   --color-moss-400: #5FB983;
   --color-moss-500: #3D9A63;
   --color-moss-600: #2E7D4F;
+  --color-moss-700: #26673F; /** As above. The 600 cleared 4.5 only against the old, paler page. */
+  --color-rose-100: #F6E2E2; /** As jade.100, the other way. */
   --color-rose-300: #D98585;
   --color-rose-400: #C97070;
   --color-rose-500: #B14A4A;
+  --color-rose-600: #9C4040; /** Dark enough to read on the page surface, which the 500 no longer is. */
   --color-teal-300: #86D0DC;
   --color-teal-400: #4FB3C4;
   --color-teal-500: #1E8A9B;
@@ -57,6 +64,10 @@
   --control-track-fine: 6px;
   --danger-base: #8E2323;
   --danger-press: #6E1A1A;
+  --effect-down: #9C4040;
+  --effect-down-wash: #F6E2E2;
+  --effect-up: #0B6E3F;
+  --effect-up-wash: #DDF2E6;
   --font-family-data: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, sans-serif; /** Everything numeric and structural. Engineered to disambiguate 0/O, 1/l/I and 6/8, which is the exact failure a character sheet must not have. */
   --font-family-display: 'Archivo', 'Archivo Expanded', system-ui, sans-serif; /** Character name and section heads only. Equipment signage, not fantasy. */
   --font-leading-normal: 1.55; /** Prose. */
@@ -87,7 +98,7 @@
   --layout-viewport-target: 390px; /** Design width. A player at a table is on a phone, so this is where the layout is decided; design/003 added the two widths below for everyone else. */
   --layout-viewport-wide: 600px; /** A tablet, or a phone turned sideways. Grids of short labels gain a second column here; prose does not. */
   --line-focus: #166E7C;
-  --line-strong: #5A7186;
+  --line-strong: #3E5265; /** A rule is structure and outranks a word. At ink.500 it was the same value as text-muted, which is how a section head and the line under it ended up the same weight. */
   --line-subtle: #D2DCE4;
   --motion-duration-hold: 600ms; /** How long a destructive action must be held before it fires. A delay, not an animation: reduced motion must not shorten it, or the guard against a mid-session mis-tap disappears for the people who set that preference. */
   --motion-duration-instant: 0ms;
@@ -97,16 +108,16 @@
   --motion-easing-enter: cubic-bezier(0, 0, 0.2, 1);
   --motion-easing-exit: cubic-bezier(0.4, 0, 1, 1);
   --outcome-critical-failure: #6E1A1A;
-  --outcome-critical-success: #0B6E3F;
-  --outcome-failure: #B14A4A;
-  --outcome-success: #2E7D4F;
+  --outcome-critical-success: #064E2C;
+  --outcome-failure: #9C4040;
+  --outcome-success: #26673F;
   --radius-card: 10px; /** Panels and drawers. */
   --radius-chip: 3px; /** Traits and rank pips, small and stamped. */
   --radius-grid: 0; /** Data cells and the sheet grid. A grid has corners. */
   --radius-sheet: 18px; /** Bottom sheets, which meet the screen edge. */
   --rank-empty: #D2DCE4;
   --rank-filled: #166E7C;
-  --rarity-common: #5A7186;
+  --rarity-common: #3E5265;
   --rarity-rare: #2F5FA8;
   --rarity-uncommon: #96591F;
   --rarity-unique: #7A4B9E;
@@ -121,18 +132,18 @@
   --space-7: 48px;
   --space-8: 64px;
   --surface-overlay: #FFFFFF;
-  --surface-page: #F2F5F8;
+  --surface-page: #E6ECF1; /** A desk. Cards are sheets laid on it, so it has to be a step down from them rather than the almost-white it was, where a card and the page behind it read as one surface. */
   --surface-raised: #FFFFFF;
-  --surface-sunken: #E6ECF1;
+  --surface-sunken: #D2DCE4;
   --tap-default: 48px; /** Standard control height on a phone. */
   --tap-min: 44px; /** Absolute floor. Nothing interactive is smaller. */
   --tap-primary: 56px; /** Actions taken repeatedly mid-session, one-handed. */
   --tap-separation: 8px; /** Minimum gap between two adjacent tap targets so a mis-tap needs real travel. */
-  --text-muted: #5A7186;
+  --text-muted: #3E5265; /** The weakest type on the screen, and what a skill label is written in. It has to clear 4.5 against the page and not merely against a card. */
   --text-on-accent: #FFFFFF;
   --text-on-danger: #FFFFFF;
   --text-primary: #16202B;
-  --text-secondary: #3E5265;
+  --text-secondary: #2B3B4D;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -142,8 +153,12 @@
     --accent-wash: #0F4F5A;
     --danger-base: #E08C8C;
     --danger-press: #C96060;
+    --effect-down: #D98585;
+    --effect-down-wash: #2E1414;
+    --effect-up: #6FD99C;
+    --effect-up-wash: #0D2A1C;
     --line-focus: #4FB3C4;
-    --line-strong: #8397A9;
+    --line-strong: #AEBDC9;
     --line-subtle: #2B3B4D;
     --outcome-critical-failure: #E08C8C;
     --outcome-critical-success: #6FD99C;
@@ -157,9 +172,9 @@
     --rarity-unique: #B48ED2;
     --scrim: #0E151C;
     --surface-overlay: #1D2A38; /** Matches raised, as it already does in light. A bottom sheet carries the same rarity chips and stat colours as a card, and at ink.700 five of those roles fell under 4.5:1. The sheet reads as floating from the scrim behind it and its own radius, not from being a lighter grey. */
-    --surface-page: #16202B;
+    --surface-page: #0E151C; /** The same relationship as light: the page is the furthest back, and a card sits on it. */
     --surface-raised: #1D2A38;
-    --surface-sunken: #0E151C;
+    --surface-sunken: #16202B;
     --text-muted: #8397A9;
     --text-on-accent: #0E151C;
     --text-on-danger: #0E151C;
@@ -174,8 +189,12 @@
   --accent-wash: #0F4F5A;
   --danger-base: #E08C8C;
   --danger-press: #C96060;
+  --effect-down: #D98585;
+  --effect-down-wash: #2E1414;
+  --effect-up: #6FD99C;
+  --effect-up-wash: #0D2A1C;
   --line-focus: #4FB3C4;
-  --line-strong: #8397A9;
+  --line-strong: #AEBDC9;
   --line-subtle: #2B3B4D;
   --outcome-critical-failure: #E08C8C;
   --outcome-critical-success: #6FD99C;
@@ -189,9 +208,9 @@
   --rarity-unique: #B48ED2;
   --scrim: #0E151C;
   --surface-overlay: #1D2A38; /** Matches raised, as it already does in light. A bottom sheet carries the same rarity chips and stat colours as a card, and at ink.700 five of those roles fell under 4.5:1. The sheet reads as floating from the scrim behind it and its own radius, not from being a lighter grey. */
-  --surface-page: #16202B;
+  --surface-page: #0E151C; /** The same relationship as light: the page is the furthest back, and a card sits on it. */
   --surface-raised: #1D2A38;
-  --surface-sunken: #0E151C;
+  --surface-sunken: #16202B;
   --text-muted: #8397A9;
   --text-on-accent: #0E151C;
   --text-on-danger: #0E151C;

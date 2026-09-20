@@ -1,0 +1,86 @@
+.pending,
+.panel {
+    padding: var(--space-4) var(--layout-gutter) var(--space-0);
+}
+
+.applied {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+}
+
+.applied__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-height: var(--tap-min);
+    padding-bottom: var(--space-2);
+    border-bottom: var(--border-hair) solid var(--line-subtle);
+}
+
+.applied__name {
+    font-size: var(--font-size-data);
+    font-weight: var(--font-weight-medium);
+}
+
+.applied__none,
+.hint {
+    color: var(--text-muted);
+    font-size: var(--font-size-data);
+    line-height: var(--font-leading-snug);
+}
+
+.conditions,
+.rules,
+.custom {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+}
+
+.condition {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-height: var(--tap-min);
+}
+
+/* The name and what it does, stacked, because "+1 status to attack rolls, Damage" does not fit
+   beside a stepper on a phone and is the half that answers the question. */
+.condition__name {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    font-size: var(--font-size-data);
+    min-width: 0;
+}
+
+.condition__reads {
+    font-size: var(--font-size-chip);
+    color: var(--text-muted);
+    text-wrap: pretty;
+}
+
+.effects__kind {
+    margin: var(--space-5) 0 0;
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-muted);
+}
+
+.effects__kind:first-of-type {
+    margin-top: var(--space-4);
+}
+
+.states--none {
+    color: var(--text-muted);
+}
+
+.line {
+    font-size: var(--font-size-chip);
+    color: var(--text-secondary);
+}

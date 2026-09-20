@@ -1,481 +1,376 @@
-
-.table-code {
-    font-family: var(--font-family-data);
-    font-size: var(--font-size-stat);
-    font-weight: var(--font-weight-bold);
-    letter-spacing: var(--font-tracking-wide);
-}
-
 .pending,
 .panel {
-    padding: var(--space-4) var(--layout-gutter) var(--space-0);
+    padding: var(--space-3) var(--layout-gutter) 0;
 }
 
-.entry {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    text-align: start;
-}
-
-.offline,
-.trouble {
-    margin: var(--space-3) var(--layout-gutter) var(--space-0);
-    padding: var(--space-3);
-    border: var(--border-hair) solid var(--line-subtle);
-    border-radius: var(--radius-card);
-    background: var(--surface-sunken);
-    color: var(--text-secondary);
-    font-size: var(--font-size-data);
-    line-height: var(--font-leading-snug);
-}
-
-.trouble {
-    border-color: var(--danger-base);
-    color: var(--danger-base);
-}
-
-.party {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    align-items: start;
-    gap: var(--space-3);
-    padding: var(--space-3) var(--layout-gutter) var(--space-0);
-}
-
-/* A character is a name and a row of numbers rather than prose, so it takes the width as
-   columns. auto-fit rather than a fixed count, because a table of one character on a laptop got
-   a third of the screen and two thirds of nothing: the empty tracks collapse and the one card
-   spreads, which its own grids of statistics and skills then spend on more columns.
-   600px and 1024px are layout.viewport-wide and layout.viewport-desk; a media query cannot read
-   a custom property. */
-@media (min-width: 600px) {
-    .party {
-        grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
-    }
-}
-
-@media (min-width: 1024px) {
-    .party {
-        grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
-    }
-}
-
-.identity {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-}
-
-.character__name {
-    font-size: var(--font-size-subhead);
-    font-weight: var(--font-weight-semibold);
-    line-height: var(--font-leading-tight);
-}
-
-.lineage {
-    color: var(--text-secondary);
-    font-size: var(--font-size-chip);
-}
-
-/* Three across a phone, and more across a laptop rather than three tiles a foot wide each. A
-   tile holds four letters and a number, so it has a size it wants to be and a card that grew
-   should give it siblings, not room. */
-.stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 6rem), 1fr));
-    gap: var(--space-2);
-}
-
-.stat {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-1);
-    min-width: var(--tap-min);
-    min-height: var(--tap-default);
-    padding: var(--space-2) var(--space-1);
-    border: var(--border-hair) solid var(--line-subtle);
-    border-radius: var(--radius-card);
-    background: var(--surface-sunken);
-    color: var(--text-primary);
-}
-
-.stat__label {
-    color: var(--text-muted);
-    font-size: var(--font-size-chip);
-    text-transform: uppercase;
-    letter-spacing: var(--font-tracking-wide);
-}
-
-.stat__value {
-    font-family: var(--font-family-data);
-    font-size: var(--font-size-stat);
-    font-weight: var(--font-weight-semibold);
-    line-height: var(--font-leading-tight);
-}
-
-.vitals {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-}
-
-.hp {
-    display: inline-flex;
-    align-items: baseline;
-    gap: var(--space-2);
-    font-family: var(--font-family-data);
-    font-size: var(--font-size-stat);
-    font-weight: var(--font-weight-semibold);
-}
-
-.hp__label {
-    color: var(--text-muted);
-    font-family: var(--font-family-display);
-    font-size: var(--font-size-chip);
-    font-weight: var(--font-weight-regular);
-    text-transform: uppercase;
-    letter-spacing: var(--font-tracking-wide);
-}
-
-.hp__of,
-.hp__max {
-    color: var(--text-secondary);
-    font-size: var(--font-size-body);
-}
-
-/* The typed amount and its two verbs stay on one line at phone width, with the field taking
-   whatever is left, because this is the control a DM reaches for mid-turn. */
-.amount {
-    display: flex;
-    align-items: flex-end;
-    gap: var(--space-2);
-    flex: 1 1 14rem;
-}
-
-.amount__field {
-    flex: 1 1 5rem;
-    min-width: 4rem;
-}
-
-
-.chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-}
-
-.acts {
-    display: flex;
-    justify-content: flex-end;
-}
-
-.breakdown {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-}
-
-.breakdown__base {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-3);
-    padding-bottom: var(--space-3);
-    border-bottom: var(--border-hair) solid var(--line-subtle);
-}
-
-.breakdown__what {
-    color: var(--text-secondary);
-    font-size: var(--font-size-data);
-}
-
-.breakdown__number {
-    font-family: var(--font-family-data);
-    font-size: var(--font-size-stat);
-    font-weight: var(--font-weight-semibold);
-}
-
-.breakdown__heading {
-    color: var(--text-muted);
-    font-size: var(--font-size-chip);
-    font-weight: var(--font-weight-semibold);
-    text-transform: uppercase;
-    letter-spacing: var(--font-tracking-wide);
-}
-
-.breakdown__applied,
-.breakdown__suppressed {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    margin: var(--space-0);
-    padding: var(--space-0);
-    list-style: none;
-}
-
-.row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: var(--space-2);
-    color: var(--text-secondary);
-    font-size: var(--font-size-data);
-    line-height: var(--font-leading-snug);
-}
-
-.row__source {
-    color: var(--text-primary);
-    font-weight: var(--font-weight-semibold);
-}
-
-.row--off {
-    color: var(--text-muted);
-}
-
-/* A suppressed modifier has to read as struck out rather than as a second applied one, and the
-   reason it was struck out is the part that has to stay readable. */
-.row--off .row__source {
-    color: var(--text-muted);
-    text-decoration: line-through var(--line-strong);
-}
-
-.row--none {
-    color: var(--text-muted);
-}
-
-.applied {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    margin-top: var(--space-4);
-}
-
-.applied__row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    min-height: var(--tap-min);
-    padding-bottom: var(--space-2);
-    border-bottom: var(--border-hair) solid var(--line-subtle);
-}
-
-.applied__name {
-    font-size: var(--font-size-data);
-    font-weight: var(--font-weight-medium);
-}
-
-.applied__none,
 .hint {
-    color: var(--text-muted);
+    margin: var(--space-2) 0 0;
     font-size: var(--font-size-data);
-    line-height: var(--font-leading-snug);
+    color: var(--text-muted);
 }
 
-.conditions,
-.rules,
-.custom {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    margin-top: var(--space-4);
-}
-
-.condition {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    min-height: var(--tap-min);
-}
-
-/* The name and what it does, stacked, because "+1 status to attack rolls, Damage" does not fit
-   beside a stepper on a phone and is the half that answers the question. */
-.condition__name {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    font-size: var(--font-size-data);
-    min-width: 0;
-}
-
-.condition__reads {
+.line {
     font-size: var(--font-size-chip);
-    color: var(--text-muted);
-    text-wrap: pretty;
-}
-
-.effects__kind {
-    margin: var(--space-5) 0 0;
-    font-size: var(--font-size-chip);
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-muted);
-}
-
-.effects__kind:first-of-type {
-    margin-top: var(--space-4);
-}
-
-.states--none {
-    color: var(--text-muted);
-}
-
-/* A roll is a name and a number, read down a column rather than across a grid, because a skill
-   name is a word or two and a stat label is four letters. */
-.rolls__heading {
-    margin: var(--space-4) 0 var(--space-2);
-    font-size: var(--font-size-chip);
-    font-weight: var(--font-weight-semibold);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-}
-
-.rolls {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr));
-    gap: var(--space-1);
-}
-
-.roll {
-    display: flex;
-    align-items: center;
-    text-align: left;
-    justify-content: space-between;
-    gap: var(--space-3);
-    min-height: var(--tap-min);
-    padding: 0 var(--space-3);
-    border: var(--border-hair) solid transparent;
-    border-radius: var(--radius-chip);
-    background: none;
-    color: inherit;
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-}
-
-.roll:hover {
-    border-color: var(--line-subtle);
-}
-
-/* The name is prose, not a link. It inherits an accent from the button reset otherwise, and a
-   card of eighteen teal skill names reads as eighteen things to tap somewhere else. */
-.roll__name {
-    font-size: var(--font-size-data);
-    color: var(--text-primary);
-    min-width: 0;
-    text-wrap: pretty;
-}
-
-.roll__value {
-    font-size: var(--font-size-data);
-    color: var(--text-primary);
-    flex: none;
-    font-weight: var(--font-weight-semibold);
-    font-variant-numeric: tabular-nums;
-}
-
-/* The untrained skills are a long list a player rarely wants and a DM occasionally does, so they
-   are one tap away rather than either always there or nowhere. */
-.rest {
-    margin-top: var(--space-2);
-}
-
-.rest__summary {
-    display: flex;
-    align-items: center;
-    min-height: var(--tap-min);
-    font-size: var(--font-size-chip);
-    color: var(--text-muted);
-    cursor: pointer;
+    color: var(--text-secondary);
 }
 
 .fight {
     padding: var(--space-3) var(--layout-gutter) var(--space-6);
 }
 
-.fight__top {
+/* ---------------------------------------------------------------- whose turn */
+
+/* The one fact a GM reads most often in a session, in a sentence, above everything. The rule
+   down the current row's edge says the same thing but only once you have found the row, and on
+   a phone with twelve creatures in the order that means scrolling. */
+/* Sits directly on the list it points into, and reads as the heading of it rather than as a
+   notice above it. The name is in the display face because it is a name. */
+.now {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-}
-
-.fight__heading {
-    margin: 0;
-    font-size: var(--font-size-subhead);
-}
-
-.fight__acts {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--tap-separation);
-}
-
-.fight__end {
-    margin-top: var(--space-4);
-}
-
-.order {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    margin: var(--space-4) 0 0;
-    padding: 0;
-    list-style: none;
-}
-
-/* One row per creature, and the row whose turn it is says so with a rule down its left edge
-   rather than with colour alone. */
-/* Two columns: the initiative, and everything about the creature. The DM controls take the
-   second column on a row of their own rather than sitting beside the name, because a typed
-   field, two buttons and a switch do not fit beside a name on a phone and overlapped it. */
-.turn {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: start;
+    align-items: baseline;
     gap: var(--space-2) var(--space-3);
-    min-height: var(--tap-min);
+    margin-top: var(--space-5);
     padding: var(--space-2) var(--space-3);
-    border-left: var(--border-focus) solid transparent;
-    border-radius: var(--radius-chip);
+    border: var(--border-hair) solid var(--accent-base);
+    border-bottom: 0;
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+    background: var(--accent-base);
+    color: var(--text-on-accent);
+    font-size: var(--font-size-body);
 }
 
-.turn--now {
-    border-left-color: var(--accent-base);
-    background: var(--surface-raised);
+/* Before anybody has rolled there is no turn to point at, so it stops being the loudest thing
+   on the screen and says what is missing instead. */
+.now--idle {
+    border-color: var(--line-subtle);
+    background: var(--surface-sunken);
+    color: var(--text-muted);
 }
 
-.turn__initiative {
-    min-width: 2.5ch;
-    font-size: var(--font-size-stat);
-    font-variant-numeric: tabular-nums;
-    text-align: right;
+.now__glyph {
+    align-self: center;
 }
 
-.turn__who {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
+.now--idle .now__glyph {
+    color: var(--text-muted);
+}
+
+.now__who {
     flex: 1 1 auto;
     min-width: 0;
 }
 
-.turn__name {
-    font-size: var(--font-size-body);
+.now__name {
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-subhead);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--font-tracking-tight);
 }
 
-.turn__line {
+.now__round {
+    padding: 0 var(--space-2);
+    border: var(--border-hair) solid currentColor;
+    border-radius: var(--radius-chip);
     font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+/* Add, Roll and Undo are used once a fight each. Next turn is used every few seconds, so it is
+   the only filled button on the screen and the other three are quiet beside it. */
+.fight__acts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.fight ::deep .fight__next {
+    flex: 1 0 100%;
+    margin-inline-start: 0;
+}
+
+@media (min-width: 600px) {
+    .fight ::deep .fight__next {
+        flex: 0 0 auto;
+        margin-inline-start: var(--space-2);
+    }
+}
+
+.fight__next .pf-icon {
+    transform: rotate(90deg);
+}
+
+/* ::deep for the same reason. An irreversible, once-a-fight action does not need a target the
+   width of a desk monitor. */
+.fight ::deep .fight__end {
+    align-self: start;
+    width: auto;
+    margin-top: var(--space-4);
+}
+
+/* ---------------------------------------------------------------- the order */
+
+.order {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding: var(--space-2);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-radius: 0 0 var(--radius-card) var(--radius-card);
+    list-style: none;
+}
+
+/* Three bands down the row rather than columns across it: who, their numbers, the controls.
+   Columns put a lake of nothing between a name and a damage field at desk widths, and at phone
+   widths they pushed the Heal button off the screen. */
+.turn {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-left: var(--border-focus) solid transparent;
+    border-radius: var(--radius-chip);
+    background: var(--surface-page);
+}
+
+/* Whose turn it is, said three ways: the rule down the left edge, the tinted ground, and the
+   sentence above the order. Colour alone would leave it to whoever can see this particular
+   teal, and across twelve rows on a phone it is the one thing a GM must never miss. */
+.turn--now {
+    border-color: var(--accent-base);
+    border-left-width: var(--space-1);
+    border-left-color: var(--accent-base);
+    background: var(--surface-raised);
+    box-shadow: 0 0 0 var(--border-hair) var(--accent-base);
+}
+
+.turn__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.turn__initiative {
+    flex: none;
+    min-width: 3ch;
+    font-family: var(--font-family-data);
+    font-size: var(--font-size-stat);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+/* The GM's copy is a field, because at a real table the players roll their own dice and read
+   the number out. It is drawn as the number it holds until it is touched, so a row of boxes
+   does not read as a form. */
+.turn__initiative--typed {
+    width: 3.5ch;
+    padding: var(--space-1) 0;
+    border: var(--border-hair) solid transparent;
+    border-bottom-color: var(--line-subtle);
+    border-radius: var(--radius-grid);
+    background: none;
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.turn__initiative--typed:hover {
+    border-color: var(--line-subtle);
+    background: var(--surface-sunken);
+}
+
+.turn__initiative--typed:focus {
+    border-color: var(--accent-base);
+    background: var(--surface-raised);
+    outline: var(--line-focus) solid var(--border-focus);
+    outline-offset: 1px;
+}
+
+.turn__kind {
+    flex: none;
+    color: var(--text-muted);
+}
+
+.turn__called {
+    min-width: 0;
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-semibold);
+    overflow-wrap: anywhere;
+}
+
+.turn__level {
+    flex: none;
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+    font-variant-numeric: tabular-nums;
+}
+
+/* A monster the players have not been shown. The GM sees it in their order and needs to know at
+   a glance that nobody else does, because saying its name aloud is the usual way that changes. */
+.turn__hidden {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-chip);
+    background: var(--surface-sunken);
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+}
+
+/* Through ::deep because the class is passed to a component, and a page scope stamps only the
+   elements written in the page: a plain .turn__out rule here matches nothing at all. Worth
+   knowing, because the rule looks right and fails silently.
+
+   Pushed to the far end on its own. It is the one control on the row that takes a creature out
+   of the fight, and beside the chip that takes a condition off it looked like the same button.
+   Quiet until it is reached for. */
+.turn__head ::deep .turn__out {
+    flex: none;
+    margin-inline-start: auto;
+    color: var(--line-strong);
+}
+
+.turn__head ::deep .turn__out:hover {
+    color: var(--danger-base);
+}
+
+.turn__body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+}
+
+/* ---------------------------------------------------------------- hit points */
+
+.hits {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.hits__track {
+    flex: none;
+    width: 5rem;
+    height: 0.6rem;
+    border: var(--border-hair) solid var(--line-subtle);
+    border-radius: var(--radius-chip);
+    background: var(--surface-sunken);
+    overflow: hidden;
+}
+
+.hits__fill {
+    display: block;
+    height: 100%;
+    border-radius: var(--radius-chip);
+    background: var(--accent-base);
+}
+
+.hits__count {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-family-data);
+    font-size: var(--font-size-data);
     font-variant-numeric: tabular-nums;
     color: var(--text-secondary);
 }
+
+.hits__count .pf-icon {
+    margin-inline-end: var(--space-1);
+}
+
+.hits__now {
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.hits__of {
+    color: var(--text-muted);
+}
+
+.hits__temp {
+    color: var(--accent-base);
+    font-size: var(--font-size-chip);
+    font-variant-numeric: tabular-nums;
+}
+
+/* At nothing left the bar stops being a measure and becomes a state, so it says the state. */
+.hits--down .hits__fill {
+    background: var(--danger-base);
+}
+
+.hits--down .hits__now,
+.hits--down .hits__count {
+    color: var(--danger-base);
+}
+
+.hits__state {
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-chip);
+    background: var(--danger-base);
+    color: var(--text-on-danger);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--font-tracking-wide);
+    text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------------- defences */
+
+/* Five boxes that wrap rather than scroll. At 390px they take two lines and every number is
+   still read without moving anything, which a horizontal strip cannot promise. */
+.defences {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.defence {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-grid);
+    background: var(--surface-sunken);
+}
+
+.defence__label {
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+    letter-spacing: var(--font-tracking-wide);
+    text-transform: uppercase;
+}
+
+.defence__value {
+    font-family: var(--font-family-data);
+    font-size: var(--font-size-data);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+/* Armour class is the number a fight asks about most, and the only one of the five that is not
+   a roll, so it is the only one drawn differently. */
+.defence[data-defence="AC"] {
+    background: var(--surface-raised);
+    box-shadow: inset 0 0 0 var(--border-hair) var(--accent-base);
+}
+
+.defence[data-defence="AC"] .defence__value {
+    color: var(--accent-press);
+}
+
+/* ---------------------------------------------------------------- conditions */
 
 .turn__chips {
     display: flex;
@@ -483,12 +378,71 @@
     gap: var(--space-1);
 }
 
-.turn__dm {
-    grid-column: 2;
-    display: flex;
+/* Tapping a chip takes the condition off. That is one tap for the commonest correction in a
+   fight, and Undo is a button away, which is what makes the speed worth the risk. */
+.chip {
+    display: inline-flex;
     align-items: center;
+    gap: var(--space-1);
+    min-height: var(--tap-min);
+    padding: var(--space-1) var(--space-3);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-radius: var(--radius-chip);
+    background: var(--surface-raised);
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--font-size-chip);
+    cursor: pointer;
+}
+
+.chip:hover {
+    border-color: var(--danger-base);
+    color: var(--danger-base);
+}
+
+.chip:focus-visible {
+    outline: var(--line-focus) solid var(--border-focus);
+    outline-offset: 2px;
+}
+
+.chip__off {
+    color: var(--text-muted);
+}
+
+.chip:hover .chip__off {
+    color: var(--danger-base);
+}
+
+.chip--add {
+    border-style: dashed;
+    background: none;
+    color: var(--accent-base);
+}
+
+.chip--add:hover {
+    border-color: var(--accent-base);
+    border-style: solid;
+    color: var(--accent-press);
+}
+
+/* ---------------------------------------------------------------- controls */
+
+.turn__dm {
+    display: flex;
+    align-items: end;
     gap: var(--space-3);
     flex-wrap: wrap;
+}
+
+.amount {
+    display: flex;
+    align-items: end;
+    flex-wrap: wrap;
+    gap: var(--tap-separation);
+}
+
+.amount ::deep .amount__act {
+    padding-inline: var(--space-3);
 }
 
 .reveal {
@@ -500,16 +454,21 @@
 }
 
 .reveal__label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
     font-size: var(--font-size-chip);
     color: var(--text-secondary);
 }
+
+/* ---------------------------------------------------------------- reminders */
 
 /* What the last turn change left somebody to do. Not a warning: these are normal and frequent,
    and a red box round "Gnibbo is frightened 1" would cry wolf every round. */
 .reminders {
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
+    gap: var(--space-2);
     margin: var(--space-4) 0 0;
     padding: var(--space-3);
     border-radius: var(--radius-chip);
@@ -518,21 +477,31 @@
 }
 
 .reminder {
+    display: flex;
+    align-items: start;
+    gap: var(--space-2);
     font-size: var(--font-size-data);
     color: var(--text-secondary);
     text-wrap: pretty;
 }
 
-.adding,
-.editor {
+.reminder__glyph {
+    margin-top: 0.1em;
+    color: var(--accent-base);
+}
+
+/* ---------------------------------------------------------------- adding */
+
+.adding {
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
     margin-top: var(--space-4);
 }
 
-.adding__heading,
-.editor__heading {
+.adding__heading {
+    display: flex;
+    align-items: center;
     margin: var(--space-4) 0 0;
     font-size: var(--font-size-chip);
     font-weight: var(--font-weight-semibold);
@@ -541,467 +510,21 @@
     color: var(--text-muted);
 }
 
-/* Two fields across a phone and as many as fit on anything wider. A build is twenty short
-   fields; one column of twenty is a scroll, and a fixed two columns wastes a laptop. */
-.editor__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
-    gap: var(--space-3);
-}
-
-.editor__acts {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--tap-separation);
-    margin-top: var(--space-5);
-}
-
-.line {
-    font-size: var(--font-size-chip);
-    color: var(--text-secondary);
-}
-
-/* A stepper names itself only to a screen reader, which is enough beside a hit point readout
-   and not enough in a grid of twelve. */
-.editor__field {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-}
-
-.editor__label {
-    font-size: var(--font-size-chip);
-    color: var(--text-secondary);
-}
-
-.explore {
-    padding: var(--space-3) var(--layout-gutter) var(--space-6);
-}
-
-.explore__heading {
-    margin: 0;
-    font-size: var(--font-size-subhead);
-}
-
-.explore__blurb {
-    margin: var(--space-2) 0 0;
-    font-size: var(--font-size-data);
-    color: var(--text-secondary);
-    text-wrap: pretty;
-}
-
-/* One row per character, side by side once there is room. A party of five is five short
-   pickers, and a single column of them on a laptop is a scroll for no reason. */
-.doing {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
-    gap: var(--space-4);
-    margin-top: var(--space-4);
-}
-
-.doing__row {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-}
-
-.doing__says {
-    margin: 0;
-    font-size: var(--font-size-chip);
-    color: var(--text-secondary);
-    text-wrap: pretty;
-}
-
-.camp {
-    padding: 0 var(--layout-gutter) var(--space-6);
-}
-
-.camp__top {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-3);
-}
-
-.camp__heading {
-    margin: 0;
-    font-size: var(--font-size-subhead);
-}
-
-/* The one number this panel exists for. "How long have we been here?" is asked out loud, so it
-   is answered in words rather than in minutes. */
-.camp__clock {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-2);
-    margin: 0;
-}
-
-.camp__clock-label {
-    font-size: var(--font-size-chip);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-}
-
-.camp__clock-value {
-    font-size: var(--font-size-data);
-    font-weight: var(--font-weight-semibold);
-}
-
-.camping {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-2) var(--space-3);
-    padding: var(--space-3) 0;
-    border-top: var(--border-hair) solid var(--line-subtle);
-}
-
-.camping__who {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    min-width: 0;
-}
-
-.camping__name {
-    font-size: var(--font-size-body);
-}
-
-/* Not a warning. Being immune to Treat Wounds for an hour is the normal consequence of having
-   just been Treated, and the button being off already says it cannot be done. */
-.camping__immune {
-    font-size: var(--font-size-chip);
-    color: var(--text-muted);
-}
-
-.camping__acts {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--tap-separation);
-}
-
-.camp__what {
-    margin-top: var(--space-4);
-}
-
-.camp__what-summary {
-    display: flex;
-    align-items: center;
-    min-height: var(--tap-min);
-    font-size: var(--font-size-chip);
-    color: var(--text-muted);
-    cursor: pointer;
-}
-
-.camp__list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
-    gap: var(--space-3);
-    margin: var(--space-2) 0 0;
-}
-
-.camp__entry dt {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-2);
-    font-size: var(--font-size-data);
-    font-weight: var(--font-weight-semibold);
-}
-
-.camp__cost {
-    font-size: var(--font-size-chip);
-    font-weight: var(--font-weight-regular);
-    color: var(--text-muted);
-}
-
-.camp__entry dd {
-    margin: var(--space-1) 0 0;
-    font-size: var(--font-size-chip);
-    color: var(--text-secondary);
-    text-wrap: pretty;
-}
-
-.camp__rest {
-    margin-top: var(--space-5);
-}
-
-.camp__rest-says {
-    margin: var(--space-2) 0 0;
-    font-size: var(--font-size-chip);
-    color: var(--text-secondary);
-    text-wrap: pretty;
-}
-
-.downtime {
-    padding: var(--space-3) var(--layout-gutter) var(--space-6);
-}
-
-.downtime__top {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-3);
-}
-
-.downtime__heading {
-    margin: 0;
-    font-size: var(--font-size-subhead);
-}
-
-.downtime__day {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-2);
-    margin: 0;
-}
-
-.downtime__day-label {
-    font-size: var(--font-size-chip);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-}
-
-.downtime__day-value {
-    font-size: var(--font-size-stat);
-    font-variant-numeric: tabular-nums;
-}
-
-.spending {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    padding: var(--space-4) 0;
-    border-top: var(--border-hair) solid var(--line-subtle);
-}
-
-.spending__task {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    gap: var(--space-4);
-}
-
-.spending__level {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-}
-
-.spending__level-label,
-.spending__dc-label {
-    font-size: var(--font-size-chip);
-    color: var(--text-secondary);
-}
-
-/* The number the DM would otherwise open the book for, beside the modifier the roller adds. */
-.spending__dc {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-2);
-    margin: 0;
-}
-
-.spending__dc-value {
-    font-size: var(--font-size-stat);
-    font-variant-numeric: tabular-nums;
-}
-
-.spending__skill {
-    font-size: var(--font-size-data);
-    font-variant-numeric: tabular-nums;
-    color: var(--text-secondary);
-}
-
-.spending__says {
-    margin: 0;
-    font-size: var(--font-size-chip);
-    color: var(--text-secondary);
-    text-wrap: pretty;
-}
-
-.downtime__next {
-    margin-top: var(--space-5);
-}
-
-.downtime__next-says {
-    margin: var(--space-2) 0 0;
-    font-size: var(--font-size-chip);
-    color: var(--text-secondary);
-    text-wrap: pretty;
-}
-
-.reference {
-    padding: var(--space-3) var(--layout-gutter) 0;
-}
-
-.reference__heading {
-    margin: 0 0 var(--space-2);
-    font-size: var(--font-size-subhead);
-}
-
-/* Folded per character, because six players is six sheets worth of feats and the panel is for
-   settling one question rather than for reading. */
-.owned {
-    border-top: var(--border-hair) solid var(--line-subtle);
-}
-
-.owned__summary {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-3);
-    min-height: var(--tap-min);
-    padding: var(--space-2) 0;
-    cursor: pointer;
-}
-
-.owned__name {
-    font-size: var(--font-size-body);
-}
-
-.owned__count {
-    font-size: var(--font-size-chip);
-    color: var(--text-muted);
-}
-
-.owned__kind {
-    margin: var(--space-3) 0 var(--space-1);
-    font-size: var(--font-size-chip);
-    font-weight: var(--font-weight-semibold);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-}
-
-.owned__entries {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
-    gap: var(--space-1);
-}
-
-.owned__entry {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-height: var(--tap-min);
-    justify-content: center;
-    padding: var(--space-1) var(--space-2);
-    border-radius: var(--radius-chip);
-    text-decoration: none;
-}
-
-a.owned__entry:hover {
-    background: var(--surface-sunken);
-}
-
-.owned__entry-name {
-    font-size: var(--font-size-data);
-    color: var(--text-primary);
-}
-
-.owned__entry-kind {
-    font-size: var(--font-size-chip);
-    color: var(--text-muted);
-}
-
-/* Not an error state. Homebrew is somebody's character too; it just has no record to open. */
-.owned__entry--unknown .owned__entry-name {
-    color: var(--text-secondary);
-}
-
-.attempts {
-    padding: 0 var(--layout-gutter);
-}
-
-.attempts__heading {
-    margin: 0 0 var(--space-2);
-    font-size: var(--font-size-subhead);
-}
-
-.trying {
-    border-top: var(--border-hair) solid var(--line-subtle);
-}
-
-.trying__summary {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-3);
-    min-height: var(--tap-min);
-    padding: var(--space-2) 0;
-    cursor: pointer;
-}
-
-.trying__name {
-    font-size: var(--font-size-body);
-}
-
-.trying__count {
-    font-size: var(--font-size-chip);
-    font-variant-numeric: tabular-nums;
-    color: var(--text-muted);
-}
-
-.trying__rest {
-    margin-top: var(--space-3);
-}
-
-.trying__rest-summary {
-    display: flex;
-    align-items: center;
-    min-height: var(--tap-min);
-    font-size: var(--font-size-chip);
-    color: var(--text-muted);
-    cursor: pointer;
-}
-
-.tries {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
-    gap: var(--space-1);
-}
-
-/* The name, what it is rolled with, and the number. Sorted by the number, because a player
-   scanning this is looking for the thing they are best at. */
-.try {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: baseline;
-    gap: 0 var(--space-2);
-    min-height: var(--tap-min);
-    align-content: center;
-    padding: var(--space-1) var(--space-2);
-    border-radius: var(--radius-chip);
-}
-
-.try__name {
-    font-size: var(--font-size-data);
-}
-
-.try__skill {
-    grid-column: 1;
-    font-size: var(--font-size-chip);
-    color: var(--text-muted);
-}
-
-.try__value {
-    grid-row: 1 / span 2;
-    grid-column: 2;
-    align-self: center;
-    font-size: var(--font-size-data);
-    font-weight: var(--font-weight-semibold);
-    font-variant-numeric: tabular-nums;
-}
-
-/* Not an error. Being untrained in Thievery is a character choice, not a fault. */
-.try--barred .try__name {
-    color: var(--text-secondary);
+/* Wide enough and the numbers sit beside the controls on one line, which halves the height of a
+   twelve-creature order and keeps a whole fight on one screen. */
+@media (min-width: 1000px) {
+    .turn {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        column-gap: var(--space-4);
+    }
+
+    .turn__head {
+        grid-column: 1 / -1;
+    }
+
+    .turn__dm {
+        justify-self: end;
+    }
 }

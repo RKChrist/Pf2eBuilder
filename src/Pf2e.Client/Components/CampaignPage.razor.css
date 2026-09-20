@@ -12,7 +12,11 @@
 
 .heading {
     margin: 0;
-    font-size: var(--font-size-subhead);
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-section);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: var(--font-tracking-tight);
+    line-height: var(--font-leading-tight);
 }
 
 .code {
@@ -29,10 +33,18 @@
     color: var(--text-muted);
 }
 
+/* Read aloud once, at the start of a session, so everybody joins the same campaign. It has to
+   be unambiguous and it does not have to be large: at the stat size it was arguing with the
+   page heading beside it over which one the screen was about. */
 .campaign-code {
-    font-size: var(--font-size-stat);
+    padding: var(--space-1) var(--space-2);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-radius: var(--radius-chip);
+    background: var(--surface-raised);
+    font-family: var(--font-family-data);
+    font-size: var(--font-size-data);
     font-weight: var(--font-weight-semibold);
-    letter-spacing: 0.08em;
+    letter-spacing: 0.14em;
 }
 
 .shell {
@@ -44,26 +56,41 @@
     padding: var(--space-3) var(--layout-gutter) 0;
 }
 
+/* The control that says what the table is doing. One track, three cells, no gaps: a segmented
+   control reads as one thing with a part of it chosen, where three separated buttons read as
+   three buttons of which one happens to be tinted. */
 .shell__modes {
     display: flex;
-    gap: var(--tap-separation);
-    padding: var(--space-1);
-    border: var(--border-hair) solid var(--line-subtle);
-    border-radius: var(--radius-chip);
-    background: var(--surface-sunken);
+    border: var(--border-strong) solid var(--line-strong);
+    border-radius: var(--radius-card);
+    background: var(--surface-raised);
+    overflow: hidden;
 }
 
 .shell__mode-link {
     display: flex;
     align-items: center;
-    gap: var(--space-1);
-    min-height: var(--tap-default);
-    padding: var(--space-2) var(--space-3);
-    border-radius: var(--radius-chip);
-    font-size: var(--font-size-data);
+    justify-content: center;
+    gap: var(--space-2);
+    flex: 1 0 auto;
+    min-height: var(--tap-primary);
+    padding: var(--space-2) var(--space-5);
     color: var(--text-secondary);
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-data);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--font-tracking-wide);
     text-decoration: none;
     white-space: nowrap;
+}
+
+.shell__mode-link + .shell__mode-link {
+    border-inline-start: var(--border-hair) solid var(--line-subtle);
+}
+
+.shell__mode-link:hover {
+    background: var(--surface-sunken);
+    color: var(--text-primary);
 }
 
 .shell__mode-link.on {
@@ -90,7 +117,17 @@
     min-height: var(--tap-min);
     display: flex;
     align-items: center;
+    padding-inline: var(--space-2);
+    border-radius: var(--radius-chip);
+    color: var(--accent-base);
     font-size: var(--font-size-data);
+    font-weight: var(--font-weight-medium);
+    text-decoration: none;
+}
+
+.shell__party:hover {
+    background: var(--surface-raised);
+    text-decoration: underline;
 }
 
 .shell__round {
@@ -126,4 +163,11 @@
 .join,
 .panel {
     padding: var(--space-3) var(--layout-gutter) 0;
+}
+
+.entry {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    text-align: start;
 }

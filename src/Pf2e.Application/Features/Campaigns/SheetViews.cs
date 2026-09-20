@@ -132,7 +132,8 @@ internal static class SheetViews
         breakdown.Base,
         breakdown.Total,
         [.. breakdown.Applied.Select(Of)],
-        [.. breakdown.Suppressed.Select(s => new SuppressedSummary(Of(s.Modifier), s.Reason))]);
+        [.. breakdown.Suppressed.Select(s => new SuppressedSummary(Of(s.Modifier), s.Reason))],
+        breakdown.Bare);
 
     public static ActiveEffectView Of(ActiveEffect effect) => new(
         effect.Id,

@@ -220,3 +220,11 @@ h1:focus {
     clip-path: inset(50%);
     white-space: nowrap;
 }
+
+/* The hit point field is four characters wide, not the width its container would give it. Here
+   for the same reason as the rule above: a page's scoped stylesheet cannot reach inside a
+   component it only passed a class to, so the width it set was never applied. */
+.amount__field {
+    width: 5rem;
+    flex: none;
+}

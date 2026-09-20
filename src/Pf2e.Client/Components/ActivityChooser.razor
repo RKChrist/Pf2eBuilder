@@ -1,0 +1,80 @@
+@* What one character is doing, as the choices themselves rather than as a dropdown.
+
+   A dropdown hides nine options behind a tap and, on a phone, behind the operating system's own
+   picker. At a table the GM says "everyone pick what you are doing" and four people choose at
+   once, so the thing that matters is seeing what there is and what everyone else took. Nine
+   chips wrap into two lines and answer both without opening anything. *@
+<div class="choose" data-choose="@Name">
+    <div class="choose__who">
+        <span class="choose__name">@Name</span>
+    </div>
+
+    @* The character's own numbers, above the line and not below it, so a row of chips reading
+       "AC 25" is never mistaken for another thing they could be doing. *@
+    @if (Numbers is not null)
+    {
+        <div class="choose__numbers">@Numbers</div>
+    }
+
+    <div class="choose__options" role="group" aria-label="@($"What {Name} is doing")">
+        <button type="button"
+                class="pick pick--none @(string.IsNullOrEmpty(Chosen) ? "pick--on" : null)"
+                aria-pressed="@(string.IsNullOrEmpty(Chosen) ? "true" : "false")"
+                @onclick="() => Pick(null)">
+            @Nothing
+        </button>
+        @foreach (var option in Options)
+        {
+            <button type="button"
+                    class="pick @(option.Key == Chosen ? "pick--on" : null)"
+                    data-pick="@option.Key"
+                    title="@option.What"
+                    aria-pressed="@(option.Key == Chosen ? "true" : "false")"
+                    @onclick="() => Pick(option.Key)">
+                @option.Name
+            </button>
+        }
+    </div>
+
+    @if (Chosen is { Length: > 0 } && Says is { Length: > 0 } says)
+    {
+        <p class="choose__says">@says</p>
+    }
+
+    @ChildContent
+</div>
+
+@code {
+    /// <summary>One thing a character can be doing, whichever list it came from. Both the
+    /// exploration and the downtime activities arrive as their own view type, and a chooser that
+    /// knew about either of them would have to be written twice.</summary>
+    public sealed record Choice(string Key, string Name, string What);
+
+    [Parameter, EditorRequired] public string Name { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired] public IReadOnlyList<Choice> Options { get; set; } = [];
+
+    /// <summary>The chosen key, and null or empty for none.</summary>
+    [Parameter] public string? Chosen { get; set; }
+
+    [Parameter] public EventCallback<string?> ChosenChanged { get; set; }
+
+    /// <summary>What "none of them" is called here. Nothing in particular while travelling is
+    /// not the same as nothing today.</summary>
+    [Parameter] public string Nothing { get; set; } = "Nothing";
+
+    /// <summary>What the chosen one does, under the choices, where it explains the one that is
+    /// marked rather than sitting beside a name it has nothing to do with.</summary>
+    [Parameter] public string? Says { get; set; }
+
+    /// <summary>This character's own numbers, drawn above the choices.</summary>
+    [Parameter] public RenderFragment? Numbers { get; set; }
+
+    /// <summary>Anything the choice brings with it, such as a task level and its DC.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Tapping the chosen one again clears it, which is how a row of chips is expected
+    /// to behave and saves hunting for the "nothing" option.</summary>
+    Task Pick(string? key) =>
+        ChosenChanged.InvokeAsync(key == Chosen || string.IsNullOrEmpty(key) ? null : key);
+}

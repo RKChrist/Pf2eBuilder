@@ -86,6 +86,24 @@ public sealed class TrackerApi(HttpClient http)
     public Task<CampaignView> UndoAsync(string code, CancellationToken ct) =>
         SendAsync<CampaignView>(new HttpRequestMessage(HttpMethod.Post, $"{Campaign(code)}/encounter/undo"), ct);
 
+    /// <summary>One number, on its own. Rolling gives everybody a number and starts the round,
+    /// so it is the wrong command for correcting a misheard one.</summary>
+    public Task<CampaignView> SetInitiativeAsync(
+        string code, Guid combatant, int initiative, CancellationToken ct) =>
+        SendAsync<CampaignView>(
+            Carrying(
+                HttpMethod.Put,
+                $"{Campaign(code)}/encounter/combatants/{combatant}/initiative",
+                new SetInitiativeRequest(initiative)),
+            ct);
+
+    public Task<CampaignView> RemoveCombatantAsync(
+        string code, Guid combatant, CancellationToken ct) =>
+        SendAsync<CampaignView>(
+            new HttpRequestMessage(
+                HttpMethod.Delete, $"{Campaign(code)}/encounter/combatants/{combatant}"),
+            ct);
+
     public Task<CampaignView> RevealAsync(string code, Guid combatant, bool revealed, CancellationToken ct) =>
         SendAsync<CampaignView>(
             Carrying(
@@ -116,6 +134,12 @@ public sealed class TrackerApi(HttpClient http)
     public Task<IReadOnlyList<CampActivityView>> GetCampActivitiesAsync(CancellationToken ct) =>
         SendAsync<IReadOnlyList<CampActivityView>>(
             new HttpRequestMessage(HttpMethod.Get, "camp-activities"), ct);
+
+    /// <summary>The camping activities as the ruleset holds them. Names and requirements only:
+    /// the pull takes no rule prose, so what each one does is on the record it links to.</summary>
+    public Task<IReadOnlyList<CampingActivityView>> GetCampingActivitiesAsync(CancellationToken ct) =>
+        SendAsync<IReadOnlyList<CampingActivityView>>(
+            new HttpRequestMessage(HttpMethod.Get, "camping-activities"), ct);
 
     public Task<CampaignView> TakeCampActivityAsync(
         string code, Guid character, string activity, CancellationToken ct) =>

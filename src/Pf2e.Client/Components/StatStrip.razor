@@ -1,0 +1,148 @@
+@inherits FluxorComponent
+@inject IDispatcher Dispatcher
+
+@* A character's numbers, and what is on them, wherever a character appears.
+
+   The encounter, exploration and downtime pages each showed a character in their own way and
+   none of them let you ask why a number was what it was: a buff landed and the screen said
+   nothing. Every number here is a button onto the sheet that explains it, and carries a mark
+   while something is moving it, so "is the anthem on" is answered by looking rather than by
+   opening anything.
+
+   One component rather than three copies, because the question is the same on all three pages
+   and the answer drifting between them is how a tracker stops being trusted. *@
+<div class="strip" data-strip="@Character.Id">
+    <ul class="strip__row">
+        @foreach (var reading in Defences(Character))
+        {
+            <li>
+                <button type="button"
+                        class="num"
+                        data-stat="@reading.Short"
+                        data-moved="@reading.Moved"
+                        aria-label="@Why(reading)"
+                        @onclick="() => Dispatcher.Dispatch(new BreakdownOpened(Character.Id, reading.Where))">
+                    <span class="num__label">@reading.Short</span>
+                    <span class="num__value">@reading.Value</span>
+                    @if (reading.Moved is { } moved)
+                    {
+                        <span class="num__moved" data-moved="@moved">@reading.Signed</span>
+                    }
+                </button>
+            </li>
+        }
+    </ul>
+
+    @* Where a Bless or an anthem is supposed to show up. The order carried no attack at all, so
+       the commonest buff at a table landed on a screen that had nowhere to print it. *@
+    @if (ShowAttacks && Attacks(Character) is { Count: > 0 } attacks)
+    {
+        <ul class="strip__row strip__row--attacks">
+            @foreach (var reading in attacks)
+            {
+                <li>
+                    <button type="button"
+                            class="num num--attack"
+                            data-attack="@reading.Short"
+                            data-moved="@reading.Moved"
+                            aria-label="@Why(reading)"
+                            @onclick="() => Dispatcher.Dispatch(new BreakdownOpened(Character.Id, reading.Where))">
+                        <span class="num__label">@reading.Short</span>
+                        <span class="num__value">@reading.Value</span>
+                        @if (reading.Moved is { } moved)
+                        {
+                            <span class="num__moved" data-moved="@moved">@reading.Signed</span>
+                        }
+                    </button>
+                </li>
+            }
+        </ul>
+    }
+
+    @if (ShowEffects)
+    {
+        @* Tapping a chip takes the effect off. Undo is a button away on the fight page and a
+           re-tap in the sheet everywhere else, which is what makes one tap worth the speed. *@
+        <div class="on">
+            @foreach (var effect in Character.Effects)
+            {
+                <button type="button"
+                        class="chip"
+                        data-effect="@effect.Id"
+                        aria-label="@($"Remove {SheetFormat.Named(effect)} from {Character.Name}")"
+                        @onclick="() => Dispatcher.Dispatch(
+                            new EffectSet(EffectSubject.Character(Character.Id), effect.Id, null))">
+                    <span class="chip__name">@SheetFormat.Named(effect)</span>
+                    <Icon Name="close" Class="chip__off" />
+                </button>
+            }
+            <button type="button"
+                    class="chip chip--add"
+                    @onclick="() => Dispatcher.Dispatch(
+                        new PickerOpened(EffectSubject.Character(Character.Id)))">
+                <Icon Name="spark" Class="chip__glyph" />
+                <span class="chip__name">Effect</span>
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public CharacterSheetView Character { get; set; } = default!;
+
+    [Parameter] public bool ShowAttacks { get; set; } = true;
+
+    [Parameter] public bool ShowEffects { get; set; } = true;
+
+    /// <summary>
+    /// One number, with the breakdown it opens and how far something has moved it.
+    /// <para>Swing comes off the contract rather than being worked out here. It is the total
+    /// minus what the number would be with only what the character is carrying, so worn armour
+    /// never marks a number as changed and a suppressed buff is never counted twice.</para>
+    /// </summary>
+    public sealed record Reading(string Short, string Value, StatAddress Where, int Swing)
+    {
+        public string? Moved => Swing > 0 ? "up" : Swing < 0 ? "down" : null;
+
+        public string Signed => Swing > 0 ? $"+{Swing}" : Swing.ToString();
+    }
+
+    static IReadOnlyList<Reading> Defences(CharacterSheetView character) =>
+    [
+        .. Pf2e.Client.State.Defences.All
+            .Select(line => (line, Value: line.OfCharacter(character)))
+            .Where(pair => pair.Value is not null)
+            .Select(pair => new Reading(
+                pair.line.Line.Short,
+                pair.line.Write(pair.Value!.Total),
+                StatAddress.Fixed(pair.line.Slot),
+                pair.Value!.Swing)),
+    ];
+
+    static IReadOnlyList<Reading> Attacks(CharacterSheetView character) =>
+    [
+        .. character.Attacks.Select(attack => new Reading(
+            attack.Name,
+            SheetFormat.Signed(attack.Value.Total),
+            StatAddress.Weapon(attack.Name),
+            attack.Value.Swing)),
+        .. character.SpellAttack is { } spell
+            ?
+            [
+                new Reading(
+                    "Spell",
+                    SheetFormat.Signed(spell.Total),
+                    StatAddress.Fixed(StatSlot.SpellAttack),
+                    spell.Swing),
+            ]
+            : Array.Empty<Reading>(),
+    ];
+
+    /// <summary>What the button says aloud. The tint and the arrow say it on screen and say
+    /// nothing to a screen reader, so the label carries it in words.</summary>
+    string Why(Reading reading) =>
+        reading.Swing == 0
+            ? $"{Character.Name} {reading.Short} {reading.Value}. Nothing is changing it."
+            : $"{Character.Name} {reading.Short} {reading.Value}, "
+              + $"{Math.Abs(reading.Swing)} {(reading.Swing > 0 ? "up" : "down")} on its own.";
+}

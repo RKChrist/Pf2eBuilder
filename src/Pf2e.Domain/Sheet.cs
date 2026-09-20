@@ -47,7 +47,8 @@ public static class CharacterSheet
                 build.ArmorName,
                 ModifierType.Item,
                 build.ArmorItemBonus,
-                [Selector.Exactly(StatKind.ArmorClass)]));
+                [Selector.Exactly(StatKind.ArmorClass)],
+                ModifierOrigin.Gear));
         }
 
         var level = build.Level;

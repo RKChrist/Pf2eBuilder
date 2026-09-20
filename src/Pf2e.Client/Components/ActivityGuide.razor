@@ -1,0 +1,25 @@
+@* What each of the choices does, once under the chooser rather than beside every character's
+   copy of them. Folded away, because a table reads these the first session and then remembers.
+
+   The chips above carry the same sentences in a title attribute, which a pointer finds and a
+   thumb never does. This is the version a phone can reach. *@
+<Disclosure Class="guide" Title="@Title" Glyph="@Glyph" Count="Options.Count">
+    <dl class="guide__list">
+        @foreach (var option in Options)
+        {
+            <div class="guide__entry">
+                <dt class="guide__name">@option.Name</dt>
+                <dd class="guide__what">@option.What</dd>
+            </div>
+        }
+    </dl>
+</Disclosure>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<ActivityChooser.Choice> Options { get; set; } = [];
+
+    [Parameter] public string Title { get; set; } = "What these do";
+
+    [Parameter] public string? Glyph { get; set; }
+}

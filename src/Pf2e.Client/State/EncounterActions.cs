@@ -32,6 +32,14 @@ public sealed record ChangeUndone;
 
 public sealed record MonsterRevealed(Guid CombatantId, bool Revealed);
 
+/// <summary>What the GM has typed into one combatant's initiative box, before they commit it.
+/// A draft rather than a send per keystroke, because "2" is on the way to "21".</summary>
+public sealed record InitiativeDrafted(Guid CombatantId, string Draft);
+
+public sealed record InitiativeSet(Guid CombatantId, int Initiative);
+
+public sealed record CombatantRemoved(Guid CombatantId);
+
 public sealed record EncounterEnded;
 
 /// <summary>Null clears it, which is what "nothing in particular" means.</summary>
@@ -100,6 +108,30 @@ public static class EncounterReducers
         AddingCombatant = state.AddingCombatant is { } picker ? picker with { Busy = true } : null,
         ActionError = null,
     };
+
+    [ReducerMethod]
+    public static CampaignState On(CampaignState state, InitiativeDrafted action) => state with
+    {
+        InitiativeDrafts = new Dictionary<Guid, string>(state.InitiativeDrafts)
+        {
+            [action.CombatantId] = action.Draft,
+        },
+    };
+
+    /// <summary>The box empties on the way out. What the server sends back is on the row, and a
+    /// box still holding the number that produced it would be a second copy going stale.</summary>
+    [ReducerMethod]
+    public static CampaignState On(CampaignState state, InitiativeSet action) => state with
+    {
+        InitiativeDrafts = state.InitiativeDrafts
+            .Where(entry => entry.Key != action.CombatantId)
+            .ToDictionary(entry => entry.Key, entry => entry.Value),
+        ActionError = null,
+    };
+
+    [ReducerMethod]
+    public static CampaignState On(CampaignState state, CombatantRemoved _) =>
+        state with { ActionError = null };
 
     [ReducerMethod]
     public static CampaignState On(CampaignState state, EditorOpened action) => state with

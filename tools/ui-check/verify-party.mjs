@@ -72,13 +72,13 @@ function driver(page) {
       return false;
     },
     stat: async (label) => Number.parseInt(await page.eval(
-      `document.querySelector('.stat[aria-label="${label}"] .stat__value')?.textContent?.trim() ?? ''`), 10),
+      `document.querySelector('.stat[aria-label^="${label}"] .stat__value')?.textContent?.trim() ?? ''`), 10),
     async closeSheet() {
       await api.click('.pf-sheet__close');
       await api.waitUntil('document.querySelectorAll(".pf-sheet__panel").length === 0');
     },
     async openBreakdown(label) {
-      await api.click(`.stat[aria-label="${label}"]`);
+      await api.click(`.stat[aria-label^="${label}"]`);
       await api.waitFor('.breakdown');
     },
     async addCustom(name, sign, value, type, applies) {
@@ -109,9 +109,9 @@ await one.page.goto(`${client}/party`);
 
 check('the party screen offers a way in', await one.waitFor('.join'));
 
-await one.clickText('button', 'Start a new table');
-check('a new table gets a code', await one.waitFor('.table-code'));
-const code = (await one.text('.table-code')).trim();
+await one.clickText('button', 'Start a new campaign');
+check('a new campaign gets a code', await one.waitFor('.campaign-code'));
+const code = (await one.text('.campaign-code')).trim();
 check('the code is six readable characters', /^[A-HJ-NP-Z2-9]{6}$/.test(code), code);
 
 await one.type('.pf-textarea', pathbuilder);
@@ -188,14 +188,22 @@ check('a second page joins the same table', await two.waitFor('.character'));
 check.eq('the second page sees the same armour class', await two.stat('Armor Class'), 23);
 check.eq('the second page sees the same Will', await two.stat('Will'), willBefore + 2);
 
-await one.click('.character .pf-stepper__btn--minus');
+// The card carried two ways to change one number: a typed amount with Damage and Heal, and a
+// stepper beside it for one point at a time. The typed field takes a one, so the stepper was
+// a second control for a job the first already did.
+const hurt = async (amount) => {
+  await one.type('.character .amount__field input', String(amount));
+  await one.clickText('.character .amount button', 'Damage');
+};
+
+await hurt(1);
 check('a hit-point delta lands on the first page', await one.waitUntil(
   `Number.parseInt(document.querySelector('.hp__current').textContent, 10) === 75`));
 check.eq('the card shows the server number, not a guess', await one.number('.hp__current'), 75);
 check('the second page follows without a reload', await two.waitUntil(
   `Number.parseInt(document.querySelector('.hp__current').textContent, 10) === 75`));
 
-await one.click('.character .pf-stepper__btn--minus');
+await hurt(1);
 check('two deltas sum rather than clobber', await one.waitUntil(
   `Number.parseInt(document.querySelector('.hp__current').textContent, 10) === 74`));
 check('the second page follows the second delta too', await two.waitUntil(

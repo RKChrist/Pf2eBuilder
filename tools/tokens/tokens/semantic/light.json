@@ -2,13 +2,14 @@
   "surface": {
     "$type": "color",
     "page": {
-      "$value": "{color.ink.50}"
+      "$value": "{color.ink.100}",
+      "$description": "A desk. Cards are sheets laid on it, so it has to be a step down from them rather than the almost-white it was, where a card and the page behind it read as one surface."
     },
     "raised": {
       "$value": "{color.ink.0}"
     },
     "sunken": {
-      "$value": "{color.ink.100}"
+      "$value": "{color.ink.200}"
     },
     "overlay": {
       "$value": "{color.ink.0}"
@@ -20,10 +21,11 @@
       "$value": "{color.ink.900}"
     },
     "secondary": {
-      "$value": "{color.ink.600}"
+      "$value": "{color.ink.700}"
     },
     "muted": {
-      "$value": "{color.ink.500}"
+      "$value": "{color.ink.600}",
+      "$description": "The weakest type on the screen, and what a skill label is written in. It has to clear 4.5 against the page and not merely against a card."
     },
     "on-accent": {
       "$value": "{color.ink.0}"
@@ -38,7 +40,8 @@
       "$value": "{color.ink.200}"
     },
     "strong": {
-      "$value": "{color.ink.500}"
+      "$value": "{color.ink.600}",
+      "$description": "A rule is structure and outranks a word. At ink.500 it was the same value as text-muted, which is how a section head and the line under it ended up the same weight."
     },
     "focus": {
       "$value": "{color.teal.600}"
@@ -74,7 +77,7 @@
   "rarity": {
     "$type": "color",
     "common": {
-      "$value": "{color.ink.500}"
+      "$value": "{color.ink.600}"
     },
     "uncommon": {
       "$value": "{color.amber.600}"
@@ -92,13 +95,13 @@
       "$value": "{color.crimson.700}"
     },
     "failure": {
-      "$value": "{color.rose.500}"
+      "$value": "{color.rose.600}"
     },
     "success": {
-      "$value": "{color.moss.600}"
+      "$value": "{color.moss.700}"
     },
     "critical-success": {
-      "$value": "{color.jade.700}"
+      "$value": "{color.jade.800}"
     }
   },
   "rank": {
@@ -108,6 +111,22 @@
     },
     "empty": {
       "$value": "{color.ink.200}"
+    }
+  },
+  "effect": {
+    "$type": "color",
+    "$description": "What an effect is doing to a number, and which way. Separate from accent because accent means \"you can interact with this\": when a raised shield and a hyperlink were the same teal, a marked armour class read as a link and a link read as a buff. Separate from the outcome ramp because a bonus is not a successful roll.",
+    "up": {
+      "$value": "{color.jade.700}"
+    },
+    "up-wash": {
+      "$value": "{color.jade.100}"
+    },
+    "down": {
+      "$value": "{color.rose.600}"
+    },
+    "down-wash": {
+      "$value": "{color.rose.100}"
     }
   }
 }

@@ -1,0 +1,52 @@
+@* A section that opens, built on <details> so the browser does the work: it is keyboard
+   reachable without a tabindex, announced as expandable without aria-expanded, and found by
+   find-in-page even while shut.
+
+   Name groups disclosures that should close one another. Open says which one starts open, and
+   is read once: after that the element owns its own state, which is what keeps a section from
+   snapping shut every time the campaign refreshes. *@
+<details class="pf-disclose @Class" name="@Name" open="@Open" @attributes="Attributes">
+    <summary class="pf-disclose__summary">
+        <Icon Name="chevron" Class="pf-disclose__chevron" />
+        @if (Glyph is { Length: > 0 })
+        {
+            <Icon Name="@Glyph" />
+        }
+        <span class="pf-disclose__label">
+            @(SummaryContent ?? Text())
+            @if (Count is { } count)
+            {
+                <span class="pf-disclose__count">@count</span>
+            }
+        </span>
+    </summary>
+    <div class="pf-disclose__body">@ChildContent</div>
+</details>
+
+@code {
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Groups disclosures that close one another. Null leaves this one independent.</summary>
+    [Parameter] public string? Name { get; set; }
+
+    [Parameter] public bool Open { get; set; }
+
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>An icon name for what this section is about, and null for no icon.</summary>
+    [Parameter] public string? Glyph { get; set; }
+
+    /// <summary>How many things are inside, shown on the right so a shut section still says it
+    /// has something in it. Null shows nothing rather than a zero.</summary>
+    [Parameter] public int? Count { get; set; }
+
+    /// <summary>Replaces <see cref="Title"/> where the summary is more than a word.</summary>
+    [Parameter] public RenderFragment? SummaryContent { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    RenderFragment Text() => @<text>@Title</text>;
+}
