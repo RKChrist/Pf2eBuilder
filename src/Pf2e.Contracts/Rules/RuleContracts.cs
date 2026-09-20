@@ -25,7 +25,10 @@ public sealed record RuleSearchResult(
     IReadOnlyList<RuleSummary> Items,
     int TotalMatching,
     int Page,
-    int PageSize);
+    int PageSize,
+    /// <summary>What was searched for instead, when a word typed is in no name at all and a
+    /// close one is. Null when the search ran exactly as typed, which is nearly always.</summary>
+    string? SearchedFor = null);
 
 /// <summary>How many records match in each category that has any, so a screen can say how much
 /// is behind a door before anyone opens it.</summary>

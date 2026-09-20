@@ -12,6 +12,13 @@
     {
         <p class="summary">@Summary(known)</p>
     }
+    @if (ReadAs is { } meant)
+    {
+        @* Said, because results for a word nobody typed are otherwise a mystery. *@
+        <p class="read-as" role="status">
+            No rule is called that, so this is a search for <strong>@meant</strong>.
+        </p>
+    }
 </header>
 
 @if (!State.HasQuery)
@@ -120,6 +127,11 @@ else
     SearchState State => Store.Value;
 
     RuleCounts? Counts => State.Counts is RemoteData<RuleCounts>.Loaded loaded ? loaded.Value : null;
+
+    string? ReadAs =>
+        State.HasQuery && State.Results is RemoteData<RuleSearchResult>.Loaded { Value.SearchedFor: { } meant }
+            ? meant
+            : null;
 
     string Heading => State.HasQuery ? $"Results for “{State.Query.Trim()}”" : "Search";
 

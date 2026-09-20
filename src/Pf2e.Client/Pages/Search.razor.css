@@ -11,6 +11,11 @@
     overflow-wrap: anywhere;
 }
 
+.read-as {
+    color: var(--text-secondary);
+    font-size: var(--font-size-data);
+}
+
 .summary {
     color: var(--text-secondary);
     font-size: var(--font-size-data);

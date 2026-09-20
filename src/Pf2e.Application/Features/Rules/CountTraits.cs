@@ -29,7 +29,7 @@ public sealed class CountTraitsHandler(IRulesDbContext db) : IRequestHandler<Cou
         // the one column it needs is read.
         var lists = await db.RuleRecords.AsNoTracking()
             .InCategory(query.Category)
-            .NameContains(query.Name)
+            .NameContains(await RuleSpelling.CorrectAsync(db, query.Name, ct))
             .LevelBetween(query.MinLevel, query.MaxLevel)
             .Select(r => r.Traits)
             .ToListAsync(ct);

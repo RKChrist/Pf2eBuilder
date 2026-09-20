@@ -41,23 +41,27 @@ public sealed class SearchRulesHandler(IRulesDbContext db) : IRequestHandler<Sea
 {
     public async Task<RuleSearchResult> Handle(SearchRules query, CancellationToken ct)
     {
+        var name = await RuleSpelling.CorrectAsync(db, query.Name, ct);
+        var searchedFor = name == query.Name ? null : name;
+
         var records = db.RuleRecords.AsNoTracking()
             .InCategory(query.Category)
-            .NameContains(query.Name)
+            .NameContains(name)
             .LevelBetween(query.MinLevel, query.MaxLevel);
 
         if (query.Trait is { Length: > 0 } trait)
         {
-            return await ByTrait(records, trait, query, ct);
+            return await ByTrait(records, trait, query, ct) with { SearchedFor = searchedFor };
         }
 
         var total = await records.CountAsync(ct);
-        var page = await Ranked(records, query.Name)
+        var page = await Ranked(records, name)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
             .ToListAsync(ct);
 
-        return new RuleSearchResult([.. page.Select(RuleSummaries.Of)], total, query.Page, query.PageSize);
+        return new RuleSearchResult(
+            [.. page.Select(RuleSummaries.Of)], total, query.Page, query.PageSize, searchedFor);
     }
 
     static IOrderedQueryable<RuleRecord> Ranked(IQueryable<RuleRecord> records, string? name)
@@ -67,9 +71,12 @@ public sealed class SearchRulesHandler(IRulesDbContext db) : IRequestHandler<Sea
             return records.OrderBy(r => r.Name).ThenBy(r => r.Id);
         }
 
+        // "raise shield" is not how Raise a Shield starts, so a name that opens with the first
+        // word typed ranks beside one that opens with the whole phrase.
         var lowered = name.ToLowerInvariant();
+        var first = RuleFilters.Words(lowered)[0];
         return records
-            .OrderBy(r => r.Name.ToLower() == lowered ? 0 : r.Name.ToLower().StartsWith(lowered) ? 1 : 2)
+            .OrderBy(r => r.Name.ToLower() == lowered ? 0 : r.Name.ToLower().StartsWith(first) ? 1 : 2)
             .ThenBy(r => r.Name)
             .ThenBy(r => r.Id);
     }

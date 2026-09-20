@@ -51,6 +51,11 @@
                             </div>
                         }
 
+                        @if (found.SearchedFor is { } meant)
+                        {
+                            <p class="note read-as" role="status">Searching for <strong>@meant</strong></p>
+                        }
+
                         <ul class="options" role="listbox" id="@ListId" aria-label="Best matches">
                             @for (var index = 0; index < Shown(found).Count; index++)
                             {
