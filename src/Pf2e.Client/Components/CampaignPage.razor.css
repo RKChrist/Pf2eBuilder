@@ -132,9 +132,16 @@
     color: var(--text-danger, var(--text-primary));
 }
 
-.join,
 .panel {
     padding: var(--space-3) var(--layout-gutter) 0;
+}
+
+/* A form four fields wide does not need a card the width of a desk monitor around it. The
+   measure is the one prose keeps, because the paragraph above the field is prose. */
+.join {
+    max-width: calc(var(--layout-content-max) + var(--layout-gutter) * 2);
+    margin-inline: auto;
+    padding: var(--space-5) var(--layout-gutter) 0;
 }
 
 .entry {

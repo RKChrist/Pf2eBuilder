@@ -143,7 +143,31 @@ public sealed class TrackedCharacter
     /// The only place that expresses "the build is replaced, the session is preserved". A player
     /// who levels up mid-session must not get their hit points reset to full.
     /// </summary>
+    /// <summary>
+    /// Everything an import knows: the build layer, and then the parts of a character that only
+    /// an export can state.
+    /// </summary>
     public void Apply(Character build)
+    {
+        ApplyEdits(build);
+
+        Skills = build.Skills;
+        Weapons = build.Weapons;
+        Spellcasting = build.Spellcasting;
+        Feats = build.Feats;
+        Spells = build.Spells;
+        StatedMaxHitPoints = build.StatedMaxHitPoints;
+    }
+
+    /// <summary>
+    /// The fields the edit screen can express, and only those.
+    /// <para>Split out because the edit screen builds a Character from the handful of values it
+    /// collects and leaves the rest at their defaults. Writing all of them from that would erase
+    /// a character's weapons, skills, feats and spells every time somebody corrected a level,
+    /// which is what it used to do. An edit calls this; nothing it cannot express is reachable
+    /// from here.</para>
+    /// </summary>
+    public void ApplyEdits(Character build)
     {
         Name = build.Name;
         Level = build.Level;
@@ -169,11 +193,5 @@ public sealed class TrackedCharacter
         ClassHitPoints = build.ClassHitPoints;
         BonusHitPoints = build.BonusHitPoints;
         BonusHitPointsPerLevel = build.BonusHitPointsPerLevel;
-        Skills = build.Skills;
-        Weapons = build.Weapons;
-        Spellcasting = build.Spellcasting;
-        Feats = build.Feats;
-        Spells = build.Spells;
-        StatedMaxHitPoints = build.StatedMaxHitPoints;
     }
 }

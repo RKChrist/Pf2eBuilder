@@ -261,4 +261,33 @@ public class CombatantRules(SeededDatabase database) : IClassFixture<SeededDatab
 
         Assert.Equal(["Grukk the Elder", "Grukk the Younger"], [.. Names(pair).Order()]);
     }
+// The edit screen collects a name, a level, six attributes, five proficiencies and the
+    // armour and hit point inputs. It used to hand those to the writer that sets every field
+    // on a character, so correcting a level erased the weapons, skills, feats and spells the
+    // import had brought in, and the only sign was the attacks going missing off the fight
+    // page. Nothing an edit cannot express is reachable from an edit.
+    [Fact]
+    public async Task CorrectingALevelKeepsEverythingTheImportBroughtIn()
+    {
+        var campaign = await NewCampaign();
+        var bard = await Import(campaign.Code, "Zuz");
+
+        Assert.NotEmpty(bard.Attacks);
+        Assert.NotEmpty(bard.Skills);
+        Assert.NotEmpty(bard.Feats);
+        Assert.NotEmpty(bard.Spells);
+        Assert.NotNull(bard.SpellAttack);
+
+        await using var db = database.NewContext();
+        var edited = await new EditCharacterHandler(db, Broadcaster).Handle(
+            new EditCharacter(campaign.Code, bard.Id, bard.Build with { Level = 8 }),
+            default);
+
+        Assert.Equal(8, edited.Level);
+        Assert.Equal(bard.Attacks.Select(a => a.Name), edited.Attacks.Select(a => a.Name));
+        Assert.Equal(bard.Skills.Select(a => a.Name), edited.Skills.Select(a => a.Name));
+        Assert.Equal(bard.Feats.Select(a => a.Name), edited.Feats.Select(a => a.Name));
+        Assert.Equal(bard.Spells.Select(a => a.Name), edited.Spells.Select(a => a.Name));
+        Assert.NotNull(edited.SpellAttack);
+    }
 }

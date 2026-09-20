@@ -93,7 +93,10 @@ public sealed class EditCharacterHandler(ITrackerDbContext db, ICampaignBroadcas
             throw new CombatantNotFoundException("No character in this campaign has that id.");
         }
 
-        character.Apply(Build(command.Build));
+        // ApplyEdits, not Apply: this command carries the build layer and nothing else, and
+        // writing the rest from it would erase the weapons, skills, feats and spells the import
+        // brought in.
+        character.ApplyEdits(Build(command.Build));
         await db.SaveChangesAsync(ct);
 
         var sheet = SheetViews.Of(character, campaign.EffectApplications);
