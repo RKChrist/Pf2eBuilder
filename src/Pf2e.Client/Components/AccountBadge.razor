@@ -1,0 +1,44 @@
+@inherits FluxorComponent
+@inject IState<AccountState> Store
+@inject IDispatcher Dispatcher
+
+@* Who this browser is, in the one band that is on every screen. It is also what asks the server
+   that question once per load: the account page is not where you find out whether you are signed
+   in, because you have no reason to go there to be told you are. *@
+
+<a class="who @(Store.Value.Session is Session.In ? "who--in" : null)"
+   href="/account"
+   title="@Title">
+    <Icon Name="person" Class="who__glyph" />
+    <span class="who__name">@Name</span>
+</a>
+
+@code {
+    string Name => Store.Value.Session switch
+    {
+        Session.In signed => First(signed.Account.DisplayName),
+        Session.Unknown or Session.Asking => string.Empty,
+        _ => "Sign in",
+    };
+
+    string Title => Store.Value.Session switch
+    {
+        Session.In signed => $"Signed in as {signed.Account.DisplayName}",
+        _ => "Sign in or create an account",
+    };
+
+    /// <summary>A header is not where a full name fits on a phone, and the rest of it is on the
+    /// account screen this links to.</summary>
+    static string First(string name) =>
+        name.Split(' ', StringSplitOptions.RemoveEmptyEntries) is [var first, ..] ? first : name;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        if (Store.Value.Session is Session.Unknown)
+        {
+            Dispatcher.Dispatch(new SessionAsked());
+        }
+    }
+}

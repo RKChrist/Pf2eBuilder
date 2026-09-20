@@ -30,6 +30,7 @@ builder.Services.AddSingleton(Options.Create(api));
 builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(api.BaseUrl) });
 builder.Services.AddScoped<RulesApi>();
 builder.Services.AddScoped<TrackerApi>();
+builder.Services.AddScoped<AccountsApi>();
 builder.Services.AddScoped<CampaignHub>();
 builder.Services.AddScoped<CampaignMemory>();
 builder.Services.AddFluxor(options => options.ScanAssemblies(typeof(App).Assembly));

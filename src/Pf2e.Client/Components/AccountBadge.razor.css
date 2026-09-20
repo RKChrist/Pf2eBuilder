@@ -1,0 +1,35 @@
+/* A quiet thing beside the search field. It is not what anybody came to this screen for, and a
+   filled button there would compete with the one control the header exists for. */
+.who {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: var(--tap-min);
+    padding-inline: var(--space-2);
+    border-radius: var(--radius-chip);
+    color: var(--text-secondary);
+    font-size: var(--font-size-chip);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.who:hover {
+    color: var(--accent-base);
+}
+
+.who:focus-visible {
+    outline: var(--line-focus) solid var(--border-focus);
+    outline-offset: 2px;
+}
+
+.who--in {
+    color: var(--text-primary);
+}
+
+.who__glyph {
+    color: var(--text-muted);
+}
+
+.who--in .who__glyph {
+    color: var(--accent-base);
+}

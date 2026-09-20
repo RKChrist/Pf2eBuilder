@@ -1,0 +1,141 @@
+@page "/account"
+@inherits FluxorComponent
+@inject IState<AccountState> Store
+@inject IDispatcher Dispatcher
+
+@* Signing in is optional and says so. A campaign is still a code anybody can type, and nothing
+   on this screen is needed to play; what an account buys is that the next device you pick up
+   knows who you are. design/012 has the reasoning. *@
+
+<PageTitle>Account</PageTitle>
+
+<PageHead Heading="@(State.Session is Session.In signed ? signed.Account.DisplayName : "Account")"
+          Blurb="@Blurb" />
+
+<div class="panel account">
+    <Card>
+        <ChildContent>
+            @switch (State.Session)
+            {
+                case Session.Unknown:
+                case Session.Asking:
+                    <div class="account__pending">
+                        <Spinner ShowLabel="true" Label="Checking this browser" />
+                    </div>
+                    break;
+
+                case Session.In here:
+                    <div class="account__who">
+                        <p class="account__email">@here.Account.Email</p>
+                        <p class="account__note">
+                            This browser stays signed in until you sign out or the session expires.
+                        </p>
+                        <Button Variant="ButtonVariant.Secondary"
+                                OnClick="() => Dispatcher.Dispatch(new SignOutRequested())">
+                            Sign out
+                        </Button>
+                    </div>
+                    break;
+
+                default:
+                    <div class="account__form">
+                        <TextInput Label="Email"
+                                   Type="email"
+                                   Autocomplete="username"
+                                   InputMode="email"
+                                   Placeholder="you@example.com"
+                                   Value="@State.Draft.Email"
+                                   ValueChanged="value => Draft(State.Draft with { Email = value ?? string.Empty })" />
+
+                        @if (State.Form is AccountForm.Register)
+                        {
+                            <TextInput Label="Name"
+                                       Autocomplete="nickname"
+                                       Hint="What the table sees. Your email is never shown to anyone else."
+                                       Value="@State.Draft.DisplayName"
+                                       ValueChanged="value => Draft(State.Draft with { DisplayName = value ?? string.Empty })" />
+                        }
+
+                        <TextInput Label="Password"
+                                   Type="password"
+                                   Autocomplete="@(State.Form is AccountForm.Register ? "new-password" : "current-password")"
+                                   Hint="@(State.Form is AccountForm.Register ? $"At least {MinimumPassword} characters. Length is the only rule." : null)"
+                                   Value="@State.Draft.Password"
+                                   ValueChanged="value => Draft(State.Draft with { Password = value ?? string.Empty })" />
+
+                        @if (State.Trouble is { Length: > 0 } trouble)
+                        {
+                            <p class="account__trouble" role="alert">
+                                <Icon Name="warn" Class="pf-icon--lead" />@trouble
+                            </p>
+                        }
+
+                        <Button Variant="ButtonVariant.Primary"
+                                Class="account__go"
+                                Busy="State.Working"
+                                Disabled="@(!Ready)"
+                                OnClick="Submit">
+                            @(State.Form is AccountForm.Register ? "Create the account" : "Sign in")
+                        </Button>
+
+                        @* Signing in is the thing that happens over and over and making an
+                           account happens once, so one of them is the form and the other is a
+                           way to get to it. Two equal arms also put the words "Sign in" on two
+                           controls at once, which is one more than a screen can afford. *@
+                        <Button Variant="ButtonVariant.Quiet"
+                                Class="account__switch"
+                                OnClick="() => Dispatcher.Dispatch(new AccountFormSwitched(Other))">
+                            @(State.Form is AccountForm.Register
+                                ? "I already have an account"
+                                : "New here? Create an account")
+                        </Button>
+                    </div>
+                    break;
+            }
+        </ChildContent>
+    </Card>
+</div>
+
+@code {
+    /// <summary>The server's own floor, repeated here only to say it before somebody types
+    /// something shorter and is refused. The server is what enforces it.</summary>
+    const int MinimumPassword = 12;
+
+    AccountState State => Store.Value;
+
+    AccountForm Other =>
+        State.Form is AccountForm.Register ? AccountForm.SignIn : AccountForm.Register;
+
+    string Blurb => State.Session switch
+    {
+        Session.In => "Signed in on this browser.",
+        _ => "Optional. A campaign is a code anybody can type, and an account is only so the "
+             + "next device you pick up knows who you are.",
+    };
+
+    bool Ready =>
+        !State.Working
+        && State.Draft.Email.Trim().Length > 0
+        && State.Draft.Password.Length > 0
+        && (State.Form is not AccountForm.Register || State.Draft.DisplayName.Trim().Length > 0);
+
+    void Draft(AccountDraft draft) => Dispatcher.Dispatch(new AccountDraftChanged(draft));
+
+    void Submit() => Dispatcher.Dispatch(
+        State.Form is AccountForm.Register
+            ? new RegistrationSubmitted()
+            : (object)new SignInSubmitted());
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        // Here rather than OnAfterRender, which FluxorComponent owns: an override of it in a
+        // subclass never runs, which cost a night the last time something needed the first
+        // paint. Standalone WebAssembly has no prerender, so this is safe.
+        if (State.Session is Session.Unknown)
+        {
+            Dispatcher.Dispatch(new SessionAsked());
+        }
+    }
+}

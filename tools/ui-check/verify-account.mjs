@@ -67,16 +67,19 @@ const readable = await me.eval(`document.cookie`);
 check('no part of the session is readable by script',
   !readable.includes('pf2e.auth') && !readable.includes('eyJ'), readable.slice(0, 200) || '(empty)');
 
-const mine = await call(me, 'GET', '/accounts/me');
+const mine = await call(me, 'GET', '/accounts/session');
 check.eq('the session comes back on the next request', mine.status, 200, mine.text);
-check('as the same account', mine.body?.id === registered.body?.id,
-  `${registered.body?.id} -> ${mine.body?.id}`);
+check('as the same account', mine.body?.account?.id === registered.body?.id,
+  `${registered.body?.id} -> ${mine.body?.account?.id}`);
 
 // A second device is a second browser context. Sharing one would make every check above pass
 // against a session it never established.
 const stranger = await person({ isolated: true });
-const theirs = await call(stranger, 'GET', '/accounts/me');
-check.eq('a browser that never signed in has no session', theirs.status, 401, theirs.text);
+// An answer, not a refusal. Asking who you are is not something to be denied, and a 401 here
+// would print a console error on every screen of the app for every signed-out visitor.
+const theirs = await call(stranger, 'GET', '/accounts/session');
+check.eq('asking who a browser is always answers', theirs.status, 200, theirs.text);
+check('and a browser that never signed in is nobody', theirs.body?.account === null, theirs.text);
 
 const taken = await call(stranger, 'POST', '/accounts', {
   email,
@@ -107,14 +110,98 @@ check('as the account that was registered', back.body?.id === registered.body?.i
 
 const out = await call(stranger, 'DELETE', '/accounts/session');
 check.eq('signing out answers no content', out.status, 204, out.text);
-const after = await call(stranger, 'GET', '/accounts/me');
-check.eq('and the session is gone', after.status, 401, after.text);
+const after = await call(stranger, 'GET', '/accounts/session');
+check('and the session is gone', after.status === 200 && after.body?.account === null, after.text);
 
 // The first browser was never signed out, and one browser's sign-out must not reach another's.
-const stillMine = await call(me, 'GET', '/accounts/me');
-check.eq('the other browser is still signed in', stillMine.status, 200, stillMine.text);
+const stillMine = await call(me, 'GET', '/accounts/session');
+check('the other browser is still signed in',
+  stillMine.body?.account?.id === registered.body?.id, stillMine.text);
 
-const errors = [...me.consoleErrors(), ...stranger.consoleErrors()]
+// The screen. Everything above went through fetch; none of it proves a person can do it.
+const screen = await person({ isolated: true });
+const typed = `gm-${Date.now()}-screen@example.test`;
+
+const wait = async (page, selector, ms = 20000) => {
+  const deadline = Date.now() + ms;
+  while (Date.now() < deadline) {
+    if (await page.eval(`!!document.querySelector(${JSON.stringify(selector)})`)) return true;
+    await sleep(150);
+  }
+  return false;
+};
+
+const press = async (page, text) => {
+  const hit = await page.eval(`(() => {
+    const el = [...document.querySelectorAll('button')]
+      .find(b => b.textContent.trim() === ${JSON.stringify(text)});
+    if (!el || el.disabled) return false;
+    el.scrollIntoView({ block: 'center' });
+    el.click();
+    return true;
+  })()`);
+  await sleep(700);
+  return hit;
+};
+
+// By the label, because the fields differ between the two arms of this form and their order is
+// not a contract.
+const fill = (page, label, value) => page.eval(`(() => {
+  const field = [...document.querySelectorAll('.pf-field')]
+    .find(f => f.querySelector('.pf-field__label')?.textContent.trim() === ${JSON.stringify(label)});
+  const input = field?.querySelector('.pf-input');
+  if (!input) return false;
+  Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, ${JSON.stringify(value)});
+  for (const t of ['input', 'change']) input.dispatchEvent(new Event(t, { bubbles: true }));
+  return true;
+})()`);
+
+await screen.goto(`${client}/account`);
+check('the account screen is reachable by its own address', await wait(screen, '.account__form'));
+check('and says signing in is optional', await screen.eval(
+  `document.body.innerText.includes('Optional')`));
+check('the header offers a way in before anybody has one',
+  await screen.eval(`document.querySelector('.who')?.textContent.trim()`)
+    .then(text => text === 'Sign in'),
+  await screen.eval(`document.querySelector('.who')?.textContent.trim() ?? 'nothing'`));
+
+const labels = (page) => page.eval(
+  `[...document.querySelectorAll('.pf-field__label')].map(e => e.textContent.trim()).join()`);
+
+check('signing in asks for two things and not three',
+  await labels(screen) === 'Email,Password', await labels(screen));
+check('the form offers a way to make one', await press(screen, 'New here? Create an account'));
+check('and making an account asks for a name as well',
+  await labels(screen) === 'Email,Name,Password', await labels(screen));
+check('the password field hides what is typed in it', await screen.eval(
+  `!!document.querySelector('.pf-input[type="password"]')`));
+
+await fill(screen, 'Email', typed);
+await fill(screen, 'Name', 'Tarrow of the Vale');
+await fill(screen, 'Password', 'a rope of onions');
+await sleep(300);
+check('creating the account from the screen works', await press(screen, 'Create the account'));
+check('and the header says who you are',
+  await wait(screen, '.who--in') &&
+  await screen.eval(`document.querySelector('.who__name')?.textContent.trim()`) === 'Tarrow',
+  await screen.eval(`document.querySelector('.who')?.textContent.trim() ?? 'nothing'`));
+
+// The part that makes an account worth having over a browser that remembers something.
+await screen.goto(`${client}/account`);
+check('a reload comes back signed in', await wait(screen, '.who--in'),
+  'the cookie outlived the page');
+
+check('signing out from the screen works', await press(screen, 'Sign out'));
+check('and the header goes back to offering the way in',
+  await wait(screen, '.account__form') &&
+  !(await screen.eval(`!!document.querySelector('.who--in')`)));
+
+await fill(screen, 'Email', typed);
+await fill(screen, 'Password', 'a rope of onions');
+await sleep(300);
+check('and the account signs back in', await press(screen, 'Sign in') && await wait(screen, '.who--in'));
+
+const errors = [...me.consoleErrors(), ...stranger.consoleErrors(), ...screen.consoleErrors()]
   .filter((e) => !e.includes('ERR_BLOCKED_BY_CLIENT'))
   // A 401 and a 409 are the answers this file asks for, and Chrome logs every one of them.
   .filter((e) => !e.includes('401') && !e.includes('409'));

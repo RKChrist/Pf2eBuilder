@@ -1,0 +1,67 @@
+.account__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    margin-top: var(--space-4);
+}
+
+.account__pending {
+    display: flex;
+    justify-content: center;
+    padding: var(--space-5);
+}
+
+.account__who {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: var(--space-3);
+}
+
+.account__email {
+    margin: 0;
+    font-family: var(--font-family-data);
+    font-size: var(--font-size-body);
+    color: var(--text-primary);
+}
+
+.account__note {
+    margin: 0;
+    font-size: var(--font-size-chip);
+    color: var(--text-secondary);
+}
+
+/* What the server refused, in its own words. Not a field error: the commonest one is that the
+   email and the password do not match, which belongs to neither field on its own. */
+.account__trouble {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    border: var(--border-hair) solid var(--danger-base);
+    border-radius: var(--radius-chip);
+    color: var(--danger-base);
+    font-size: var(--font-size-chip);
+}
+
+/* Through ::deep, because these are classes handed to components rather than elements this
+   file writes. */
+.account ::deep .account__go {
+    align-self: start;
+}
+
+/* A way out of this form rather than a second thing to do in it, so it carries none of a
+   button weight: the one filled control on the card is the one that submits. */
+.account ::deep .account__switch {
+    align-self: start;
+    padding-inline: 0;
+    color: var(--text-secondary);
+    font-weight: var(--font-weight-regular);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.account ::deep .account__switch:hover {
+    color: var(--accent-base);
+}

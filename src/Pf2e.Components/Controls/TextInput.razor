@@ -2,10 +2,11 @@
     <label class="pf-field__label" for="@_id">@Label</label>
     <input class="pf-input"
            id="@_id"
-           type="text"
+           type="@Type"
            value="@Value"
            @oninput="OnInput"
            inputmode="@InputMode"
+           autocomplete="@Autocomplete"
            placeholder="@Placeholder"
            disabled="@Disabled"
            aria-describedby="@DescribedBy"
@@ -33,6 +34,14 @@
     [Parameter] public string? Value { get; set; }
 
     [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    /// <summary>A password field is the same control with its characters hidden, so it is this
+    /// one. Anything else a browser has a keyboard for, such as email, goes here too.</summary>
+    [Parameter] public string Type { get; set; } = "text";
+
+    /// <summary>Named on the input rather than left to the browser's guess, because a password
+    /// manager fills nothing without it, and the wrapper's attributes land on the div.</summary>
+    [Parameter] public string? Autocomplete { get; set; }
 
     [Parameter] public string? InputMode { get; set; }
 
