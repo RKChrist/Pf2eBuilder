@@ -30,7 +30,11 @@ public sealed record EffectPicker(
     EffectSubject Subject,
     PickerArm Arm,
     string Query,
-    RemoteData<RuleSearchResult> Found);
+    RemoteData<RuleSearchResult> Found,
+    /// <summary>What is typed into the effects filter. Separate from <paramref name="Query"/>,
+    /// which searches the server on every keystroke: this one only hides rows already on
+    /// screen.</summary>
+    string Filter = "");
 
 public sealed record EffectDraft(string Name, bool Bonus, int Value, string Type, string Applies)
 {
@@ -198,6 +202,8 @@ public sealed record PickerOpened(EffectSubject Subject);
 public sealed record PickerClosed;
 
 public sealed record ArmSelected(PickerArm Arm);
+
+public sealed record EffectFilterChanged(string Filter);
 
 public sealed record RuleQueryChanged(string Query);
 
@@ -367,6 +373,12 @@ public static class CampaignReducers
     [ReducerMethod]
     public static CampaignState On(CampaignState state, ArmSelected action) =>
         state.Picker is { } picker ? state with { Picker = picker with { Arm = action.Arm } } : state;
+
+    [ReducerMethod]
+    public static CampaignState On(CampaignState state, EffectFilterChanged action) =>
+        state.Picker is { } picker
+            ? state with { Picker = picker with { Filter = action.Filter } }
+            : state;
 
     [ReducerMethod]
     public static CampaignState On(CampaignState state, RuleQueryChanged action) =>

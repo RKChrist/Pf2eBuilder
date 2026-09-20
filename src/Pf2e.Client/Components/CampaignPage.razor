@@ -14,16 +14,15 @@
     fight.
 *@
 
-<header class="top">
-    <h1 class="heading">@Heading</h1>
-    @if (State.Code.Length > 0)
-    {
-        <p class="code">
+<PageHead Heading="@Heading">
+    <Aside>
+        @if (State.Code.Length > 0)
+        {
             <span class="code__label">Campaign</span>
             <span class="campaign-code">@State.Code</span>
-        </p>
-    }
-</header>
+        }
+    </Aside>
+</PageHead>
 
 <RemoteView T="CampaignView" Data="State.Campaign">
     <NotAsked>@Entrance</NotAsked>

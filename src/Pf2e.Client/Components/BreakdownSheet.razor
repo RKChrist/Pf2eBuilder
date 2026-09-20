@@ -17,7 +17,7 @@
                 <span class="breakdown__number">@breakdown.Base</span>
             </p>
 
-            <h3 class="breakdown__heading">Applied</h3>
+            <SectionHead Text="Applied" Level="3" Class="pf-section--sub" />
             <ul class="breakdown__applied">
                 @foreach (var modifier in breakdown.Applied)
                 {
@@ -33,7 +33,7 @@
                 }
             </ul>
 
-            <h3 class="breakdown__heading">Suppressed</h3>
+            <SectionHead Text="Suppressed" Level="3" Class="pf-section--sub" />
             <ul class="breakdown__suppressed">
                 @foreach (var suppressed in breakdown.Suppressed)
                 {

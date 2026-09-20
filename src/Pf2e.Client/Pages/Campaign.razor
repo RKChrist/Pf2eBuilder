@@ -204,7 +204,7 @@
 
                             @foreach (var group in Owned(character))
                             {
-                                <h3 class="owned__kind">@group.Heading</h3>
+                                <SectionHead Text="@group.Heading" Level="3" Class="pf-section--sub" />
                                 <div class="owned__entries">
                                     @foreach (var entry in group.Entries)
                                     {

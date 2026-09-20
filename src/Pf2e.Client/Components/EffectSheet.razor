@@ -63,9 +63,16 @@
                         </ErrorState>
                     </Failed>
                     <Loaded Context="effects">
+                        <SearchField Class="effects__filter"
+                                     Value="@picker.Filter"
+                                     ValueChanged="text => Dispatcher.Dispatch(
+                                         new EffectFilterChanged(text ?? string.Empty))"
+                                     Placeholder="frightened, bless, shield"
+                                     Label="Narrow the list" />
+
                         @* Buffs first. Somebody reaches for this sheet because something good
                            just happened to them far more often than because something bad did. *@
-                        @foreach (var group in Grouped(effects))
+                        @foreach (var group in Grouped(Matching(effects, picker.Filter)))
                         {
                             <Disclosure Class="effects__group"
                                         Title="@group.Heading"
@@ -103,6 +110,11 @@
                                     }
                                 </div>
                             </Disclosure>
+                        }
+
+                        @if (Matching(effects, picker.Filter).Count == 0)
+                        {
+                            <p class="hint">Nothing here is called that.</p>
                         }
                     </Loaded>
                 </RemoteView>
@@ -241,6 +253,24 @@
         new(PickerArm.Rules, "Rules"),
         new(PickerArm.Custom, "Custom"),
     ];
+
+    /// <summary>What the typed letters leave. Matched against the name and against what the
+    /// effect does, so "armor" finds the three things that move an armour class.</summary>
+    static IReadOnlyList<ConditionSummary> Matching(
+        IReadOnlyList<ConditionSummary> effects, string filter)
+    {
+        if (filter.Trim() is not { Length: > 0 } wanted)
+        {
+            return effects;
+        }
+
+        return
+        [
+            .. effects.Where(effect =>
+                effect.Name.Contains(wanted, StringComparison.OrdinalIgnoreCase)
+                || Reads(effect).Contains(wanted, StringComparison.OrdinalIgnoreCase)),
+        ];
+    }
 
     sealed record EffectGroup(string Heading, string Glyph, IReadOnlyList<ConditionSummary> Effects);
 

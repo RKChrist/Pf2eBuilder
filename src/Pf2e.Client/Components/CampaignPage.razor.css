@@ -1,31 +1,3 @@
-/* The mode strip is navigation now, so it is links rather than a segmented control: a mode is a
-   page you can open, bookmark and go back from. The dot marks the mode the table is actually in,
-   which is not always the page you are looking at. */
-.top {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-3);
-    padding: var(--space-4) var(--layout-gutter) 0;
-}
-
-.heading {
-    margin: 0;
-    font-family: var(--font-family-display);
-    font-size: var(--font-size-section);
-    font-weight: var(--font-weight-bold);
-    letter-spacing: var(--font-tracking-tight);
-    line-height: var(--font-leading-tight);
-}
-
-.code {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-2);
-    margin: 0;
-}
-
 .code__label {
     font-size: var(--font-size-chip);
     letter-spacing: 0.06em;

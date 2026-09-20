@@ -445,12 +445,10 @@
     padding-inline: var(--space-3);
 }
 
-.reveal {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
+/* Through ::deep, because .reveal is a class passed to the Switch component now rather than a
+   label this page draws around one. */
+.turn__dm ::deep .reveal {
     min-height: var(--tap-min);
-    cursor: pointer;
 }
 
 .reveal__label {
@@ -492,22 +490,15 @@
 
 /* ---------------------------------------------------------------- adding */
 
+.adding ::deep .adding__all {
+    min-height: var(--tap-min);
+}
+
 .adding {
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
     margin-top: var(--space-4);
-}
-
-.adding__heading {
-    display: flex;
-    align-items: center;
-    margin: var(--space-4) 0 0;
-    font-size: var(--font-size-chip);
-    font-weight: var(--font-weight-semibold);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text-muted);
 }
 
 /* Wide enough and the numbers sit beside the controls on one line, which halves the height of a

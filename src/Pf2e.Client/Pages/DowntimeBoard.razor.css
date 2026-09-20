@@ -1,18 +1,5 @@
-.pending,
-.panel {
-    padding: var(--space-4) var(--layout-gutter) var(--space-0);
-}
-
 .downtime {
     padding: var(--space-3) var(--layout-gutter) var(--space-6);
-}
-
-.spending {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    padding: var(--space-4) 0;
-    border-top: var(--border-hair) solid var(--line-subtle);
 }
 
 .spending__task {
@@ -51,13 +38,6 @@
     font-size: var(--font-size-data);
     font-variant-numeric: tabular-nums;
     color: var(--text-secondary);
-}
-
-.spending__says {
-    margin: 0;
-    font-size: var(--font-size-chip);
-    color: var(--text-secondary);
-    text-wrap: pretty;
 }
 
 .spending__task {

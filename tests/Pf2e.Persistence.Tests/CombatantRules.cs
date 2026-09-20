@@ -38,12 +38,15 @@ public class CombatantRules(SeededDatabase database) : IClassFixture<SeededDatab
             .Handle(new ImportCharacter(code, payload.ToJsonString()), default);
     }
 
-    async Task<CampaignView> AddMonster(CreatedCampaignView campaign, string name)
+    async Task<CampaignView> AddMonster(CreatedCampaignView campaign, string? name = null)
     {
         await using var db = database.NewContext();
         return await new AddCombatantHandler(db, db, Stack, Broadcaster)
             .Handle(new AddCombatant(campaign.Code, campaign.DmKey, Ogre, null, name), default);
     }
+
+    static IReadOnlyList<string> Names(CampaignView view) =>
+        [.. view.Encounter!.Combatants.Select(c => c.Name)];
 
     async Task<CampaignView> AddPlayer(CreatedCampaignView campaign, Guid characterId)
     {
@@ -207,5 +210,55 @@ public class CombatantRules(SeededDatabase database) : IClassFixture<SeededDatab
 
         await Assert.ThrowsAsync<NotTheDmException>(
             () => Remove(campaign, Named(withOgre, "Ogre boss"), asPlayer: true));
+    }
+    // One of a creature is that creature. Two are a problem: they take damage separately and
+    // the GM says "the one on the left", which an order printing the same name twice cannot
+    // answer. The name comes off the record rather than being written here, because which
+    // creature the fixture id points at is not what this is about.
+    [Fact]
+    public async Task TheSecondOfACreatureNumbersItselfAndRenamesTheFirst()
+    {
+        var campaign = await NewCampaign();
+
+        var alone = await AddMonster(campaign);
+        var beast = Assert.Single(Names(alone));
+
+        var pair = await AddMonster(campaign);
+        Assert.Equal([$"{beast} 1", $"{beast} 2"], [.. Names(pair).Order()]);
+
+        var three = await AddMonster(campaign);
+        Assert.Contains($"{beast} 3", Names(three));
+    }
+
+    // What numbering is for is that no two rows in the order ever read the same. It is not
+    // that a number is retired: once the second one is dead and gone there is no second one,
+    // and a new arrival taking the number is unambiguous at every moment anybody is looking.
+    [Fact]
+    public async Task NoTwoCreaturesInTheOrderEverShareAName()
+    {
+        var campaign = await NewCampaign();
+        var alone = await AddMonster(campaign);
+        var beast = Assert.Single(Names(alone));
+        var pair = await AddMonster(campaign);
+
+        var second = pair.Encounter!.Combatants.Single(c => c.Name == $"{beast} 2");
+        await Remove(campaign, second.Id);
+
+        var replaced = await AddMonster(campaign);
+        var names = Names(replaced);
+
+        Assert.Equal(2, names.Count);
+        Assert.Equal(names.Count, names.Distinct().Count());
+    }
+
+    // A GM who names one keeps the name they gave it. Numbering is for the ones nobody named.
+    [Fact]
+    public async Task ANamedMonsterKeepsItsName()
+    {
+        var campaign = await NewCampaign();
+        await AddMonster(campaign, "Grukk the Elder");
+        var pair = await AddMonster(campaign, "Grukk the Younger");
+
+        Assert.Equal(["Grukk the Elder", "Grukk the Younger"], [.. Names(pair).Order()]);
     }
 }

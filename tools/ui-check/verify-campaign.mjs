@@ -129,7 +129,7 @@ const owned = await dm.eval(`(() => {
   panel.open = true;
   return {
     summary: panel.querySelector('.owned__count').textContent.trim(),
-    kinds: [...panel.querySelectorAll('.owned__kind')].map(h => h.textContent.trim()),
+    kinds: [...panel.querySelectorAll('.pf-section__label')].map(h => h.textContent.trim()),
     openable: panel.querySelectorAll('a.owned__entry').length,
     unopenable: [...panel.querySelectorAll('.owned__entry--unknown .owned__entry-kind')].map(e => e.textContent.trim()),
     named: [...panel.querySelectorAll('.owned__entry-name')].map(e => e.textContent.trim()),
@@ -277,13 +277,13 @@ check('and says nobody is in it yet', await dm.eval(
   `document.body.innerText.includes('Nobody is in this fight yet')`));
 
 await clickText(dm, '.fight__acts button', 'Add');
-await waitFor(dm, '.adding__heading');
+await waitFor(dm, '.adding .pf-section__label');
 check('the roster is offered before the bestiary', await dm.eval(
   `(() => {
-    const headings = [...document.querySelectorAll('.adding__heading')].map(h => h.textContent.trim());
+    const headings = [...document.querySelectorAll('.adding .pf-section__label')].map(h => h.textContent.trim());
     return headings.join(' | ') === 'From this campaign | A monster';
   })()`),
-  await dm.eval(`[...document.querySelectorAll('.adding__heading')].map(h => h.textContent.trim()).join(' | ')`));
+  await dm.eval(`[...document.querySelectorAll('.adding .pf-section__label')].map(h => h.textContent.trim()).join(' | ')`));
 await clickText(dm, '.pf-row__title, .pf-row .title, .pf-row', 'Gnibbo').catch(async () => {
   await dm.eval(`(() => {
     const row = [...document.querySelectorAll('.adding .pf-row')].find(r => r.textContent.includes('Gnibbo'));

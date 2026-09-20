@@ -121,7 +121,7 @@ public sealed class AddCombatantHandler(
             // take damage separately.
             Id = Guid.NewGuid(),
             EncounterId = encounter.Id,
-            Name = command.Name is { Length: > 0 } named ? named : record.Name,
+            Name = command.Name is { Length: > 0 } named ? named : Numbered(encounter, record.Name),
             RuleId = record.Id,
             Stats = stats,
             CurrentHitPoints = stats.MaxHitPoints,
@@ -130,6 +130,40 @@ public sealed class AddCombatantHandler(
             // cannot see it. Revealing is the DM's deliberate act.
             Revealed = false,
         };
+    }
+
+    /// <summary>
+    /// What to call this one when the fight already holds another of the same creature. The
+    /// second arrival numbers itself and renames the first, so a lone ogre is "Ogre Warrior" and
+    /// the moment there are two they are "Ogre Warrior 1" and "Ogre Warrior 2".
+    /// <para>Counted over the rows that are actually in the order, so what this guarantees is
+    /// that no two of them ever read the same. A number is not retired: once a creature is dead
+    /// and gone a new arrival may take it back, which is unambiguous because there is nothing
+    /// left on the screen to confuse it with.</para>
+    /// </summary>
+    static string Numbered(Encounter encounter, string name)
+    {
+        var sameCreature = encounter.Combatants
+            .OfType<MonsterCombatant>()
+            .Where(m => m.Name == name || m.Name.StartsWith(name + " ", StringComparison.Ordinal))
+            .ToList();
+
+        if (sameCreature.Count == 0)
+        {
+            return name;
+        }
+
+        if (sameCreature.SingleOrDefault(m => m.Name == name) is { } lonely)
+        {
+            lonely.Name = $"{name} 1";
+        }
+
+        var highest = sameCreature
+            .Select(m => int.TryParse(m.Name[name.Length..].Trim(), out var n) ? n : 1)
+            .DefaultIfEmpty(0)
+            .Max();
+
+        return $"{name} {highest + 1}";
     }
 
     static int Number(JsonObject? mechanics, string key) =>

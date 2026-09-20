@@ -24,14 +24,6 @@
     font-weight: var(--font-weight-semibold);
 }
 
-.breakdown__heading {
-    color: var(--text-muted);
-    font-size: var(--font-size-chip);
-    font-weight: var(--font-weight-semibold);
-    text-transform: uppercase;
-    letter-spacing: var(--font-tracking-wide);
-}
-
 .breakdown__applied,
 .breakdown__suppressed {
     display: flex;

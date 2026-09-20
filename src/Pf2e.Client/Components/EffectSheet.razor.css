@@ -5,7 +5,7 @@
 
 .applied {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: var(--space-2);
     margin-top: var(--space-4);
 }
@@ -13,16 +13,22 @@
 .applied__row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
+    gap: var(--space-2);
     min-height: var(--tap-min);
-    padding-bottom: var(--space-2);
-    border-bottom: var(--border-hair) solid var(--line-subtle);
+    padding: 0 var(--space-2) 0 var(--space-3);
+    border: var(--border-hair) solid var(--accent-base);
+    border-radius: var(--radius-chip);
+    background: var(--accent-wash);
+    color: var(--accent-press);
 }
 
 .applied__name {
     font-size: var(--font-size-data);
     font-weight: var(--font-weight-medium);
+}
+
+.applied__glyph {
+    color: currentColor;
 }
 
 .applied__none,
@@ -32,7 +38,13 @@
     line-height: var(--font-leading-snug);
 }
 
-.conditions,
+.conditions {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+}
+
 .rules,
 .custom {
     display: flex;
@@ -47,6 +59,21 @@
     justify-content: space-between;
     gap: var(--space-3);
     min-height: var(--tap-min);
+    padding: var(--space-2) var(--space-3);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-radius: var(--radius-card);
+    background: var(--surface-raised);
+}
+
+/* Already on this creature. The list is long and the two or three that are on are the ones a
+   table is looking for. */
+.condition:has(.pf-switch__input:checked),
+.condition:has(.pf-stepper__value:not(:empty)) {
+    border-color: var(--line-subtle);
+}
+
+.condition:hover {
+    border-color: var(--accent-base);
 }
 
 /* The name and what it does, stacked, because "+1 status to attack rolls, Damage" does not fit
@@ -65,22 +92,16 @@
     text-wrap: pretty;
 }
 
-.effects__kind {
-    margin: var(--space-5) 0 0;
-    font-size: var(--font-size-chip);
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-muted);
-}
-
-.effects__kind:first-of-type {
-    margin-top: var(--space-4);
-}
-
 .states--none {
     color: var(--text-muted);
 }
 
-.line {
-    font-size: var(--font-size-chip);
-    color: var(--text-secondary);
+/* Thirty-odd effects in a sheet no taller than a thumb can reach. Three letters is faster than
+   scrolling, and it sits above the groups so it is the first thing under the tabs. */
+.effects__filter {
+    margin-top: var(--space-3);
+}
+
+.effects__group + .effects__group {
+    border-top: var(--border-hair) solid var(--line-subtle);
 }

@@ -31,7 +31,7 @@
                            ValueChanged="v => Edit(draft with { AncestryName = v ?? string.Empty })" />
             </div>
 
-            <h3 class="editor__heading">Attributes</h3>
+            <SectionHead Text="Attributes" Level="3" Class="pf-section--sub" />
             @* Modifiers, not scores. The sheet says Dexterity +3, so this says +3 too rather
                than making somebody convert 16 in their head to mean the same thing. *@
             <div class="editor__grid">
@@ -67,7 +67,7 @@
                 </div>
             </div>
 
-            <h3 class="editor__heading">Proficiencies</h3>
+            <SectionHead Text="Proficiencies" Level="3" Class="pf-section--sub" />
             <div class="editor__grid">
                 <Select TValue="string" Label="Key attribute" Options="CharacterEdits.Attributes"
                         Value="@draft.KeyAttribute"
@@ -89,7 +89,7 @@
                         ValueChanged="v => Edit(draft with { ClassDc = v ?? draft.ClassDc })" />
             </div>
 
-            <h3 class="editor__heading">Armour and hit points</h3>
+            <SectionHead Text="Armour and hit points" Level="3" Class="pf-section--sub" />
             <div class="editor__grid">
                 <TextInput Label="Armour" Value="@draft.ArmorName"
                            ValueChanged="v => Edit(draft with { ArmorName = v ?? string.Empty })" />

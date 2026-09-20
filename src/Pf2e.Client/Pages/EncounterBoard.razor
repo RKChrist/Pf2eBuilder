@@ -248,14 +248,14 @@
                                             @* A monster the players have not been shown is not on
                                                their screen at all, so this is the only way it gets
                                                there, and a bare toggle would not say so. *@
-                                            <label class="reveal">
-                                                <Switch Checked="combatant.Revealed"
-                                                        CheckedChanged="on => Dispatcher.Dispatch(new MonsterRevealed(combatant.Id, on))" />
+                                            <Switch Class="reveal"
+                                                    Checked="combatant.Revealed"
+                                                    CheckedChanged="on => Dispatcher.Dispatch(new MonsterRevealed(combatant.Id, on))">
                                                 <span class="reveal__label">
                                                     <Icon Name="@(combatant.Revealed ? "eye" : "eye-off")" />
                                                     Players can see it
                                                 </span>
-                                            </label>
+                                            </Switch>
                                         }
                                     </div>
                                 }
@@ -300,9 +300,19 @@
         <div class="adding">
             @if (Absent(open) is { Count: > 0 } roster)
             {
-                <h3 class="adding__heading">
-                    <Icon Name="person" Class="pf-icon--lead" />From this campaign
-                </h3>
+                <SectionHead Text="From this campaign" Glyph="person" Level="3"
+                             Class="pf-section--sub">
+                    <Aside>
+                        @if (roster.Count > 1)
+                        {
+                            <Button Variant="ButtonVariant.Quiet"
+                                    Class="adding__all"
+                                    OnClick="() => AddEveryone(roster)">
+                                <Icon Name="plus" Class="pf-icon--lead" />All @roster.Count
+                            </Button>
+                        }
+                    </Aside>
+                </SectionHead>
                 <Card>
                     <ListContent>
                         @foreach (var character in roster)
@@ -315,9 +325,7 @@
                 </Card>
             }
 
-            <h3 class="adding__heading">
-                <Icon Name="skull" Class="pf-icon--lead" />A monster
-            </h3>
+            <SectionHead Text="A monster" Glyph="skull" Level="3" Class="pf-section--sub" />
             <SearchField Value="@picker.Query"
                          ValueChanged="query => Dispatcher.Dispatch(new MonsterQueryChanged(query ?? string.Empty))"
                          Placeholder="Search 3,786 creatures"
@@ -465,6 +473,17 @@
     static RenderFragment Line(string text) => @<span class="line">@text</span>;
 
     int? Typed(Guid creatureId) => SheetFormat.Typed(State.HitPointDraft(creatureId));
+
+    /// <summary>The whole party at once, which is how a fight starts. Dispatched one at a time
+    /// rather than as a batch, because each one is its own command on the server and a party of
+    /// five arriving as five commands is five broadcasts nobody notices.</summary>
+    void AddEveryone(IReadOnlyList<CharacterSheetView> roster)
+    {
+        foreach (var character in roster)
+        {
+            Dispatcher.Dispatch(new CombatantAdded(null, character.Id, null));
+        }
+    }
 
     void Apply(Guid creatureId, string direction)
     {

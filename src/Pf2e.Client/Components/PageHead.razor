@@ -9,7 +9,13 @@
         </a>
     }
 
-    <h1 class="heading">@Heading</h1>
+    <div class="line">
+        <h1 class="heading">@Heading</h1>
+        @if (Aside is not null)
+        {
+            <div class="aside">@Aside</div>
+        }
+    </div>
 
     @if (Blurb is { Length: > 0 } blurb)
     {
@@ -32,4 +38,9 @@
     [Parameter] public string? Blurb { get; set; }
 
     [Parameter] public string? Detail { get; set; }
+
+    /// <summary>What belongs beside the name of the page rather than under it: the campaign
+    /// code everybody has to read out to join. Null on a screen that has nothing to put
+    /// there, which is most of them.</summary>
+    [Parameter] public RenderFragment? Aside { get; set; }
 }

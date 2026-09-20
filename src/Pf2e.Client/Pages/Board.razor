@@ -14,7 +14,7 @@
         @* The tracker is a screen, not a rules category, so it does not come from the
            catalogue. It sits first because at the table it is the thing being opened. *@
         <section class="section" aria-label="Your campaign">
-            <h2 class="section-title">Your campaign</h2>
+            <SectionHead Text="Your campaign" Glyph="dice" Class="pf-section--sub" />
             <div class="categories">
                 <a class="category" href="/campaign">
                     <span class="face"><span class="label">Campaign</span></span>
@@ -28,7 +28,7 @@
         <section class="section" aria-label="@section.Name">
             @if (Sections.Count > 1)
             {
-                <h2 class="section-title">@section.Name</h2>
+                <SectionHead Text="@section.Name" Class="pf-section--sub" />
             }
             <div class="categories">
                 @foreach (var category in section.Categories)
