@@ -42,7 +42,9 @@
     background: var(--accent-tint);
 }
 
+/* The gap is here and not in the markup, where Razor takes the space after a closing tag out. */
 .choose__says strong {
+    margin-inline-end: 0.35em;
     color: var(--text-primary);
 }
 

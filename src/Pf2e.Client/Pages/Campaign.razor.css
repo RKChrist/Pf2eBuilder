@@ -381,3 +381,16 @@
 .stat__moved[data-moved="down"] {
     color: var(--effect-down);
 }
+
+.import__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+/* The same width the ways in are held to, so the button is the size of the form above it and
+   not a bar across a desk monitor. */
+.import__form ::deep .import__go {
+    align-self: flex-start;
+    min-inline-size: 12rem;
+}

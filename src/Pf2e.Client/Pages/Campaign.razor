@@ -120,7 +120,8 @@
                         <div class="vitals">
                             <HitPoints Current="character.CurrentHitPoints"
                                        Max="character.MaxHitPoints"
-                                       Temporary="character.TemporaryHitPoints" />
+                                       Temporary="character.TemporaryHitPoints"
+                                       ShowCount="false" />
                             <p class="hp">
                                 <span class="hp__label">Hit points</span>
                                 <span class="hp__current">@character.CurrentHitPoints</span>
@@ -230,8 +231,35 @@
     }
 
     <div class="panel import">
-        <Card Title="Put a character in the campaign">
-            <ChildContent>
+        @* Once there is a party, putting somebody else in it is the rare thing on this page, and
+           the form was taking half of it. It stays open while it is being used or has something
+           to say. *@
+        @if (table.Characters.Count > 0)
+        {
+            <Card>
+                <ChildContent>
+                    <Disclosure Class="import__more"
+                                Title="Add or update a character"
+                                Glyph="plus"
+                                Open="@(State.Importing || State.ImportError is not null || State.Offered.Trim().Length > 0)">
+                        @ImportForm
+                    </Disclosure>
+                </ChildContent>
+            </Card>
+        }
+        else
+        {
+            <Card Title="Put a character in the campaign">
+                <ChildContent>@ImportForm</ChildContent>
+            </Card>
+        }
+    </div>
+</CampaignPage>
+
+<CharacterEditorSheet />
+
+@code {
+    RenderFragment ImportForm => @<div class="import__form">
                 @* Three ways in, because the builders people use hand a character over differently.
                    A Wanderer's Guide character its owner has made public can be read from its link.
                    Pathbuilder gives you JSON you can copy. Wanderer's Guide only offers a
@@ -303,14 +331,7 @@
                         OnClick="() => Dispatcher.Dispatch(new ImportRequested())">
                     Import
                 </Button>
-            </ChildContent>
-        </Card>
-    </div>
-</CampaignPage>
-
-<CharacterEditorSheet />
-
-@code {
+    </div>;
     CampaignState State => Store.Value;
 
     sealed record OwnedGroup(string Heading, IReadOnlyList<SheetEntryView> Entries);

@@ -574,7 +574,7 @@ const einar = `[...document.querySelectorAll('.character')]
 check("a Wanderer's Guide export imports beside a Pathbuilder one",
   await dm.eval(`!!${einar}`));
 
-const before = await dm.eval(`${einar}?.querySelector('.hits__of')?.textContent.trim() ?? ''`);
+const before = await dm.eval(`${einar}?.querySelector('.hp__max')?.textContent.trim() ?? ''`);
 await dm.eval(`[...${einar}.querySelectorAll('.acts button')]
   .find(b => b.textContent.trim() === 'Edit')?.click()`);
 await waitFor(dm, '.editor');
@@ -597,7 +597,7 @@ await sleep(400);
 await clickText(dm, '.editor__acts button', 'Save');
 await sleep(1200);
 
-const after = await dm.eval(`${einar}?.querySelector('.hits__of')?.textContent.trim() ?? ''`);
+const after = await dm.eval(`${einar}?.querySelector('.hp__max')?.textContent.trim() ?? ''`);
 check('and moving it moves the maximum on the card',
   Number(after.replace('/', '')) === Number(before.replace('/', '')) + 1, `${before} -> ${after}`);
 
