@@ -133,6 +133,24 @@ you. Because a websocket never appears in resource timings, the hub's destinatio
 through the HTTP negotiate that precedes it, and a missing negotiate fails rather than passes:
 not seeing the hub is not the same as seeing it go to the right place.
 
+## Boot check
+
+`verify-boot.mjs` is the only check here with no browser and no running server to point it at.
+It starts the API itself, three times, and kills it:
+
+    node tools/ui-check/verify-boot.mjs [port]
+
+Six assertions covering the build itself, the refusal to start in Production without
+`Auth:Jwt:SigningKey`, that the refusal names that setting rather than saying validation failed,
+that a key too short for HS256 is refused at boot rather than throwing at the first sign-in, and
+that a configured key starts normally. Development is exempt by design and is therefore not what
+this runs: the app generates a throwaway key there, so booting in Development would pass while
+the thing under test was switched off.
+
+It runs the built binary rather than `dotnet run`, which starts the app as a child of itself and
+would leave it holding the port. Port 5199 by default, never 5092, and a temporary database with
+seeding off: the dev server's database belongs to whoever is already running it.
+
 ## Recording a walkthrough
 
 `record.mjs` drives the running app through scripted scenarios and captures frames:
