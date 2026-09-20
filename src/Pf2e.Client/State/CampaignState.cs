@@ -50,9 +50,20 @@ public sealed record CampaignState
 
     public string CodeDraft { get; init; } = string.Empty;
 
-    /// <summary>Held for this browser session only. It arrives once, with the campaign this
-    /// browser created, and a reload makes this browser a player again.</summary>
+    /// <summary>The key for the campaign that is open, and null for a table this browser only
+    /// plays at. It arrives once, with the campaign this browser created, and from then on it
+    /// comes back out of <see cref="CampaignMemory"/> with whichever campaign is opened.</summary>
     public string? DmKey { get; init; }
+
+    /// <summary>The campaigns this browser has been in, newest first, as the join form lists
+    /// them. Read once per page load and kept in step with storage by every open and forget.
+    /// </summary>
+    public IReadOnlyList<RememberedCampaign> Remembered { get; init; } = [];
+
+    /// <summary>Whether this browser has already been asked what it was in. Once per load, not
+    /// once per screen: a person who leaves a campaign walks to another page and must not be
+    /// put straight back into the one they just left.</summary>
+    public bool Recalled { get; init; }
 
     public RemoteData<CampaignView> Campaign { get; init; } = new RemoteData<CampaignView>.NotAsked();
 
@@ -141,9 +152,23 @@ public sealed record CampaignFailed(string Message);
 /// join form.</summary>
 public sealed record CampaignRecalled;
 
-/// <summary>It was. The key rides along, because coming back as a player is the failure this
-/// whole path exists to prevent.</summary>
+/// <summary>Open one of the campaigns this browser holds. The key rides along, because coming
+/// back as a player is the failure this whole path exists to prevent. Dispatched by the recall
+/// for the most recent one, and by a tap on any of the others.</summary>
 public sealed record CampaignRemembered(RememberedCampaign Campaign);
+
+/// <summary>What this browser holds, as the join form lists it. Answered by the recall and by
+/// every open and forget after it, so the list on screen and the list in storage cannot
+/// disagree.</summary>
+public sealed record CampaignsRemembered(IReadOnlyList<RememberedCampaign> Campaigns);
+
+/// <summary>Out of the campaign and back to the join form, holding on to everything. The way to
+/// a second table: until this existed, the only way out of a campaign was to clear the browser's
+/// storage, which threw away the DM key with it.</summary>
+public sealed record CampaignLeft;
+
+/// <summary>Drop one campaign from this browser, and with it the only copy of its DM key.</summary>
+public sealed record CampaignForgetRequested(string Code);
 
 /// <summary>The remembered campaign is not there any more, so this browser stops claiming to be
 /// in it. Quiet on purpose: nothing was lost that the person was looking at.</summary>
@@ -259,9 +284,14 @@ public static class CampaignReducers
     public static CampaignState On(CampaignState state, CampaignFailed action) =>
         state with { Campaign = new RemoteData<CampaignView>.Failed(action.Message) };
 
+    /// <summary>A change for a campaign this browser is not in is dropped. One hub connection
+    /// carries several tables over a session now, and a push that arrived for the one somebody
+    /// just left would otherwise put it back on their screen.</summary>
     [ReducerMethod]
     public static CampaignState On(CampaignState state, CampaignRefreshed action) =>
-        state with { Campaign = new RemoteData<CampaignView>.Loaded(action.Campaign) };
+        string.Equals(state.Code, action.Campaign.Code, StringComparison.Ordinal)
+            ? state with { Campaign = new RemoteData<CampaignView>.Loaded(action.Campaign) }
+            : state;
 
     [ReducerMethod]
     public static CampaignState On(CampaignState state, CampaignCreated action) =>
@@ -276,11 +306,44 @@ public static class CampaignReducers
     };
 
     [ReducerMethod]
-    public static CampaignState On(CampaignState state, CampaignForgotten _) => state with
+    public static CampaignState On(CampaignState state, CampaignRecalled _) =>
+        state with { Recalled = true };
+
+    [ReducerMethod]
+    public static CampaignState On(CampaignState state, CampaignsRemembered action) =>
+        state with { Remembered = action.Campaigns };
+
+    [ReducerMethod]
+    public static CampaignState On(CampaignState state, CampaignForgotten _) => Cleared(state);
+
+    [ReducerMethod]
+    public static CampaignState On(CampaignState state, CampaignLeft _) => Cleared(state);
+
+    /// <summary>
+    /// Back to the join form. Everything emptied here belongs to the campaign being left, down
+    /// to the drafts: a half-typed damage number keyed by a character at one table would
+    /// otherwise be sitting in the field when the next table opens.
+    /// <para>What this deliberately keeps is what the browser remembers. Leaving is not
+    /// forgetting, and the DM keys in that list are the only copies there are.</para>
+    /// </summary>
+    static CampaignState Cleared(CampaignState state) => state with
     {
         Code = string.Empty,
+        CodeDraft = string.Empty,
         DmKey = null,
         Campaign = new RemoteData<CampaignView>.NotAsked(),
+        Live = false,
+        ActionError = null,
+        ImportError = null,
+        Importing = false,
+        PasteDraft = string.Empty,
+        File = null,
+        Breakdown = null,
+        Picker = null,
+        AddingCombatant = null,
+        Editing = null,
+        HitPointDrafts = new Dictionary<Guid, string>(),
+        InitiativeDrafts = new Dictionary<Guid, string>(),
     };
 
     // Each of the two ways in clears the other, because two half filled ways to say the same

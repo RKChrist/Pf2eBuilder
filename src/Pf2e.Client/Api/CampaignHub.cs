@@ -65,5 +65,24 @@ public sealed class CampaignHub : IAsyncDisposable
         _dmKey = dmKey;
     }
 
+    /// <summary>Out of the campaign without joining another. What is forgotten first is what
+    /// this connection is in, so a reconnection that lands mid-call does not rejoin the table
+    /// somebody has just walked away from.</summary>
+    public async Task LeaveAsync(CancellationToken ct)
+    {
+        if (_joined is not { } code)
+        {
+            return;
+        }
+
+        _joined = null;
+        _dmKey = null;
+
+        if (_connection.State is HubConnectionState.Connected)
+        {
+            await _connection.InvokeAsync("LeaveCampaign", code, ct);
+        }
+    }
+
     public ValueTask DisposeAsync() => _connection.DisposeAsync();
 }
