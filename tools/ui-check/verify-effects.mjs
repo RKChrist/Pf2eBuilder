@@ -142,7 +142,9 @@ for (const key of ['raise-a-shield', 'cover', 'shield-spell', 'bless', 'courageo
   check(`${key} is offered`, !!row, row?.reads ?? 'missing');
   if (row) check(`${key} says what it does`, row.reads.length > 0, row.reads);
 }
-check('every offered effect states its modifiers', picker.rows.every(r => r.reads.length > 0),
+check('the picker offered any effects to check', picker.rows.length > 0, `${picker.rows.length} rows`);
+check('every offered effect states its modifiers',
+  picker.rows.length > 0 && picker.rows.every(r => r.reads.length > 0),
   picker.rows.filter(r => !r.reads).map(r => r.key).join(', ') || 'all of them do');
 
 // Raise a buckler. Armour class should move by one and nothing else should move at all.

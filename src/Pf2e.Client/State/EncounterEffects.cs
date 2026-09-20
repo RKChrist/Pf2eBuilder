@@ -36,6 +36,28 @@ public sealed class EncounterEffects
         RunAsync(dispatcher, code => _tracker.AddCombatantAsync(
             code, action.RuleId, action.CharacterId, action.Name, null, CancellationToken.None));
 
+    /// <summary>One at a time, each awaited. The party is small and the latency is a rounding
+    /// error next to a GM tapping four rows by hand, which is what this replaced.</summary>
+    [EffectMethod]
+    public async Task Handle(PartyAdded action, IDispatcher dispatcher)
+    {
+        foreach (var characterId in action.CharacterIds)
+        {
+            try
+            {
+                dispatcher.Dispatch(new CampaignRefreshed(await _tracker.AddCombatantAsync(
+                    _state.Value.Code, null, characterId, null, null, CancellationToken.None)));
+            }
+            catch (CampaignApiException failure)
+            {
+                // Said out loud and then stopped. Carrying on would leave the GM looking at a
+                // fight that is missing somebody with nothing on screen saying who.
+                dispatcher.Dispatch(new ActionFailed(failure.Message));
+                return;
+            }
+        }
+    }
+
     [EffectMethod]
     public Task Handle(InitiativeRolled _, IDispatcher dispatcher) =>
         // An empty list rolls for everyone the DM has not typed a number for, which is everyone.

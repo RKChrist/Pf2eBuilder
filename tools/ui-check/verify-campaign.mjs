@@ -29,6 +29,9 @@ const waitFor = async (page, selector, ms = 25000) => {
     if (await page.eval(`!!document.querySelector(${JSON.stringify(selector)})`)) return true;
     await sleep(150);
   }
+  // Reported before it throws. Without this a page that never rendered exited 1 with no
+  // FAIL line at all, which reads exactly like a check that ran and failed.
+  check(`the page rendered ${selector}`, false, 'never appeared');
   throw new Error(`never saw ${selector}`);
 };
 
@@ -151,8 +154,8 @@ await shot(dm, 'dm-08-reference');
 // Exploration: what everyone is doing, and the one that changes how the fight starts.
 await goMode(dm, 'Exploration');
 await waitFor(dm, '[data-choose]');
-check('exploration asks what each character is doing', await dm.eval(
-  `!!document.querySelector('[data-choose]')`));
+check('exploration asks every character what they are doing', await dm.eval(
+  `document.querySelectorAll('[data-choose]').length`).then(n => n === 1), 'one character on the roster, one chooser');
 const activities = await dm.eval(
   `[...document.querySelectorAll('[data-choose] .pick')].map(b => b.textContent.trim())`);
 check('and offers every printed activity plus doing nothing', activities.length === 10,
@@ -272,7 +275,8 @@ check('and clears what everybody chose', tomorrow.chosen === 'Nothing today' && 
 // Into a fight.
 await goMode(dm, 'Encounter');
 await waitFor(dm, '.fight');
-check('switching to Fight shows the initiative panel', await dm.eval(`!!document.querySelector('.fight')`));
+check('switching to Fight shows an initiative panel with nobody in it', await dm.eval(
+  `!!document.querySelector('.fight') && document.querySelectorAll('.turn').length === 0`));
 check('and says nobody is in it yet', await dm.eval(
   `document.body.innerText.includes('Nobody is in this fight yet')`));
 
@@ -424,7 +428,9 @@ await type(player, '.pf-input', code);
 await sleep(400);
 await clickText(player, 'button', 'Join');
 await waitFor(player, '.character');
-check('a player joins with the code alone', await player.eval(`!!document.querySelector('.character')`));
+check('a player joins with the code alone and sees the party', await player.eval(
+  `[...document.querySelectorAll('.character__name')].map(e => e.textContent.trim())`)
+  .then(names => names.includes('Gnibbo')), 'the roster reached a browser that only had the code');
 
 // The strip is navigation for everybody, so a player gets the links: they can look at the camp
 // page while the party is still walking. What a player does not get is the table moving when
@@ -466,6 +472,7 @@ const seen = await player.eval(`(() => {
     removals: document.querySelectorAll('.turn__out').length,
   };
 })()`);
+check('the player is looking at a fight at all', seen.names.length > 0, seen.names.join(', '));
 check('the player is not offered the encounter controls', seen.controls === 0, String(seen.controls));
 check('nor the initiative fields', seen.initiativeFields === 0, String(seen.initiativeFields));
 check('nor a way to take anybody out of the fight', seen.removals === 0, String(seen.removals));

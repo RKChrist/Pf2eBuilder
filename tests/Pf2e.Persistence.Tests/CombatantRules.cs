@@ -45,6 +45,18 @@ public class CombatantRules(SeededDatabase database) : IClassFixture<SeededDatab
             .Handle(new AddCombatant(campaign.Code, campaign.DmKey, Ogre, null, name), default);
     }
 
+
+    const string Swarm = "creature-2695";
+
+    const string Seeker = "creature-51";
+
+    async Task<CampaignView> AddCreature(CreatedCampaignView campaign, string ruleId)
+    {
+        await using var db = database.NewContext();
+        return await new AddCombatantHandler(db, db, Stack, Broadcaster)
+            .Handle(new AddCombatant(campaign.Code, campaign.DmKey, ruleId, null, null), default);
+    }
+
     static IReadOnlyList<string> Names(CampaignView view) =>
         [.. view.Encounter!.Combatants.Select(c => c.Name)];
 
@@ -289,5 +301,42 @@ public class CombatantRules(SeededDatabase database) : IClassFixture<SeededDatab
         Assert.Equal(bard.Feats.Select(a => a.Name), edited.Feats.Select(a => a.Name));
         Assert.Equal(bard.Spells.Select(a => a.Name), edited.Spells.Select(a => a.Name));
         Assert.NotNull(edited.SpellAttack);
+    }
+// Numbering treated any name beginning with the new one as a copy of it, so a fight holding
+    // a Bloodseeker Swarm turned a lone Bloodseeker into "Bloodseeker 2", with no first one
+    // anywhere. A copy is the exact name, or the exact name and a number, and nothing else.
+    [Fact]
+    public async Task ACreatureWhoseNameStartsWithAnothersIsNotACopyOfIt()
+    {
+        var campaign = await NewCampaign();
+
+        var withSwarm = await AddCreature(campaign, Swarm);
+        var swarm = Assert.Single(Names(withSwarm));
+
+        var both = await AddCreature(campaign, Seeker);
+
+        // The one that just arrived is alone, so it carries the record's name with no number,
+        // and the creature that only shares a prefix with it is untouched.
+        Assert.Contains(swarm, Names(both));
+        var seeker = Assert.Single(Names(both), name => name != swarm);
+        Assert.True(swarm.StartsWith(seeker + " ", StringComparison.Ordinal),
+            $"expected '{swarm}' to start with '{seeker} ', which is what makes this a prefix pair");
+        Assert.DoesNotContain(seeker + " ", Names(both).Where(name => name != swarm));
+    }
+
+    // Two combatants can already carry the bare record name, because the API accepts a name of
+    // its own even though the picker never sends one. Renumbering the next arrival must not throw.
+    [Fact]
+    public async Task TwoCreaturesAlreadySharingTheRecordNameDoNotBreakTheNextArrival()
+    {
+        var campaign = await NewCampaign();
+        var first = await AddMonster(campaign);
+        var beast = Assert.Single(Names(first));
+
+        await AddMonster(campaign, beast);
+        var third = await AddMonster(campaign);
+
+        Assert.Equal(3, Names(third).Count);
+        Assert.Equal(Names(third).Count, Names(third).Distinct().Count());
     }
 }

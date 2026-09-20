@@ -21,7 +21,7 @@
                 <TextInput Label="Name" Value="@draft.Name"
                            ValueChanged="v => Edit(draft with { Name = v ?? string.Empty })" />
                 <div class="editor__field">
-                    <span class="editor__label" id="edit-Level">Level</span>
+                    <span class="editor__label">Level</span>
                     <NumberStepper Label="Level" Min="1" Max="20" Value="draft.Level"
                                    ValueChanged="v => Edit(draft with { Level = v })" />
                 </div>
@@ -36,32 +36,32 @@
                than making somebody convert 16 in their head to mean the same thing. *@
             <div class="editor__grid">
                 <div class="editor__field">
-                    <span class="editor__label" id="edit-Strength">Str</span>
+                    <span class="editor__label">Str</span>
                     <NumberStepper Label="Str" Min="-5" Max="10" Value="draft.Strength"
                                    ValueChanged="v => Edit(draft with { Strength = v })" />
                 </div>
                 <div class="editor__field">
-                    <span class="editor__label" id="edit-Dexterity">Dex</span>
+                    <span class="editor__label">Dex</span>
                     <NumberStepper Label="Dex" Min="-5" Max="10" Value="draft.Dexterity"
                                    ValueChanged="v => Edit(draft with { Dexterity = v })" />
                 </div>
                 <div class="editor__field">
-                    <span class="editor__label" id="edit-Constitution">Con</span>
+                    <span class="editor__label">Con</span>
                     <NumberStepper Label="Con" Min="-5" Max="10" Value="draft.Constitution"
                                    ValueChanged="v => Edit(draft with { Constitution = v })" />
                 </div>
                 <div class="editor__field">
-                    <span class="editor__label" id="edit-Intelligence">Int</span>
+                    <span class="editor__label">Int</span>
                     <NumberStepper Label="Int" Min="-5" Max="10" Value="draft.Intelligence"
                                    ValueChanged="v => Edit(draft with { Intelligence = v })" />
                 </div>
                 <div class="editor__field">
-                    <span class="editor__label" id="edit-Wisdom">Wis</span>
+                    <span class="editor__label">Wis</span>
                     <NumberStepper Label="Wis" Min="-5" Max="10" Value="draft.Wisdom"
                                    ValueChanged="v => Edit(draft with { Wisdom = v })" />
                 </div>
                 <div class="editor__field">
-                    <span class="editor__label" id="edit-Charisma">Cha</span>
+                    <span class="editor__label">Cha</span>
                     <NumberStepper Label="Cha" Min="-5" Max="10" Value="draft.Charisma"
                                    ValueChanged="v => Edit(draft with { Charisma = v })" />
                 </div>
@@ -97,7 +97,7 @@
                         Value="@draft.ArmorRank"
                         ValueChanged="v => Edit(draft with { ArmorRank = v ?? draft.ArmorRank })" />
                 <div class="editor__field">
-                    <span class="editor__label" id="edit-ArmorItemBonus">Armour bonus</span>
+                    <span class="editor__label">Armour bonus</span>
                     <NumberStepper Label="Armour bonus" Min="0" Max="10" Value="draft.ArmorItemBonus"
                                    ValueChanged="v => Edit(draft with { ArmorItemBonus = v })" />
                 </div>
@@ -107,12 +107,12 @@
                                    ValueChanged="v => Edit(draft with { ArmorDexCap = v })" />
                 </div>
                 <div class="editor__field">
-                    <span class="editor__label" id="edit-AncestryHitPoints">Ancestry HP</span>
+                    <span class="editor__label">Ancestry HP</span>
                     <NumberStepper Label="Ancestry HP" Min="0" Max="20" Value="draft.AncestryHitPoints"
                                    ValueChanged="v => Edit(draft with { AncestryHitPoints = v })" />
                 </div>
                 <div class="editor__field">
-                    <span class="editor__label" id="edit-ClassHitPoints">Class HP</span>
+                    <span class="editor__label">Class HP</span>
                     <NumberStepper Label="Class HP" Min="0" Max="20" Value="draft.ClassHitPoints"
                                    ValueChanged="v => Edit(draft with { ClassHitPoints = v })" />
                 </div>
@@ -123,7 +123,8 @@
                         OnClick="() => Dispatcher.Dispatch(new EditorClosed())">
                     Cancel
                 </Button>
-                <Button Disabled="editor.Saving"
+                <Button Variant="ButtonVariant.Primary"
+                        Disabled="editor.Saving"
                         OnClick="() => Dispatcher.Dispatch(new EditSubmitted())">
                     @if (editor.Saving)
                     {

@@ -160,7 +160,8 @@ export function reporter() {
     if (!ok) failures++;
     console.log(`${ok ? 'PASS' : 'FAIL'}  ${label.padEnd(58)} ${detail}`);
   };
-  check.eq = (label, actual, expected) => check(label, String(actual) === String(expected), `got ${actual}, want ${expected}`);
+  check.eq = (label, actual, expected, detail) =>
+    check(label, String(actual) === String(expected), detail ?? `got ${actual}, want ${expected}`);
   check.done = () => {
     console.log(`\n${failures} failure(s)`);
     return failures;

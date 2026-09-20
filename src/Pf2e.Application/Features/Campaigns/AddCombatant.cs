@@ -41,6 +41,17 @@ public sealed class AddCombatantHandler(
     ITrackerDbContext db, IRulesDbContext rules, IUndoStack undo, ICampaignBroadcaster broadcaster)
     : IRequestHandler<AddCombatant, CampaignView>
 {
+    /// <summary>
+    /// Two adds arriving within about two milliseconds of each other, into a campaign with no
+    /// encounter row yet, both run <c>campaign.Encounter ??= new Encounter</c> and one loses the
+    /// insert with a 500, taking its combatant with it. Once the row exists, concurrent adds are
+    /// clean, and concurrent hit point changes are clean at every point.
+    /// <para>Not retried here. Retrying on the same context re-attempts the insert that already
+    /// failed, because the doomed entity is still tracked, and a catch that reads as handled and
+    /// is not is worse than none. The client no longer produces overlapping adds: the whole party
+    /// arrives as one action whose effect awaits each add. Closing the window properly means
+    /// serialising campaign writes or creating the encounter idempotently, and that is tracked.</para>
+    /// </summary>
     public async Task<CampaignView> Handle(AddCombatant command, CancellationToken ct)
     {
         var change = await CampaignAccess.LoadForChangeAsync(
@@ -143,27 +154,63 @@ public sealed class AddCombatantHandler(
     /// </summary>
     static string Numbered(Encounter encounter, string name)
     {
-        var sameCreature = encounter.Combatants
+        var copies = encounter.Combatants
             .OfType<MonsterCombatant>()
-            .Where(m => m.Name == name || m.Name.StartsWith(name + " ", StringComparison.Ordinal))
+            .Select(monster => (Monster: monster, Copy: CopyNumber(monster.Name, name)))
+            .Where(pair => pair.Copy is not null)
             .ToList();
 
-        if (sameCreature.Count == 0)
+        if (copies.Count == 0)
         {
             return name;
         }
 
-        if (sameCreature.SingleOrDefault(m => m.Name == name) is { } lonely)
+        // Every copy ends up with a number nothing else in the fight holds. The ones already
+        // here that have none take the lowest free numbers, in the order they arrived, and the
+        // new one takes the next. Handing them all the same number, which a first attempt did,
+        // is the thing this whole function exists to prevent.
+        var taken = new HashSet<int>(copies.Where(pair => pair.Copy > 0).Select(pair => pair.Copy!.Value));
+
+        int NextFree()
         {
-            lonely.Name = $"{name} 1";
+            var number = 1;
+            while (!taken.Add(number))
+            {
+                number++;
+            }
+
+            return number;
         }
 
-        var highest = sameCreature
-            .Select(m => int.TryParse(m.Name[name.Length..].Trim(), out var n) ? n : 1)
-            .DefaultIfEmpty(0)
-            .Max();
+        foreach (var unnumbered in copies.Where(pair => pair.Copy == 0))
+        {
+            unnumbered.Monster.Name = $"{name} {NextFree()}";
+        }
 
-        return $"{name} {highest + 1}";
+        return $"{name} {NextFree()}";
+    }
+
+    /// <summary>
+    /// Which copy of <paramref name="name"/> a combatant called <paramref name="existing"/> is,
+    /// or null when it is a different creature. Zero means the bare name with no number.
+    /// <para>Only the exact name, or the exact name followed by a number and nothing else, which
+    /// is the only shape this file ever produces. Matching on a prefix made "Wolf Pack" count as
+    /// a wolf, so a lone wolf arrived as "Wolf 2".</para>
+    /// </summary>
+    static int? CopyNumber(string existing, string name)
+    {
+        if (existing == name)
+        {
+            return 0;
+        }
+
+        if (!existing.StartsWith(name + " ", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        var tail = existing[(name.Length + 1)..];
+        return int.TryParse(tail, out var number) && number > 0 ? number : null;
     }
 
     static int Number(JsonObject? mechanics, string key) =>

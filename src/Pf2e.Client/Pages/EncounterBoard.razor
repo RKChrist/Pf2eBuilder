@@ -5,6 +5,7 @@
 @inject IState<ExplorationState> ExplorationStore
 @inject IDispatcher Dispatcher
 @inject NavigationManager Navigation
+@using System.Globalization
 
 <PageTitle>Encounter</PageTitle>
 
@@ -403,7 +404,11 @@
             }
         }
 
-        Dispatcher.Dispatch(new InitiativeDrafted(combatant.Id, string.Empty));
+        // The number the server last confirmed, written back explicitly. Dispatching an empty
+        // draft looks like it does this and does not: the draft was already empty, so nothing
+        // changed and the refused text stayed in the box.
+        Dispatcher.Dispatch(new InitiativeDrafted(
+            combatant.Id, combatant.Initiative.ToString(CultureInfo.InvariantCulture)));
     }
 
     /// <summary>One defence on a row, already written the way it reads.</summary>
@@ -475,16 +480,11 @@
 
     int? Typed(Guid creatureId) => SheetFormat.Typed(State.HitPointDraft(creatureId));
 
-    /// <summary>The whole party at once, which is how a fight starts. Dispatched one at a time
-    /// rather than as a batch, because each one is its own command on the server and a party of
-    /// five arriving as five commands is five broadcasts nobody notices.</summary>
-    void AddEveryone(IReadOnlyList<CharacterSheetView> roster)
-    {
-        foreach (var character in roster)
-        {
-            Dispatcher.Dispatch(new CombatantAdded(null, character.Id, null));
-        }
-    }
+    /// <summary>The whole party at once, which is how a fight starts. One action carrying all
+    /// of them, because one action per character meant one command per character racing the rest
+    /// on the same campaign, and all but one were lost.</summary>
+    void AddEveryone(IReadOnlyList<CharacterSheetView> roster) =>
+        Dispatcher.Dispatch(new PartyAdded([.. roster.Select(character => character.Id)]));
 
     void Apply(Guid creatureId, string direction)
     {

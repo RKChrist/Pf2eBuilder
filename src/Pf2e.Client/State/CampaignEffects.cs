@@ -139,15 +139,6 @@ public sealed class CampaignEffects
             code, action.CharacterId, action.Amount, action.Direction, CancellationToken.None));
 
     [EffectMethod]
-    public Task Handle(HitPointsNudged action, IDispatcher dispatcher) =>
-        ApplyToCampaignAsync(dispatcher, code => _tracker.ChangeHitPointsAsync(
-            code,
-            action.CharacterId,
-            Math.Abs(action.Delta),
-            action.Delta < 0 ? "Damage" : "Heal",
-            CancellationToken.None));
-
-    [EffectMethod]
     public Task Handle(EffectSet action, IDispatcher dispatcher) =>
         ApplyToCampaignAsync(dispatcher, code => _tracker.ApplyEffectAsync(
             code, action.Slot, action.Effect,

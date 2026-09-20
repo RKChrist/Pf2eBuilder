@@ -145,7 +145,9 @@ public sealed class TrackedCharacter
     /// </summary>
     /// <summary>
     /// Everything an import knows: the build layer, and then the parts of a character that only
-    /// an export can state.
+    /// an export can state. This is the path a re-import takes, which is what makes "the session
+    /// layer survives a re-import" true by construction rather than by two implementations
+    /// happening to agree.
     /// </summary>
     public void Apply(Character build)
     {

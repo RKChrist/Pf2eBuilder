@@ -9,10 +9,10 @@ namespace Pf2e.Application.Features.Campaigns;
 /// <summary>
 /// Import is how a character arrives. It is not how a character stays correct: a level-up
 /// between sessions, a number Pathbuilder got wrong and a homebrew ancestry all need an edit.
-/// <para>This writes the build layer through <see cref="Domain.Tracking.TrackedCharacter.Apply"/>,
-/// which is the same and only path a re-import takes. That is what makes "the session layer
-/// survives an edit exactly as it survives a re-import" true by construction rather than by two
-/// implementations agreeing.</para>
+/// <para>This writes through <see cref="Domain.Tracking.TrackedCharacter.ApplyEdits"/>, which
+/// reaches the build layer and nothing else. A re-import goes through Apply, which reaches that
+/// same layer and then the weapons, skills, feats and spells only an export can state. Writing
+/// an edit through Apply erased all of those, because the edit command does not carry them.</para>
 /// </summary>
 public sealed record EditCharacter(string Code, Guid CharacterId, CharacterBuildEdit Build)
     : IRequest<CharacterSheetView>;

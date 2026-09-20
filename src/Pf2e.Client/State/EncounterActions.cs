@@ -24,6 +24,11 @@ public sealed record MonsterSearchFailed(string Message);
 /// exactly one of the two is set.</summary>
 public sealed record CombatantAdded(string? RuleId, Guid? CharacterId, string? Name);
 
+/// <summary>Everybody on the roster who is not in the fight yet, as one action rather than one
+/// per character. Adding them as separate actions means separate commands racing each other on
+/// the same campaign, which lost all but one of them.</summary>
+public sealed record PartyAdded(IReadOnlyList<Guid> CharacterIds);
+
 public sealed record InitiativeRolled;
 
 public sealed record TurnAdvanced;

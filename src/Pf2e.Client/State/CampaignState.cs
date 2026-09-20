@@ -166,9 +166,6 @@ public sealed record ImportFailed(string Message);
 /// push both arrive here, so a local change and somebody else's are the same render.</summary>
 public sealed record CharacterUpdated(CharacterSheetView Character);
 
-/// <summary>One point, for the nudge case the steppers still serve.</summary>
-public sealed record HitPointsNudged(Guid CharacterId, int Delta);
-
 public sealed record HitPointDraftChanged(Guid CharacterId, string Draft);
 
 /// <summary>
@@ -257,12 +254,17 @@ public static class CampaignReducers
     public static CampaignState On(CampaignState state, CampaignCreated action) =>
         state with { DmKey = action.Created.DmKey };
 
+    // Each of the two ways in clears the other, because two half filled ways to say the same
+    // thing is a screen that cannot say which one it will send. The first version claimed this
+    // and only did half of it, so a chosen file silently beat a paste with both on screen.
     [ReducerMethod]
     public static CampaignState On(CampaignState state, PasteDraftChanged action) =>
-        state with { PasteDraft = action.Draft };
+        state with
+        {
+            PasteDraft = action.Draft,
+            File = action.Draft.Length > 0 ? null : state.File,
+        };
 
-    // Choosing a file clears whatever was pasted and the other way round, because two half
-    // filled ways to say the same thing is a screen that cannot say which one it will send.
     [ReducerMethod]
     public static CampaignState On(CampaignState state, FileChosen action) =>
         state with { File = action.File, PasteDraft = string.Empty, ImportError = null };
