@@ -1,8 +1,8 @@
 <section @attributes="Attributes" class="pf-card @Class">
-    @if (!string.IsNullOrEmpty(Title) || HeadContent is not null)
+    @if (!string.IsNullOrEmpty(Title) || TitleContent is not null || HeadContent is not null)
     {
         <header class="pf-card__head">
-            <h2 class="pf-card__title">@Title</h2>
+            <h2 class="pf-card__title">@if (TitleContent is not null) { @TitleContent } else { @Title }</h2>
             @HeadContent
         </header>
     }
@@ -23,6 +23,11 @@
     [Parameter] public string? Class { get; set; }
 
     [Parameter] public string? Title { get; set; }
+
+    /// <summary>The same heading when the title has to hold something other than words, such as
+    /// a name that opens its own record. It replaces <see cref="Title"/> inside the one h2, so a
+    /// card that uses it is still one heading to a screen reader.</summary>
+    [Parameter] public RenderFragment? TitleContent { get; set; }
 
     [Parameter] public RenderFragment? HeadContent { get; set; }
 

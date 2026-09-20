@@ -4,7 +4,6 @@
 @inject IState<ConditionsState> ConditionsStore
 @inject IState<ExplorationState> ExplorationStore
 @inject IDispatcher Dispatcher
-@inject NavigationManager Navigation
 @using System.Globalization
 
 <PageTitle>Encounter</PageTitle>
@@ -130,9 +129,12 @@
                                           Label="@(adversary ? "Adversary" : "Player character")" />
                                     @if (combatant.Monster is { RuleId: { Length: > 0 } record })
                                     {
-                                        <a class="turn__called turn__called--record"
-                                           href="@Navigation.Rule(record)"
-                                           title="@($"What {combatant.Name} can do")">@combatant.Name</a>
+                                        <span class="turn__called turn__called--record"
+                                              title="@($"What {combatant.Name} can do")">
+                                            <RuleLink Ref='@(new RuleRef.Id(record))'
+                                                      Label="@combatant.Name"
+                                                      Alone="true" />
+                                        </span>
                                     }
                                     else
                                     {
@@ -239,7 +241,9 @@
                                             else
                                             {
                                                 <span class="chip chip--read" data-effect="@effect.Id">
-                                                    <span class="chip__name">@Named(effect)</span>
+                                                    <RuleLink Ref='@(new RuleRef.Named("condition", effect.Name))'
+                                                              Label="@Named(effect)"
+                                                              Class="chip__name" />
                                                 </span>
                                             }
                                         }

@@ -4,7 +4,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime Js
 
-<BottomSheet Open="@(Detail.Value.Id is not null)" Title="@Title" OnClose="Close" Class="pf-sheet--dock rule-sheet">
+<BottomSheet Open="@(Detail.Value.Id is not null)" Title="@Title" OnClose="Close" Class="rule-sheet">
     <RemoteView T="RuleDetail" Data="Detail.Value.Detail">
         <Loading>
             <div class="pending">

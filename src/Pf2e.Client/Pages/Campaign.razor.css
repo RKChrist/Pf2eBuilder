@@ -220,34 +220,26 @@
     gap: var(--space-1);
 }
 
+/* The row holds the name and the kind; the name alone is what opens, the same as everywhere
+   else in the app, so the row is a box and not a target. */
 .owned__entry {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     gap: 2px;
     min-height: var(--tap-min);
     justify-content: center;
     padding: var(--space-1) var(--space-2);
     border-radius: var(--radius-chip);
-    text-decoration: none;
 }
 
-a.owned__entry:hover {
-    background: var(--accent-tint);
-}
-
-.owned__entry-name {
+.owned__entry ::deep .owned__entry-name {
     font-size: var(--font-size-data);
-    color: var(--text-primary);
 }
 
 .owned__entry-kind {
     font-size: var(--font-size-chip);
     color: var(--text-muted);
-}
-
-/* Not an error state. Homebrew is somebody's character too; it just has no record to open. */
-.owned__entry--unknown .owned__entry-name {
-    color: var(--text-secondary);
 }
 
 /* ---------------------------------------------------------------- import */

@@ -124,7 +124,13 @@
 }
 
 @media (hover: hover) {
-    .option:hover,
+    /* A match under the pointer is tinted the same as the one under the arrow keys. The inset
+       bar is not repeated, because that is what says where the keyboard is, and a mouse moving
+       across the list must not look like it moved the keyboard too. */
+    .option:hover {
+        background: var(--accent-wash);
+    }
+
     .chip:hover,
     .all:hover {
         background: var(--accent-tint);

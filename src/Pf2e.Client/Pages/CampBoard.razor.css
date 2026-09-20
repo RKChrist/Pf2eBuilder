@@ -115,31 +115,12 @@
     background: var(--surface-sunken);
 }
 
-.activity__name {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    min-height: var(--tap-min);
-    color: var(--accent-base);
+/* The name is a RuleLink and brings its own colour, underline and tap floor. What is left here
+   is the size it reads at and keeping it as wide as its words rather than as wide as the row. */
+.activity ::deep .activity__name {
+    align-self: flex-start;
     font-size: var(--font-size-body);
     font-weight: var(--font-weight-medium);
-    text-decoration: none;
-}
-
-/* The chevron says the name opens the rule, which sixteen boxes with a word in each did not. */
-.activity__name::after {
-    content: "";
-    flex: none;
-    width: 0.4em;
-    height: 0.4em;
-    border-top: var(--border-strong) solid currentColor;
-    border-right: var(--border-strong) solid currentColor;
-    transform: rotate(45deg);
-}
-
-.activity__name:hover {
-    color: var(--accent-press);
-    text-decoration: underline;
 }
 
 .activity__needs {

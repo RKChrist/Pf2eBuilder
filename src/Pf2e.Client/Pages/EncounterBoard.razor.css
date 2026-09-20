@@ -237,18 +237,11 @@
 }
 
 /* The name opens the creature's record, which is where "what can this thing do" is answered
-   and which the tracker could not reach at all. */
+   and which the tracker could not reach at all. The link inside brings its own look; this is
+   only the box it sits in, which carries the sentence a pointer finds on hover. */
 .turn__called--record {
     display: inline-flex;
     align-items: center;
-    min-height: var(--tap-min);
-    color: var(--accent-base);
-    text-decoration: none;
-}
-
-.turn__called--record:hover {
-    color: var(--accent-press);
-    text-decoration: underline;
 }
 
 /* However many it has, on one line, scrolled rather than wrapped: a creature with nine traits

@@ -8,7 +8,9 @@
         @foreach (var option in Options)
         {
             <div class="guide__entry">
-                <dt class="guide__name">@option.Name</dt>
+                <dt class="guide__name">
+                    <RuleLink Ref='@(new RuleRef.Named("action", option.Name))' Alone="true" />
+                </dt>
                 <dd class="guide__what">@option.What</dd>
             </div>
         }

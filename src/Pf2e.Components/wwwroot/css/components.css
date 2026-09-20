@@ -1216,6 +1216,9 @@
 .pf-sheet {
   position: fixed;
   inset: 0;
+  /* One depth for every sheet, so two open at once are painted in DOM order. The layout renders
+     the record and trait sheets after the page's own, which is what puts a rule opened from
+     inside another sheet on top of it and uncovers that sheet again when the rule closes. */
   z-index: 40;
   display: flex;
   flex-direction: column;
@@ -1347,17 +1350,20 @@
 }
 
 /* What a sheet costs is the list behind it, and on a phone there is no way round that. Given
-   laptop width there is: a sheet marked --dock stands at the side instead, so the place you had
-   in six thousand feats is still there when you look up from one. The host reserves the same
-   width for it, which is why the width is published here rather than decided twice. */
+   laptop width there is no need to pay it, so every sheet stands at the side instead and the
+   place you had in six thousand feats is still there when you look up from one. It is what a
+   sheet does at this width rather than something a caller opts into, because the four callers
+   that never opted in covered a desk monitor and dimmed a page the reader still had to use.
+   The host reserves the same width for it, which is why the width is published here rather
+   than decided twice. */
 :root {
   --pf-sheet-dock-width: min(var(--layout-content-max), 40%);
 }
 
 /* 1024px is layout.viewport-desk; a media query cannot read a custom property. */
 @media (min-width: 1024px) {
-  .pf-sheet--dock {
-    /* Read by the behaviour file, which refuses the drag-to-dismiss while this is set: a panel
+  .pf-sheet {
+    /* Read by the behaviour file, which refuses the drag-to-dismiss while this is set. A panel
        at the side does not go down, and the stylesheet is the one place that knows it is one. */
     --pf-sheet-docked: 1;
     inset-inline-start: auto;
@@ -1365,12 +1371,12 @@
   }
 
   /* Nothing is dimmed, because the list beside it stays in use. */
-  .pf-sheet--dock .pf-sheet__scrim,
-  .pf-sheet--dock .pf-sheet__grab {
+  .pf-sheet__scrim,
+  .pf-sheet__grab {
     display: none;
   }
 
-  .pf-sheet--dock .pf-sheet__panel {
+  .pf-sheet__panel {
     height: 100%;
     max-height: none;
     border-start-start-radius: var(--radius-grid);

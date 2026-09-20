@@ -40,7 +40,10 @@
         <div class="cards">
             @foreach (var condition in conditions)
             {
-                <Card Title="@condition.Name">
+                <Card>
+                    <TitleContent>
+                        <RuleLink Ref='@(new RuleRef.Named("condition", condition.Name))' Alone="true" />
+                    </TitleContent>
                     <HeadContent>
                         @if (condition.HasValue)
                         {

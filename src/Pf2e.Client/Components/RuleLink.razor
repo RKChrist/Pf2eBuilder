@@ -1,0 +1,65 @@
+@inject NavigationManager Navigation
+@inject RuleNames Names
+
+@* A rule's name, wherever it is written, opening the record behind it.
+
+   A known id is a real anchor, so middle-click and open-in-new-tab work the way they do
+   everywhere else in the app. A bare name cannot be one: where it goes is not known until
+   somebody asks, and asking every name on screen while a list is drawn would be a search per
+   row. Propagation is stopped either way, so a name inside a clickable row explains itself
+   without also firing the row. *@
+@if (Ref is RuleRef.Id known)
+{
+    <a class="@Classes" href="@Navigation.Rule(known.RuleId)" @onclick:stopPropagation>@Body</a>
+}
+else if (Ref is RuleRef.Named named)
+{
+    <button type="button"
+            class="@Classes"
+            aria-busy="@(_asking ? "true" : null)"
+            @onclick="() => Ask(named)"
+            @onclick:stopPropagation>@Body</button>
+}
+
+@code {
+    [Parameter, EditorRequired] public RuleRef Ref { get; set; } = default!;
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>What to write instead of the name itself, for the places where the words on
+    /// screen and the words the ruleset knows are not the same, such as "Frightened 2".</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Whether this link is the whole content of its own row or heading, which decides
+    /// whether it carries the tap floor. See the stylesheet.</summary>
+    [Parameter] public bool Alone { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    bool _asking;
+
+    string Classes => $"rule-link{(Alone ? " rule-link--alone" : string.Empty)} {Class}";
+
+    RenderFragment Body => ChildContent ?? (@<text>@(Label ?? (Ref as RuleRef.Named)?.Name)</text>);
+
+    /// <summary>A tap is never dead: a name the ruleset has no record of lands on a search for
+    /// it, which is where somebody would have gone looking next anyway.</summary>
+    async Task Ask(RuleRef.Named named)
+    {
+        if (_asking)
+        {
+            return;
+        }
+
+        _asking = true;
+        try
+        {
+            var id = await Names.IdOfAsync(named.Category, named.Name, CancellationToken.None);
+            Navigation.NavigateTo(id is null ? Links.Search(named.Name) : Navigation.Rule(id));
+        }
+        finally
+        {
+            _asking = false;
+        }
+    }
+}
