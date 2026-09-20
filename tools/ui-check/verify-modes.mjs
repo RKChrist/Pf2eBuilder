@@ -88,9 +88,9 @@ await click('.passing__span[data-minutes="10"]');
 await sleep(800);
 assert(/10 min/i.test(await text('.clock__value')), 'and ten minutes more on top of it', await text('.clock__value'));
 
-await click('.shell__party[href="/campaign/camp"]');
+await click('.shell__mode-link[data-page="Camp"]');
 await wait(`document.querySelector('.camp')`);
-assert((await text('.shell__party.on')) === 'Camp', 'the header says you are at camp', await text('.shell__party.on'));
+assert((await text('.shell__mode-link--page.on')) === 'Camp', 'the strip says you are at camp', await text('.shell__mode-link--page.on'));
 assert(/10 min/i.test(await text('.clock__value')), 'and camp reads the same clock the road moved', await text('.clock__value'));
 await shot('3-camp');
 

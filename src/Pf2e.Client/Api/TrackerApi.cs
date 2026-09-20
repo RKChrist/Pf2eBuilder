@@ -191,6 +191,17 @@ public sealed class TrackerApi(HttpClient http)
 
     static string Campaign(string code) => $"campaigns/{Uri.EscapeDataString(code)}";
 
+    /// <summary>Every change to a camping session. They all hang off <c>/camp</c> and all answer
+    /// with the campaign, so they are one call and the path says which.</summary>
+    public Task<CampaignView> CampAsync(
+        string code, HttpMethod method, string path, object? body, CancellationToken ct) =>
+        SendAsync<CampaignView>(
+            new HttpRequestMessage(method, $"{Campaign(code)}/camp/{path}")
+            {
+                Content = body is null ? null : JsonContent.Create(body, body.GetType()),
+            },
+            ct);
+
     static HttpRequestMessage Carrying<T>(HttpMethod method, string url, T body) =>
         new(method, url) { Content = JsonContent.Create(body) };
 

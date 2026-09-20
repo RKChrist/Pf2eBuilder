@@ -164,3 +164,26 @@
     gap: var(--space-3);
     text-align: start;
 }
+
+/* A page in the strip that is not a mode. A rule before it says the three to its left are one
+   kind of thing and this is another. */
+.shell__mode-link--page {
+    margin-inline-start: var(--space-2);
+    position: relative;
+}
+
+.shell__mode-link--page::before {
+    content: '';
+    position: absolute;
+    inset-block: var(--space-2);
+    inset-inline-start: calc(var(--space-2) * -1 + var(--space-1) / -2);
+    inline-size: var(--border-hair);
+    background: var(--line-strong);
+}
+
+/* The strip holds four now, which is one more than a phone shows across. */
+.shell__modes {
+    max-inline-size: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
