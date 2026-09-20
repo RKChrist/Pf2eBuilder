@@ -299,6 +299,32 @@ public class EncounterFlowRules(SeededDatabase database) : IClassFixture<SeededD
         Assert.Equal("Monster", Assert.Single(Assert.Single(dm.Effects).Targets).Kind);
     }
 
+    // The apply side refused a player from the beginning. The remove side asked nobody, so a
+    // player could lift the frightened the DM had just put on the ogre, on the turn it mattered.
+    [Fact]
+    public async Task OnlyTheDmLiftsAnEffectFromAMonster()
+    {
+        var campaign = await NewCampaign();
+        var bard = await Import(campaign.Code, "Zuz");
+        await AddPlayer(campaign, bard.Id);
+        var withOgre = await AddMonster(campaign, Ogre, "Ogre boss");
+        var ogre = MonsterNamed(withOgre, "Ogre boss");
+
+        var onTheOgre = Guid.NewGuid();
+        await Apply(campaign.Code, campaign.DmKey, onTheOgre, new EffectTargetSpec("Monster", ogre));
+
+        await Assert.ThrowsAsync<NotTheDmException>(() => Lift(campaign.Code, null, onTheOgre));
+        Assert.Single((await Read(campaign.Code, campaign.DmKey)).Effects);
+
+        // What a player may put on, a player may take off, which is the half that has to keep
+        // working for the gate to be worth having.
+        var onTheBard = Guid.NewGuid();
+        await Apply(campaign.Code, null, onTheBard, new EffectTargetSpec("Character", bard.Id));
+        Assert.Empty((await Lift(campaign.Code, null, onTheBard)).Characters.Single().Effects);
+
+        Assert.Empty((await Lift(campaign.Code, campaign.DmKey, onTheOgre)).Effects);
+    }
+
     // A stated kind that does not match what is there is a client confusing two ids, and doing
     // the other thing quietly is how a player ends up buffing the ogre.
     [Fact]
@@ -316,15 +342,34 @@ public class EncounterFlowRules(SeededDatabase database) : IClassFixture<SeededD
         Assert.Contains("not a character", failure.Message);
     }
 
-    async Task<CampaignView> Apply(string code, string? dmKey, params EffectTargetSpec[] targets)
+    async Task<CampaignView> Apply(string code, string? dmKey, params EffectTargetSpec[] targets) =>
+        await Apply(code, dmKey, Guid.NewGuid(), targets);
+
+    async Task<CampaignView> Apply(
+        string code, string? dmKey, Guid application, params EffectTargetSpec[] targets)
     {
         await using var db = database.NewContext();
         return await new ApplyEffectHandler(db, Stack, Broadcaster).Handle(
-            new ApplyEffect(code, dmKey, Guid.NewGuid(),
+            new ApplyEffect(code, dmKey, application,
                 new EffectSpec("Rallying Anthem", "Custom", null, 0, null,
                     [new EffectModifierView("Status", 1, [new SelectorSpecView("Exactly", "Will", null, null)])]),
                 targets),
             default);
+    }
+
+    /// <summary>The removal half of the same operation, naming the application the apply made.
+    /// A null effect is how the one command says "take it off".</summary>
+    async Task<CampaignView> Lift(string code, string? dmKey, Guid application)
+    {
+        await using var db = database.NewContext();
+        return await new ApplyEffectHandler(db, Stack, Broadcaster).Handle(
+            new ApplyEffect(code, dmKey, application, null, []), default);
+    }
+
+    async Task<CampaignView> Read(string code, string? dmKey)
+    {
+        await using var db = database.NewContext();
+        return await new GetCampaignHandler(db).Handle(new GetCampaign(code, dmKey), default);
     }
 
     async Task<Guid> CampaignId(string code)

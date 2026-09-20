@@ -365,6 +365,17 @@
     color: var(--danger-base);
 }
 
+/* What a player sees on a monster: the same chip, without the affordance of a control they
+   would be refused. */
+.chip--read {
+    cursor: default;
+}
+
+.chip--read:hover {
+    border-color: var(--line-subtle);
+    color: var(--text-secondary);
+}
+
 .chip--add {
     border-style: dashed;
     background: none;

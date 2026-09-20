@@ -199,14 +199,27 @@
                                     <div class="turn__chips">
                                         @foreach (var effect in combatant.Effects)
                                         {
-                                            <button type="button"
-                                                    class="chip"
-                                                    data-effect="@effect.Id"
-                                                    aria-label="@($"Remove {Named(effect)} from {combatant.Name}")"
-                                                    @onclick="() => Clear(combatant, effect)">
-                                                <span class="chip__name">@Named(effect)</span>
-                                                <Icon Name="close" Class="chip__off" />
-                                            </button>
+                                            @* A player reads a monster's conditions and cannot
+                                               take them off, the same way they cannot put them
+                                               on. The chip stays, because "the ogre is
+                                               frightened 2" is how a player decides their turn. *@
+                                            if (mine)
+                                            {
+                                                <button type="button"
+                                                        class="chip"
+                                                        data-effect="@effect.Id"
+                                                        aria-label="@($"Remove {Named(effect)} from {combatant.Name}")"
+                                                        @onclick="() => Clear(combatant, effect)">
+                                                    <span class="chip__name">@Named(effect)</span>
+                                                    <Icon Name="close" Class="chip__off" />
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <span class="chip chip--read" data-effect="@effect.Id">
+                                                    <span class="chip__name">@Named(effect)</span>
+                                                </span>
+                                            }
                                         }
                                         @if (mine)
                                         {

@@ -10,6 +10,7 @@ import { launch, openPage, reporter, sleep } from './cdp.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const client = process.argv[2] ?? 'http://localhost:5173/';
+const api = process.argv[3] ?? 'http://localhost:5092';
 const shots = process.env.SHOTS;
 const pathbuilder = readFileSync('tests/Pf2e.Persistence.Tests/Fixtures/gnibbo.json', 'utf8');
 
@@ -488,9 +489,62 @@ check('an unrevealed monster is not on their screen either', !seen.names.include
   seen.names.join(', '));
 await shot(player, 'player-02-fight');
 
+// A condition on a monster is the DM's to put on and the DM's to lift. The apply side has
+// refused a player from the beginning. The remove side asked nobody, so a player could take
+// frightened off the ogre on the turn it mattered, and no screen said who had.
+const ogreRow = `[...document.querySelectorAll('.turn')]
+  .find(t => t.querySelector('.turn__called')?.textContent.includes('Ogre'))`;
+
+await dm.eval(`${ogreRow}?.querySelector('.reveal .pf-switch__input')?.click()`);
+await sleep(1000);
+await dm.eval(`${ogreRow}?.querySelector('.chip--add')?.click()`);
+await waitFor(dm, '.condition');
+await dm.eval(`[...document.querySelectorAll('.condition')]
+  .find(c => c.dataset.condition === 'frightened')
+  ?.querySelector('button:last-of-type')?.click()`);
+await sleep(1200);
+await dm.eval(`document.querySelector('.pf-sheet__close')?.click()`);
+await sleep(800);
+
+check('revealing a monster puts it on the player screen',
+  await until(player, `${ogreRow} !== undefined`, 15000));
+check('with the condition the DM put on it, because that is how a player picks a turn',
+  await until(player, `${ogreRow}?.textContent.toLowerCase().includes('frightened')`, 15000));
+
+const lifting = await player.eval(`(() => {
+  const row = ${ogreRow};
+  const chip = row?.querySelector('[data-effect]');
+  return {
+    tag: chip?.tagName ?? 'none',
+    id: chip?.dataset.effect ?? '',
+    removals: row?.querySelectorAll('button[data-effect]').length ?? -1,
+    adds: row?.querySelectorAll('.chip--add').length ?? -1,
+  };
+})()`);
+check('the player is not offered a control that takes it off',
+  lifting.tag === 'SPAN' && lifting.removals === 0, JSON.stringify(lifting));
+check('nor one that puts another on', lifting.adds === 0, String(lifting.adds));
+
+// Everything above is the path a table takes, so it has to be quiet. Counted here rather than
+// at the end, because the probe below is refused on purpose and a 403 is the right answer to it.
 const errors = [...dm.consoleErrors(), ...player.consoleErrors()]
   .filter(e => !e.includes('ERR_BLOCKED_BY_CLIENT'));
 check('no console errors', errors.length === 0, errors.join(' | ').slice(0, 300));
+
+// The markup is the courtesy. This is the rule.
+const refused = await player.eval(`(async () => {
+  const answer = await fetch(
+    ${JSON.stringify(api)} + '/campaigns/' + ${JSON.stringify(code)} + '/effects/' + '${lifting.id}',
+    {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ effect: null, targets: [] }),
+    });
+  return answer.status;
+})()`);
+check.eq('and a request that asks anyway is refused', refused, 403);
+check('so it is still on the monster',
+  await until(player, `${ogreRow}?.textContent.toLowerCase().includes('frightened')`, 5000));
 
 await browser.close();
 process.exit(check.done());

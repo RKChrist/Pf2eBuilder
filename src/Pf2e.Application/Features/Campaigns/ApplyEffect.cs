@@ -13,6 +13,8 @@ namespace Pf2e.Application.Features.Campaigns;
 /// application with a Guid it generates, so resending the same apply over a flaky phone
 /// connection converges on the same state instead of stacking a duplicate. A null
 /// <see cref="Effect"/> removes the application, and removing one that is not there succeeds.
+/// <para>Both halves answer to the same role: an effect that reaches a monster is the DM's to
+/// apply and the DM's to lift.</para>
 /// <para>The targets are a list, so Rallying Anthem on the whole party is one row that reached
 /// five creatures rather than five rows that happen to share a name.</para>
 /// </summary>
@@ -78,6 +80,7 @@ public sealed class ApplyEffectHandler(
         {
             if (existing is not null)
             {
+                EffectTargets.GuardRemoval(role, existing);
                 campaign.EffectApplications.Remove(existing);
             }
         }

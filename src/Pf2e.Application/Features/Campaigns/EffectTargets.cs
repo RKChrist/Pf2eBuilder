@@ -57,6 +57,20 @@ internal static class EffectTargets
         return [.. resolved.DistinctBy(target => target.Id)];
     }
 
+    /// <summary>
+    /// The same gate on the way out, because an effect is two operations and authority over it
+    /// is one question. A player who could lift frightened off the ogre would be deciding the
+    /// fight as surely as one who put it there.
+    /// </summary>
+    public static void GuardRemoval(ViewerRole role, EffectApplication application)
+    {
+        if (role is not ViewerRole.Dm
+            && application.Targets.Any(target => target.Kind is EffectTargetKind.Monster))
+        {
+            throw new NotTheDmException("remove an effect from a monster");
+        }
+    }
+
     static IEnumerable<MonsterCombatant> Monsters(Campaign campaign) =>
         campaign.Encounter?.Combatants.OfType<MonsterCombatant>() ?? [];
 
