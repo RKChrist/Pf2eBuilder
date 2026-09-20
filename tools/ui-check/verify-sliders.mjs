@@ -338,6 +338,13 @@ if (hold > 0) {
 
 // ---------------------------------------------------------------- sheet drag to dismiss
 
+// At a phone width, because dragging a sheet away is a phone gesture and the stylesheet stopped
+// offering it anywhere else. Every sheet docks to the side from 1024px, where there is no
+// grabber to take hold of and nothing that goes down, which is asserted on its own below. This
+// section ran at whatever width the window happened to be and started failing the day that
+// changed, against a product that was right.
+await page.viewport(390, 800, true);
+
 const sheet = await page.eval(`document.querySelectorAll('.pf-sheet__grab').length`);
 if (sheet > 0) {
   await page.coarse(true);
@@ -369,6 +376,24 @@ if (sheet > 0) {
 
   await page.touchDrag({ x: g.x, y: g.y }, { x: g.x, y: g.y + panel.h * 0.6 }, 14);
   check('dragging the sheet down dismisses it', (await page.eval(`window.__closed`)) > 0, `${await page.eval(`window.__closed`)} close(s)`);
+
+  // The other half of the same decision. A panel standing at the side is not dismissed by
+  // pulling it downwards, so the grabber goes and the behaviour file is told to refuse the
+  // gesture. Without this, hiding the grabber everywhere would read as a pass.
+  await page.viewport(1280, 800, false);
+  await sleep(300);
+  const docked = await page.eval(`(() => {
+    const grab = document.querySelector('.pf-sheet__grab');
+    return JSON.stringify({
+      grabber: grab ? getComputedStyle(grab).display : 'gone',
+      docked: getComputedStyle(document.querySelector('.pf-sheet')).getPropertyValue('--pf-sheet-docked').trim(),
+    });
+  })()`).then(JSON.parse);
+  check('a sheet at desk width docks to the side', docked.docked === '1', JSON.stringify(docked));
+  check('and offers no grabber to pull down', docked.grabber === 'none', JSON.stringify(docked));
+
+  await page.viewport(390, 800, true);
+  await sleep(200);
   await page.coarse(false);
 } else {
   check('the bottom sheet has a grabber', false, 'no .pf-sheet__grab found');
