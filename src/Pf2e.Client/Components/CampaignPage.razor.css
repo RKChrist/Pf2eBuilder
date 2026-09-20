@@ -187,3 +187,54 @@
     overflow-x: auto;
     scrollbar-width: none;
 }
+
+/* Quiet, and beside the code rather than under the mode strip: it is the code that says which
+   table you are at, so it is the code that the way out belongs to. */
+.leave {
+    margin-inline-start: var(--space-2);
+}
+
+/* The campaigns this browser is already in. One row each: the code, whether this browser runs
+   that table, when it was last opened, and the two things that can be done with it. */
+.kept {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.kept__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    padding-block: var(--space-2);
+    border-block-end: var(--border-hair) solid var(--line-subtle);
+}
+
+.kept__row:last-child {
+    border-block-end: none;
+}
+
+.kept__role,
+.kept__when {
+    font-size: var(--font-size-chip);
+    color: var(--text-muted);
+}
+
+/* The two acts together at the far end, so a row reads as a campaign and then what can be done
+   with it rather than as four things of the same weight. They wrap under the code on a phone,
+   where the row is too narrow to hold both and still show the code. */
+.kept__acts {
+    display: flex;
+    gap: var(--space-2);
+    margin-inline-start: auto;
+}
+
+.kept__note {
+    margin: var(--space-3) 0 0;
+    font-size: var(--font-size-data);
+    color: var(--text-muted);
+    text-wrap: pretty;
+}
