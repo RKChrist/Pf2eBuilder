@@ -5,7 +5,6 @@
 @inject IState<ConditionsState> ConditionsStore
 @inject IState<ExplorationState> ExplorationStore
 @inject IDispatcher Dispatcher
-@inject NavigationManager Navigation
 
 <PageTitle>Campaign</PageTitle>
 
@@ -35,7 +34,9 @@
                         <div class="identity">
                             <h2 class="character__name">@character.Name</h2>
                             <p class="lineage">
-                                Level @character.Level @character.AncestryName @character.ClassName
+                                Level @character.Level
+                                <RuleLink Ref='@(new RuleRef.Named("ancestry", character.AncestryName))' />
+                                <RuleLink Ref='@(new RuleRef.Named("class", character.ClassName))' />
                             </p>
                         </div>
 
@@ -211,20 +212,12 @@
                                 <div class="owned__entries">
                                     @foreach (var entry in group.Entries)
                                     {
-                                        @if (entry.RuleId is { } id)
-                                        {
-                                            <a class="owned__entry" href="@Navigation.Rule(id)">
-                                                <span class="owned__entry-name">@entry.Name</span>
-                                                <span class="owned__entry-kind">@entry.Kind</span>
-                                            </a>
-                                        }
-                                        else
-                                        {
-                                            <span class="owned__entry owned__entry--unknown">
-                                                <span class="owned__entry-name">@entry.Name</span>
-                                                <span class="owned__entry-kind">@entry.Kind · no record under this name</span>
-                                            </span>
-                                        }
+                                        <span class="owned__entry">
+                                            <RuleLink Ref="@Behind(entry)"
+                                                      Label="@entry.Name"
+                                                      Class="owned__entry-name" />
+                                            <span class="owned__entry-kind">@entry.Kind</span>
+                                        </span>
                                     }
                                 </div>
                             }
@@ -324,6 +317,19 @@
                 group.Key,
                 [.. group.OrderBy(spell => spell.Name, StringComparer.OrdinalIgnoreCase)])),
     ];
+
+    /// <summary>The record behind one line of somebody's sheet. An export carries an id for what
+    /// the ruleset already held and nothing for the rest, and the rest is a spelling the snapshot
+    /// does not use as often as it is homebrew, so the name is worth asking about either way.</summary>
+    static RuleRef Behind(SheetEntryView entry) =>
+        entry.RuleId is { } id ? new RuleRef.Id(id) : new RuleRef.Named(CategoryOf(entry), entry.Name);
+
+    /// <summary>A spell's kind is its rank, written "Cantrip" or "Rank 3". Every other word an
+    /// export puts here, from "Class Feat" to "Heritage", belongs on the feat side.</summary>
+    static string CategoryOf(SheetEntryView entry) =>
+        entry.Kind is "Cantrip" || entry.Kind.StartsWith("Rank ", StringComparison.Ordinal)
+            ? "spell"
+            : "feat";
 
     static string Named(ActiveEffectView effect) => SheetFormat.Named(effect);
 

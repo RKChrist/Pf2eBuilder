@@ -23,7 +23,10 @@
                 {
                     <li class="row">
                         <ModifierValue Value="modifier.Value" Kind="RuleDisplay.KindOf(modifier.Type)" />
-                        <span class="row__source">@modifier.Source</span>
+                        <span class="row__source">
+                            <RuleLink Ref='@(new RuleRef.Named("condition", Unvalued(modifier.Source)))'
+                                      Label="@modifier.Source" />
+                        </span>
                         <span class="row__applies">to @string.Join(" and ", modifier.Applies)</span>
                     </li>
                 }
@@ -40,7 +43,10 @@
                     <li class="row row--off">
                         <ModifierValue Value="suppressed.Modifier.Value"
                                        Kind="RuleDisplay.KindOf(suppressed.Modifier.Type)" />
-                        <span class="row__source">@suppressed.Modifier.Source</span>
+                        <span class="row__source">
+                            <RuleLink Ref='@(new RuleRef.Named("condition", Unvalued(suppressed.Modifier.Source)))'
+                                      Label="@suppressed.Modifier.Source" />
+                        </span>
                         <span class="row__reason">@suppressed.Reason</span>
                     </li>
                 }
@@ -63,6 +69,16 @@
         && open.Stat.In(character) is { } breakdown
             ? $"{open.Stat.Label} {breakdown.Total}"
             : "Breakdown";
+
+    /// <summary>The rule's own name, out of the words this row shows. A scaling condition is
+    /// written "Frightened 2" here, because the value is half of what a reader is looking for,
+    /// but the record is filed under "Frightened". A GM's own buff has no trailing number and
+    /// no record either, and lands on a search, which is the right answer for it.</summary>
+    static string Unvalued(string source)
+    {
+        var split = source.LastIndexOf(' ');
+        return split > 0 && int.TryParse(source[(split + 1)..], out _) ? source[..split] : source;
+    }
 
     CharacterSheetView? Character(Guid id) =>
         State.Campaign is RemoteData<CampaignView>.Loaded loaded
