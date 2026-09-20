@@ -25,6 +25,11 @@ public static class CampaignEndpoints
             (ISender sender, HttpRequest request, string code, SetModeRequest body, CancellationToken ct) =>
                 sender.Send(new SetMode(code, DmKeyOf(request), body.Mode), ct));
 
+        // These two are the mutating routes that never read the DM key, and it is deliberate.
+        // Bringing your character in and correcting it is your own business at a real table, and
+        // the campaign code is the credential that says you are at that table: a code buys a
+        // seat, the DM key buys the fight. Gating the edit alone would secure nothing either,
+        // since anyone who can import can already replace a character wholesale by name.
         app.MapPost("/campaigns/{code}/characters",
             (ISender sender, string code, ImportCharacterRequest request, CancellationToken ct) =>
                 sender.Send(new ImportCharacter(code, request.Pathbuilder), ct));
