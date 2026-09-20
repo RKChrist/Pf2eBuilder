@@ -232,7 +232,7 @@
 }
 
 a.owned__entry:hover {
-    background: var(--surface-sunken);
+    background: var(--accent-tint);
 }
 
 .owned__entry-name {

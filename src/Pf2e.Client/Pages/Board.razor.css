@@ -26,12 +26,16 @@
     color: var(--text-primary);
     text-align: left;
     text-decoration: none;
+    box-shadow: var(--elevation-card);
     transition: background-color var(--motion-duration-quick) var(--motion-easing-exit),
-                border-color var(--motion-duration-quick) var(--motion-easing-exit);
+                border-color var(--motion-duration-quick) var(--motion-easing-exit),
+                box-shadow var(--motion-duration-quick) var(--motion-easing-exit),
+                transform var(--motion-duration-quick) var(--motion-easing-exit);
 }
 
 .category:active {
-    background: var(--surface-sunken);
+    background: var(--accent-tint);
+    transform: none;
 }
 
 .face {
@@ -48,11 +52,18 @@
     line-height: var(--font-leading-snug);
 }
 
+/* How many records are behind the card, as a tally rather than a loose number, so it reads as a
+   count of things and not as a level or a price. */
 .size {
     flex: none;
+    padding: var(--space-0) var(--space-2);
+    border-radius: var(--radius-chip);
+    background: var(--surface-sunken);
     color: var(--text-muted);
-    font-size: var(--font-size-data);
+    font-size: var(--font-size-chip);
     font-variant-numeric: tabular-nums;
+    transition: background-color var(--motion-duration-quick) var(--motion-easing-exit),
+                color var(--motion-duration-quick) var(--motion-easing-exit);
 }
 
 .note {
@@ -63,8 +74,18 @@
 
 @media (hover: hover) {
     .category:hover {
-        border-color: var(--line-strong);
-        background: var(--surface-sunken);
+        border-color: var(--accent-base);
+        box-shadow: var(--elevation-hover);
+        transform: translateY(-2px);
+    }
+
+    .category:hover .label {
+        color: var(--accent-base);
+    }
+
+    .category:hover .size {
+        background: var(--accent-tint);
+        color: var(--accent-base);
     }
 }
 

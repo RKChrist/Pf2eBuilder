@@ -99,7 +99,7 @@
 
 @media (hover: hover) {
     .rule:hover {
-        background: var(--surface-sunken);
+        background: var(--accent-tint);
     }
 }
 

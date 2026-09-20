@@ -168,7 +168,7 @@
 
 @media (hover: hover) {
     .ref:hover {
-        background: var(--surface-sunken);
+        background: var(--accent-tint);
         color: var(--accent-press);
     }
 }

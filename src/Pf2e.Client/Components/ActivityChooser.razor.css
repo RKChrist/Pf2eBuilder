@@ -88,6 +88,6 @@
 }
 
 .pick--none.pick--on:hover {
-    background: var(--surface-sunken);
+    background: var(--accent-tint);
     color: var(--text-primary);
 }

@@ -47,6 +47,7 @@
 
 /* Pulled back by the quiet button's own inset so its label starts on the heading's line. */
 .back {
+    align-self: flex-start;
     margin-inline-start: calc(var(--space-3) * -1);
     text-decoration: none;
 }

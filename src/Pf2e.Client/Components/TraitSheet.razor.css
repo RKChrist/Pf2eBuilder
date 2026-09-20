@@ -93,6 +93,6 @@
 
 @media (hover: hover) {
     .place:hover {
-        background: var(--surface-sunken);
+        background: var(--accent-tint);
     }
 }

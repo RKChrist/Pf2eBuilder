@@ -128,6 +128,7 @@
     padding: var(--space-2) 0;
     border: var(--border-hair) solid var(--line-subtle);
     border-radius: 0 0 var(--radius-card) var(--radius-card);
+    background: var(--surface-sunken);
     list-style: none;
 }
 
@@ -155,8 +156,9 @@
     padding: var(--space-3);
     border: var(--border-hair) solid var(--line-subtle);
     border-left: var(--border-focus) solid transparent;
-    border-radius: var(--radius-chip);
-    background: var(--surface-page);
+    border-radius: var(--radius-control);
+    background: var(--surface-raised);
+    box-shadow: var(--elevation-card);
 }
 
 /* Whose turn it is, said three ways: the rule down the left edge, the tinted ground, and the
@@ -164,10 +166,10 @@
    teal, and across twelve rows on a phone it is the one thing a GM must never miss. */
 .turn--now {
     border-color: var(--accent-base);
-    border-left-width: var(--space-1);
-    border-left-color: var(--accent-base);
-    background: var(--surface-raised);
-    box-shadow: 0 0 0 var(--border-hair) var(--accent-base);
+    border-left-width: var(--space-2);
+    border-left-color: var(--highlight-base);
+    background: var(--accent-tint);
+    box-shadow: 0 0 0 var(--border-hair) var(--accent-base), var(--elevation-hover);
 }
 
 /* Three columns rather than one wrapping line: the initiative, everything about who this is,
@@ -212,7 +214,7 @@
 
 .turn__initiative--typed:hover {
     border-color: var(--line-subtle);
-    background: var(--surface-sunken);
+    background: var(--accent-tint);
 }
 
 .turn__initiative--typed:focus {

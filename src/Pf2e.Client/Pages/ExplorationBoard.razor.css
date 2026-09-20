@@ -1,5 +1,9 @@
 .explore {
-    padding: var(--space-3) var(--layout-gutter) var(--space-6);
+    padding: var(--space-3) var(--layout-gutter) var(--space-4);
+}
+
+.attempts {
+    padding: var(--space-0) var(--layout-gutter) var(--space-6);
 }
 
 .explore__blurb {

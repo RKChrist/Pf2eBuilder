@@ -33,10 +33,11 @@
    three buttons of which one happens to be tinted. */
 .shell__modes {
     display: flex;
-    border: var(--border-strong) solid var(--line-strong);
+    gap: var(--space-1);
+    padding: var(--space-1);
+    border: var(--border-hair) solid var(--line-subtle);
     border-radius: var(--radius-card);
-    background: var(--surface-raised);
-    overflow: hidden;
+    background: var(--surface-sunken);
 }
 
 .shell__mode-link {
@@ -54,14 +55,13 @@
     letter-spacing: var(--font-tracking-wide);
     text-decoration: none;
     white-space: nowrap;
-}
-
-.shell__mode-link + .shell__mode-link {
-    border-inline-start: var(--border-hair) solid var(--line-subtle);
+    border-radius: var(--radius-control);
+    transition: background-color var(--motion-duration-quick) var(--motion-easing-exit),
+                color var(--motion-duration-quick) var(--motion-easing-exit);
 }
 
 .shell__mode-link:hover {
-    background: var(--surface-sunken);
+    background: var(--accent-tint);
     color: var(--text-primary);
 }
 
@@ -69,12 +69,19 @@
     background: var(--accent-base);
     color: var(--text-on-accent);
     font-weight: var(--font-weight-semibold);
+    box-shadow: var(--elevation-card);
 }
 
-/* Where the table is, which is not where you are looking. */
+/* Where the table is, which is not where you are looking. A lantern, the same mark the rail
+   uses for where you are, drawn as a disc so the bullet's own glyph metrics do not decide it. */
 .shell__here {
-    font-size: var(--font-size-chip);
-    line-height: 1;
+    inline-size: 0.6rem;
+    block-size: 0.6rem;
+    overflow: hidden;
+    border: var(--border-hair) solid color-mix(in srgb, var(--highlight-text) 45%, transparent);
+    border-radius: 50%;
+    background: var(--highlight-base);
+    color: transparent;
 }
 
 .shell__where {
@@ -98,8 +105,7 @@
 }
 
 .shell__party:hover {
-    background: var(--surface-raised);
-    text-decoration: underline;
+    background: var(--accent-tint);
 }
 
 .shell__round {
@@ -111,11 +117,11 @@
 .shell__dm {
     padding: 0 var(--space-2);
     border-radius: var(--radius-chip);
-    background: var(--surface-raised);
+    background: var(--highlight-base);
+    color: var(--highlight-text);
     font-size: var(--font-size-chip);
     font-weight: var(--font-weight-semibold);
     letter-spacing: 0.08em;
-    color: var(--text-secondary);
 }
 
 .offline,

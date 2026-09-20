@@ -127,7 +127,7 @@
     .option:hover,
     .chip:hover,
     .all:hover {
-        background: var(--surface-sunken);
+        background: var(--accent-tint);
     }
 }
 
