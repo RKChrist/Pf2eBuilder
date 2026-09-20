@@ -67,6 +67,32 @@ public class AuthOptionsRules
         Assert.Contains("Auth:Jwt:AccessTokenMinutes", refusal);
     }
 
+    /// <summary>Renewal that stops before the first token it would replace has expired is not a
+    /// limit on the session, it is a gap: the token dies with renewal already switched off and
+    /// the sign-in ends earlier than either setting says.</summary>
+    [Fact]
+    public void RenewingForLessTimeThanOneTokenLastsIsRefusedAndBothSettingsAreNamed()
+    {
+        var options = Complete();
+        options.Jwt.AccessTokenMinutes = 60;
+        options.Jwt.RefreshTokenMinutes = 30;
+
+        var refusal = RefusalOf(options);
+
+        Assert.Contains("Auth:Jwt:RefreshTokenMinutes", refusal);
+        Assert.Contains("Auth:Jwt:AccessTokenMinutes", refusal);
+    }
+
+    [Fact]
+    public void RenewingForExactlyOneTokensLifetimeIsAllowed()
+    {
+        var options = Complete();
+        options.Jwt.AccessTokenMinutes = 60;
+        options.Jwt.RefreshTokenMinutes = 60;
+
+        Assert.True(Check(options).Succeeded);
+    }
+
     [Fact]
     public void ACookieThatOutlivesTheTokenItCarriesIsAllowed()
     {

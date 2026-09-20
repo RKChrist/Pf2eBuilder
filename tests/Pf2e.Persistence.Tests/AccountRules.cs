@@ -160,6 +160,62 @@ public class AccountRules(SeededDatabase database) : IClassFixture<SeededDatabas
             stored!, System.Text.Json.JsonSerializer.Serialize(signedIn), StringComparison.Ordinal);
     }
 
+    /// <summary>Counts the work rather than timing it, because a clock in a test is a flaky
+    /// test. Equal verifications is the property that makes equal time true.</summary>
+    sealed class CountingHasher(IPasswordHasher inner) : IPasswordHasher
+    {
+        public int Verifications { get; private set; }
+
+        public string Hash(string password) => inner.Hash(password);
+
+        public bool Verify(string hash, string password)
+        {
+            Verifications++;
+            return inner.Verify(hash, password);
+        }
+    }
+
+    async Task<int> VerificationsRefusing(string email, string password)
+    {
+        var counting = new CountingHasher(Hasher);
+
+        await using var db = database.NewContext();
+        await Assert.ThrowsAsync<SignInRefusedException>(
+            () => new SignInHandler(db, counting).Handle(new SignIn(email, password), default));
+
+        return counting.Verifications;
+    }
+
+    /// <summary>
+    /// The two refusals already read the same. This is the rest of it: an address nobody
+    /// registered has to cost the same work as a wrong password, or the pair is still told apart
+    /// by a stopwatch and the shared sentence bought nothing.
+    /// </summary>
+    [Fact]
+    public async Task AnUnknownAddressCostsTheSameHashingAsAWrongPassword()
+    {
+        var email = FreshEmail();
+        await Register(email);
+
+        var wrongPassword = await VerificationsRefusing(email, "a-different-passphrase");
+        var unknownAddress = await VerificationsRefusing(FreshEmail(), Password);
+
+        Assert.Equal(1, wrongPassword);
+        Assert.Equal(wrongPassword, unknownAddress);
+    }
+
+    [Fact]
+    public void TheDecoyIsHashedOnceAndReusedRatherThanRecomputedPerRefusal()
+    {
+        var counting = new CountingHasher(Hasher);
+
+        var first = SignInDecoy.For(counting);
+        var second = SignInDecoy.For(counting);
+
+        Assert.Same(first, second);
+        Assert.True(Hasher.Verify(first, "this-password-belongs-to-no-account"));
+    }
+
     [Fact]
     public void APasswordShorterThanTheMinimumIsRefusedBeforeItIsEverHashed()
     {

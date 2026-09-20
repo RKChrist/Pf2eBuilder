@@ -21,24 +21,25 @@ public sealed class AuthCookieOptions
 {
     public string Name { get; set; } = "pf2e.auth";
 
-    /// <summary>
-    /// How long the cookie lives. Not how long a session lasts, and today that difference is
-    /// real. The token inside the cookie is minted once at sign-in and never re-minted, and a
-    /// session read signs the browser out the moment that token expires, so the session ends
-    /// after <see cref="AuthJwtOptions.AccessTokenMinutes"/> however long the cookie was told to
-    /// live. With the shipped defaults that is one hour, not twelve.
-    /// <para>Closing the gap means re-minting on a sliding renewal, which is what
-    /// <see cref="AuthJwtOptions.RefreshTokenMinutes"/> is there for and what nothing does yet.
-    /// Until then, treat this and <see cref="SlidingExpiration"/> as an upper bound the process
-    /// does not reach.</para>
-    /// </summary>
+    /// <summary>How long the envelope lives. One of the three limits on a session, along with
+    /// <see cref="AuthJwtOptions.AccessTokenMinutes"/> and
+    /// <see cref="AuthJwtOptions.RefreshTokenMinutes"/>; a session ends when the first of them
+    /// runs out.</summary>
     public int ExpireMinutes { get; set; } = 720;
 
-    /// <summary>Renews the cookie on activity. It does not renew the token inside it, so see
-    /// <see cref="ExpireMinutes"/> for what that is worth today.</summary>
+    /// <summary>Renews the cookie on activity. The token inside it is renewed alongside, by
+    /// <see cref="Authentication.AccountSession.KeepFreshAsync"/>, which is what makes this
+    /// setting mean what its name says.</summary>
     public bool SlidingExpiration { get; set; } = true;
 
-    /// <summary>A member of <see cref="SameSiteMode"/>, by name.</summary>
+    /// <summary>
+    /// A member of <see cref="SameSiteMode"/>, by name.
+    /// <para>Lax is enough for the two-process development run. A port is not part of a site, so
+    /// a client on localhost:5173 calling an API on localhost:5092 is same-site and the cookie
+    /// is sent; verify-account.mjs drives exactly that and comes back signed in after a reload.
+    /// None, which then also requires Secure and therefore https, is needed only when the client
+    /// and the API are served from genuinely different sites.</para>
+    /// </summary>
     public string SameSite { get; set; } = "Lax";
 
     /// <summary>A member of <see cref="CookieSecurePolicy"/>, by name. SameAsRequest rather than
@@ -62,10 +63,9 @@ public sealed class AuthJwtOptions
 
     public int AccessTokenMinutes { get; set; } = 60;
 
-    /// <summary>Configured ahead of the thing that will read it. Nothing mints or honours a
-    /// refresh token yet, so today this is validated and read by nothing. See
-    /// <see cref="AuthCookieOptions.ExpireMinutes"/> for what its absence currently costs.
-    /// </summary>
+    /// <summary>How long re-minting may go on before somebody has to sign in again. Measured
+    /// from when the sign-in happened, not from the ticket's IssuedUtc, for the reason written
+    /// on <see cref="Authentication.AccountSession.SignedInAtName"/>.</summary>
     public int RefreshTokenMinutes { get; set; } = 20160;
 
     public int ClockSkewSeconds { get; set; } = 30;
@@ -131,6 +131,17 @@ public sealed class AuthOptionsValidator : IValidateOptions<AuthOptions>
                 $"{MinimumSigningKeyLength} characters. Set it as a user secret or an environment " +
                 "variable; it is the secret every session in flight is signed with, so it is never " +
                 "committed and changing it signs everybody out.");
+        }
+
+        // Re-minting that stops before the first token it would replace has expired is not a
+        // limit on the session, it is a gap: the token would die with renewal already switched
+        // off and the sign-in would end earlier than either number says.
+        if (jwt.RefreshTokenMinutes < jwt.AccessTokenMinutes)
+        {
+            failures.Add(
+                $"{Path("Jwt", nameof(jwt.RefreshTokenMinutes))} is {jwt.RefreshTokenMinutes} and " +
+                $"{Path("Jwt", nameof(jwt.AccessTokenMinutes))} is {jwt.AccessTokenMinutes}. " +
+                "Re-minting has to be allowed to last at least as long as one token does.");
         }
 
         // The cookie is the envelope and the token is the credential inside it. A cookie that

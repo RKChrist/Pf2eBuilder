@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Pf2e.Api.Authentication;
 using Pf2e.Api.Configuration;
 using Pf2e.Api.Endpoints;
 using Pf2e.Api.Hubs;
@@ -112,6 +113,13 @@ builder.Services.AddOptions<CookieAuthenticationOptions>(CookieAuthenticationDef
         framework.SlidingExpiration = cookie.SlidingExpiration;
         framework.LoginPath = cookie.LoginPath;
         framework.AccessDeniedPath = cookie.AccessDeniedPath;
+
+        // Renewing the cookie without renewing the token inside it would slide an envelope
+        // around a credential that still died on the hour. This is what keeps the two together,
+        // and it runs on every request rather than on one route, so a browser carrying a dead
+        // token stops carrying it at the next thing it does.
+        framework.Events.OnValidatePrincipal =
+            validating => AccountSession.KeepFreshAsync(validating, mine.Value);
     });
 
 // Kestrel refuses a body over 30 MB before any handler sees it, and a refusal there is a bare
@@ -121,6 +129,11 @@ builder.WebHost.ConfigureKestrel(kestrel =>
     kestrel.Limits.MaxRequestBodySize = ImportCharacterValidator.MaxPayload + (1024 * 1024));
 
 var app = builder.Build();
+
+// Hashed now rather than on the first sign-in that needs it, because the request that paid for
+// it would be measurably slower than its neighbours and that is the signal the decoy exists to
+// remove. See SignInDecoy.
+SignInDecoy.For(app.Services.GetRequiredService<IPasswordHasher>());
 
 // Said through the configured logging pipeline rather than to the console from before Build(),
 // so it lands wherever the operator sends warnings.
