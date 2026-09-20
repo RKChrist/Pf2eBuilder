@@ -86,17 +86,6 @@
 
 /* ---------------------------------------------------------------- camping activities */
 
-.camp__says {
-    margin: 0 0 var(--space-2);
-    color: var(--text-secondary);
-    font-size: var(--font-size-data);
-    text-wrap: pretty;
-}
-
-.camp__group + .camp__group {
-    border-top: var(--border-hair) solid var(--line-subtle);
-}
-
 .activities {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
@@ -121,58 +110,4 @@
     align-self: flex-start;
     font-size: var(--font-size-body);
     font-weight: var(--font-weight-medium);
-}
-
-.activity__needs {
-    margin: 0;
-    color: var(--text-muted);
-    font-size: var(--font-size-chip);
-    text-wrap: pretty;
-}
-
-/* Who at this table meets it. The whole reason the list is worth drawing rather than linking
-   to: a GM asking "who can Cook a Meal" is asking about their party, not about the rule. */
-.activity__able {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-1);
-    margin: 0;
-    color: var(--accent-press);
-    font-size: var(--font-size-chip);
-    font-weight: var(--font-weight-medium);
-    text-wrap: pretty;
-}
-
-.activity__tick {
-    align-self: center;
-    color: var(--accent-base);
-}
-
-.activity__none {
-    margin: 0;
-    color: var(--text-muted);
-    font-size: var(--font-size-chip);
-    font-style: italic;
-}
-
-/* Same reason as the downtime day turning: an eight-hour rest is once a session and
-   irreversible, and a button the width of a desk monitor is a button somebody hits by accident. */
-.camp__night {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-3);
-    margin-top: var(--space-4);
-    padding-top: var(--space-3);
-    border-top: var(--border-hair) solid var(--line-subtle);
-}
-
-.camp__night ::deep .camp__rest {
-    flex: none;
-    width: auto;
-}
-
-.camp__rest-says {
-    flex: 1 1 18rem;
-    margin: 0;
 }

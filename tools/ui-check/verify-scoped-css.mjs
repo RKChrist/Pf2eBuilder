@@ -83,11 +83,20 @@ for (const sheet of sheets) {
   const written = new Set(
     [...markup.matchAll(/[a-zA-Z][\w-]*/g)].map((m) => m[0]));
 
+  // A modifier whose ending is written by C#: class="outcome outcome--@outcome.Tone", or
+  // die__face--@Tone(degree). The whole class never appears in the markup, so every rule for
+  // every value of it read as dead and three stylesheets failed for classes they really use.
+  // Same reasoning as the looseness above. The prefix has to sit against the @ to count, which
+  // is what makes it a prefix rather than a word that happens to be near one.
+  const grown = [...markup.matchAll(/([a-zA-Z][\w-]*-)@/g)].map((m) => m[1]);
+
+  const alive = (name) => written.has(name) || grown.some((prefix) => name.startsWith(prefix));
+
   const dead = [];
   for (const selector of blocks(readFileSync(sheet, 'utf8'))) {
     const wanted = classesIn(selector);
     if (wanted.length === 0) continue;
-    if (!wanted.some((name) => written.has(name))) dead.push(selector.replace(/\s+/g, ' '));
+    if (!wanted.some(alive)) dead.push(selector.replace(/\s+/g, ' '));
   }
 
   if (dead.length) {
