@@ -50,7 +50,7 @@ public partial class PrivacyRules(SeededDatabase database) : IClassFixture<Seede
 
         await using (var db = database.NewContext())
         {
-            await new ImportCharacterHandler(db, db, Broadcaster)
+            await new ImportCharacterHandler(db, db, new SharedCharacters(), Broadcaster)
                 .Handle(new ImportCharacter(campaign.Code, Fixture("gnibbo.json")), default);
         }
 

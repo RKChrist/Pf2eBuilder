@@ -88,6 +88,18 @@ public sealed class TrackedCharacterConfiguration : IEntityTypeConfiguration<Tra
                           ? null
                           : JsonSerializer.Deserialize<Spellcasting>(json, Json));
 
+        // Null for every character whose source gave the parts, which is most of them.
+        characters.Property(c => c.Stated)
+                  .HasConversion(
+                      stated => stated == null ? null : JsonSerializer.Serialize(stated, Json),
+                      json => string.IsNullOrEmpty(json)
+                          ? null
+                          : JsonSerializer.Deserialize<StatedTotals>(json, Json),
+                      new ValueComparer<StatedTotals?>(
+                          (a, b) => JsonSerializer.Serialize(a, Json) == JsonSerializer.Serialize(b, Json),
+                          v => JsonSerializer.Serialize(v, Json).GetHashCode(StringComparison.Ordinal),
+                          v => v));
+
         // Effects are not here any more. One application can reach five characters and a
         // monster, so they hang off the campaign; see EffectApplicationConfiguration.
     }

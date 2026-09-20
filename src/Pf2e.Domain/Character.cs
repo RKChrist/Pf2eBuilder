@@ -107,4 +107,32 @@ public sealed record Character(
     /// build's number.</para>
     /// </summary>
     public int? StatedMaxHitPoints { get; init; }
+
+    /// <summary>
+    /// The finished numbers a source stated, where it stated them and not the parts.
+    /// <para>A character read from a Wanderer's Guide link arrives as totals: no attributes, no
+    /// armour, no item bonuses. Rebuilding a save from a guessed Constitution would print a number
+    /// the player's own sheet disagrees with, so a stated total is taken whole as the base, the
+    /// way a weapon's bonus and the stated hit points already are, and only the session's
+    /// modifiers are stacked onto it.</para>
+    /// </summary>
+    public StatedTotals? Stated { get; init; }
+}
+
+/// <summary>Each is null where the source did not say, and that number is then computed from the
+/// parts as usual. A DC is the whole DC, ten included. Skills are keyed by the name the sheet
+/// shows.</summary>
+public sealed record StatedTotals(
+    int? ArmorClass = null,
+    int? Fortitude = null,
+    int? Reflex = null,
+    int? Will = null,
+    int? Perception = null,
+    int? ClassDc = null,
+    int? SpellAttack = null,
+    int? SpellDc = null,
+    ImmutableDictionary<string, int>? Skills = null)
+{
+    public int? Skill(string name) =>
+        Skills is not null && Skills.TryGetValue(name, out var total) ? total : null;
 }

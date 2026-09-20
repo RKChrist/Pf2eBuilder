@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Pf2e.Application.Abstractions;
+using Pf2e.Infrastructure.Characters;
 using Pf2e.Infrastructure.Configuration;
 using Pf2e.Infrastructure.Persistence;
 using Pf2e.Infrastructure.Rules;
@@ -47,6 +48,14 @@ public static class DependencyInjection
             http.Timeout = TimeSpan.FromSeconds(text.TimeoutSeconds);
             http.DefaultRequestHeaders.UserAgent.ParseAdd("Pf2eBuilder/1.0 (table companion; one record per open)");
         });
+        // A fixed host, by design: the character's number is the only thing a player supplies.
+        services.AddHttpClient<IWanderersGuideClient, WanderersGuideClient>(http =>
+        {
+            http.BaseAddress = new Uri("https://api.wanderersguide.app/functions/v1/");
+            http.Timeout = TimeSpan.FromSeconds(12);
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("Pf2eBuilder/1.0 (table companion; one shared character per import)");
+        });
+
         return services;
     }
 }

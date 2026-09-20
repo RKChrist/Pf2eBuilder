@@ -139,6 +139,139 @@ internal sealed record WanderersGuideBuild(Character Build, int ArmorPotency)
         return new WanderersGuideBuild(build, Potency(armorMeta));
     }
 
+    /// <summary>The character object on its own, which is what a Wanderer's Guide link returns and
+    /// what an export holds under <c>character</c>. Also accepted wrapped the way their API sends
+    /// it, because that is what somebody copying the response would paste.</summary>
+    public static bool LooksShared(JsonElement root) => Shared(root) is not null;
+
+    static JsonElement? Shared(JsonElement root)
+    {
+        var character = Object(root, "data") ?? root;
+        return character.ValueKind is JsonValueKind.Object
+               && Object(character, "meta_data") is not null
+               && Object(character, "details") is not null
+               && String(character, "name") is not null
+            ? character
+            : null;
+    }
+
+    static readonly Dictionary<string, ProficiencyRank> RankByLetter = new(StringComparer.Ordinal)
+    {
+        ["U"] = ProficiencyRank.Untrained,
+        ["T"] = ProficiencyRank.Trained,
+        ["E"] = ProficiencyRank.Expert,
+        ["M"] = ProficiencyRank.Master,
+        ["L"] = ProficiencyRank.Legendary,
+    };
+
+    /// <summary>
+    /// A character from the numbers Wanderer's Guide keeps beside it for its own campaign view:
+    /// maximum hit points, armour class, and a finished total and a rank for every save, skill,
+    /// perception and DC.
+    /// <para>There are no attributes, no armour and no weapons in it, because those only exist
+    /// once their rules engine has run, and that happens in a browser. So every number here is
+    /// stated rather than computed, the attributes stay at zero, and the sheet has no attacks,
+    /// feats or spells. The export file is how those arrive.</para>
+    /// <para>Their DC totals leave the ten out and ours carry it.</para>
+    /// </summary>
+    public static WanderersGuideBuild ParseShared(JsonElement root)
+    {
+        var character = Shared(root)
+            ?? throw new PathbuilderFormatException("That is not a Wanderer's Guide character.");
+
+        var name = String(character, "name");
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new PathbuilderFormatException("That Wanderer's Guide character has no name.");
+        }
+
+        var stats = Object(Object(character, "meta_data"), "calculated_stats");
+        var profs = Object(stats, "profs");
+        if (stats is null || profs is null || Int(stats, "hp_max", 0) <= 0)
+        {
+            throw new PathbuilderFormatException(
+                "Wanderer's Guide has not worked this character's numbers out yet. Open the character " +
+                "there once so it does, or export the character to a file and paste that instead.");
+        }
+
+        ProficiencyRank Letter(string key) =>
+            RankByLetter.GetValueOrDefault(String(Object(profs, key), "type") ?? "U", ProficiencyRank.Untrained);
+
+        int? Total(string key) =>
+            Object(profs, key) is { } entry && entry.TryGetProperty("total", out var total)
+            && total.ValueKind is JsonValueKind.Number && total.TryGetInt32(out var value)
+                ? value
+                : null;
+
+        var skills = new List<SkillProficiency>();
+        var totals = ImmutableDictionary.CreateBuilder<string, int>(StringComparer.OrdinalIgnoreCase);
+        void Skill(string key, string shown)
+        {
+            skills.Add(new SkillProficiency(shown, Letter(key)));
+            if (Total(key) is { } total)
+            {
+                totals[shown] = total;
+            }
+        }
+
+        foreach (var (key, shown) in SkillKeys)
+        {
+            Skill(key, shown);
+        }
+
+        foreach (var entry in profs.Value.EnumerateObject())
+        {
+            if (entry.Name.StartsWith("SKILL_LORE_", StringComparison.Ordinal)
+                && Titled(entry.Name["SKILL_LORE_".Length..]) is { Length: > 0 } subject)
+            {
+                Skill(entry.Name, $"{subject} Lore");
+            }
+        }
+
+        var details = Object(character, "details");
+        var casts = Letter("SPELL_ATTACK") is not ProficiencyRank.Untrained;
+
+        var build = new Character(
+            Name: name!.Trim(),
+            Level: Math.Clamp(Int(character, "level", 1), 1, 30),
+            ClassName: String(Object(details, "class"), "name") ?? "Unknown class",
+            AncestryName: String(Object(details, "ancestry"), "name") ?? "Unknown ancestry",
+            // Not stated anywhere in what a link returns. It only decides which conditions reach
+            // the class DC, and the DC itself is stated.
+            KeyAttribute: AttributeKind.Strength,
+            Attributes: new AttributeModifiers(0, 0, 0, 0, 0, 0),
+            Fortitude: Letter("SAVE_FORT"),
+            Reflex: Letter("SAVE_REFLEX"),
+            Will: Letter("SAVE_WILL"),
+            Perception: Letter("PERCEPTION"),
+            ClassDc: Letter("CLASS_DC"),
+            ArmorRank: ProficiencyRank.Untrained,
+            ArmorName: "Unarmored",
+            ArmorItemBonus: 0,
+            ArmorDexCap: null,
+            AncestryHitPoints: 0,
+            ClassHitPoints: 0,
+            BonusHitPoints: 0,
+            BonusHitPointsPerLevel: 0,
+            Skills: [.. skills],
+            Spellcasting: casts ? new Spellcasting("Spell", Letter("SPELL_ATTACK"), AttributeKind.Charisma) : null)
+        {
+            StatedMaxHitPoints = Int(stats, "hp_max", 0),
+            Stated = new StatedTotals(
+                ArmorClass: Int(stats, "ac", 0) is var ac and > 0 ? ac : null,
+                Fortitude: Total("SAVE_FORT"),
+                Reflex: Total("SAVE_REFLEX"),
+                Will: Total("SAVE_WILL"),
+                Perception: Total("PERCEPTION"),
+                ClassDc: Total("CLASS_DC") is { } classDc ? 10 + classDc : null,
+                SpellAttack: casts ? Total("SPELL_ATTACK") : null,
+                SpellDc: casts && Total("SPELL_DC") is { } spellDc ? 10 + spellDc : null,
+                Skills: totals.ToImmutable()),
+        };
+
+        return new WanderersGuideBuild(build, ArmorPotency: 0);
+    }
+
     /// <summary>
     /// The attribute the class DC is built from, worked back from the numbers rather than read:
     /// the export states no key attribute, and the class DC is level plus rank plus exactly it.

@@ -21,7 +21,7 @@ public class WanderersGuideRules(SeededDatabase database) : IClassFixture<Seeded
     {
         await using var db = database.NewContext();
         var campaign = await new CreateCampaignHandler(db).Handle(new CreateCampaign(), default);
-        return await new ImportCharacterHandler(db, db, Broadcaster)
+        return await new ImportCharacterHandler(db, db, new SharedCharacters(), Broadcaster)
             .Handle(new ImportCharacter(campaign.Code, Fixture("einar-wanderers-guide.json")), default);
     }
 
@@ -227,7 +227,7 @@ public class WanderersGuideRules(SeededDatabase database) : IClassFixture<Seeded
         // The two formats are told apart by shape, so adding one must not disturb the other.
         await using var db = database.NewContext();
         var campaign = await new CreateCampaignHandler(db).Handle(new CreateCampaign(), default);
-        var gnibbo = await new ImportCharacterHandler(db, db, Broadcaster)
+        var gnibbo = await new ImportCharacterHandler(db, db, new SharedCharacters(), Broadcaster)
             .Handle(new ImportCharacter(campaign.Code, Fixture("gnibbo.json")), default);
 
         Assert.Equal("Gnibbo", gnibbo.Name);
@@ -255,7 +255,7 @@ public class WanderersGuideRules(SeededDatabase database) : IClassFixture<Seeded
     async Task<CharacterSheetView> ImportInto(string code)
     {
         await using var db = database.NewContext();
-        return await new ImportCharacterHandler(db, db, Broadcaster)
+        return await new ImportCharacterHandler(db, db, new SharedCharacters(), Broadcaster)
             .Handle(new ImportCharacter(code, Fixture("einar-wanderers-guide.json")), default);
     }
 

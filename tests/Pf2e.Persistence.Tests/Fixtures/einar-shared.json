@@ -1,0 +1,284 @@
+{
+ "id": 70618,
+ "name": "(lvl 13) Einar",
+ "level": 13,
+ "hp_current": 33,
+ "hp_temp": 0,
+ "details": {
+  "class": {
+   "name": "Rogue"
+  },
+  "ancestry": {
+   "name": "Human"
+  },
+  "background": {
+   "name": "Hired Killer"
+  }
+ },
+ "meta_data": {
+  "calculated_stats": {
+   "hp_max": 151,
+   "stamina_max": 0,
+   "resolve_max": 0,
+   "ac": 34,
+   "profs": {
+    "SAVE_FORT": {
+     "total": 21,
+     "type": "E"
+    },
+    "SAVE_REFLEX": {
+     "total": 27,
+     "type": "L"
+    },
+    "SAVE_WILL": {
+     "total": 21,
+     "type": "E"
+    },
+    "SKILL_ACROBATICS": {
+     "total": 24,
+     "type": "T"
+    },
+    "SKILL_ARCANA": {
+     "total": 0,
+     "type": "U"
+    },
+    "SKILL_ATHLETICS": {
+     "total": 0,
+     "type": "U"
+    },
+    "SKILL_CRAFTING": {
+     "total": 0,
+     "type": "U"
+    },
+    "SKILL_DECEPTION": {
+     "total": 23,
+     "type": "E"
+    },
+    "SKILL_DIPLOMACY": {
+     "total": 19,
+     "type": "T"
+    },
+    "SKILL_INTIMIDATION": {
+     "total": 19,
+     "type": "T"
+    },
+    "SKILL_MEDICINE": {
+     "total": 22,
+     "type": "U"
+    },
+    "SKILL_NATURE": {
+     "total": 18,
+     "type": "T"
+    },
+    "SKILL_OCCULTISM": {
+     "total": 0,
+     "type": "U"
+    },
+    "SKILL_PERFORMANCE": {
+     "total": 23,
+     "type": "T"
+    },
+    "SKILL_RELIGION": {
+     "total": 18,
+     "type": "T"
+    },
+    "SKILL_SOCIETY": {
+     "total": 15,
+     "type": "T"
+    },
+    "SKILL_STEALTH": {
+     "total": 24,
+     "type": "T"
+    },
+    "SKILL_SURVIVAL": {
+     "total": 18,
+     "type": "T"
+    },
+    "SKILL_THIEVERY": {
+     "total": 24,
+     "type": "T"
+    },
+    "SPELL_ATTACK": {
+     "total": 21,
+     "type": "E"
+    },
+    "SPELL_DC": {
+     "total": 21,
+     "type": "E"
+    },
+    "LIGHT_ARMOR": {
+     "total": 17,
+     "type": "E"
+    },
+    "MEDIUM_ARMOR": {
+     "total": 0,
+     "type": "U"
+    },
+    "HEAVY_ARMOR": {
+     "total": 0,
+     "type": "U"
+    },
+    "UNARMORED_DEFENSE": {
+     "total": 17,
+     "type": "E"
+    },
+    "LIGHT_BARDING": {
+     "total": 0,
+     "type": "U"
+    },
+    "HEAVY_BARDING": {
+     "total": 0,
+     "type": "U"
+    },
+    "SIMPLE_WEAPONS": {
+     "total": 19,
+     "type": "M"
+    },
+    "MARTIAL_WEAPONS": {
+     "total": 19,
+     "type": "M"
+    },
+    "ADVANCED_WEAPONS": {
+     "total": 0,
+     "type": "U"
+    },
+    "UNARMED_ATTACKS": {
+     "total": 19,
+     "type": "M"
+    },
+    "PERCEPTION": {
+     "total": 24,
+     "type": "L"
+    },
+    "CLASS_DC": {
+     "total": 22,
+     "type": "E"
+    },
+    "WEAPON_GROUP_AXE": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_GROUP_BOMB": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_GROUP_BOW": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_GROUP_BRAWLING": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_GROUP_CLUB": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_GROUP_CROSSBOW": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_GROUP_DART": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_GROUP_FIREARM": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_GROUP_FLAIL": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_GROUP_HAMMER": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_GROUP_KNIFE": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_GROUP_PICK": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_GROUP_POLEARM": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_GROUP_SHIELD": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_GROUP_SLING": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_GROUP_SPEAR": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_GROUP_SWORD": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_GROUP_LASER": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_GROUP_PROJECTILE": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_DIVISION_GUN": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_DIVISION_GUN_SIMPLE": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_DIVISION_GUN_MARTIAL": {
+     "total": 0,
+     "type": "U"
+    },
+    "WEAPON_DIVISION_GUN_ADVANCED": {
+     "total": 0,
+     "type": "U"
+    },
+    "ARMOR_GROUP_CLOTH": {
+     "total": 0,
+     "type": "U"
+    },
+    "ARMOR_GROUP_CHAIN": {
+     "total": 0,
+     "type": "U"
+    },
+    "ARMOR_GROUP_COMPOSITE": {
+     "total": 0,
+     "type": "U"
+    },
+    "ARMOR_GROUP_LEATHER": {
+     "total": 0,
+     "type": "U"
+    },
+    "ARMOR_GROUP_PLATE": {
+     "total": 0,
+     "type": "U"
+    },
+    "SKILL_COMPUTERS": {
+     "total": 0,
+     "type": "U"
+    },
+    "SKILL_PILOTING": {
+     "total": 5,
+     "type": "U"
+    },
+    "SKILL_LORE_UNDERWORLD": {
+     "total": 15,
+     "type": "T"
+    }
+   }
+  }
+ }
+}

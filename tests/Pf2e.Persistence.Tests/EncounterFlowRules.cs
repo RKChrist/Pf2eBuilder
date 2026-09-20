@@ -35,7 +35,7 @@ public class EncounterFlowRules(SeededDatabase database) : IClassFixture<SeededD
         payload["build"]!["name"] = name;
 
         await using var db = database.NewContext();
-        return await new ImportCharacterHandler(db, db, Broadcaster)
+        return await new ImportCharacterHandler(db, db, new SharedCharacters(), Broadcaster)
             .Handle(new ImportCharacter(code, payload.ToJsonString()), default);
     }
 

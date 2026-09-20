@@ -91,6 +91,12 @@ internal sealed record PathbuilderBuild(Character Build, int ArmorPotency)
                 return new PathbuilderBuild(wanderers.Build, wanderers.ArmorPotency);
             }
 
+            if (WanderersGuideBuild.LooksShared(document.RootElement))
+            {
+                var shared = WanderersGuideBuild.ParseShared(document.RootElement);
+                return new PathbuilderBuild(shared.Build, shared.ArmorPotency);
+            }
+
             var root = document.RootElement;
             var build = Object(root, "build") ?? (root.ValueKind is JsonValueKind.Object ? root : null);
             var name = String(build, "name");

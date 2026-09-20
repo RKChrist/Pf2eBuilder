@@ -65,7 +65,7 @@ public class ExtractedModifiers(SeededDatabase database) : IClassFixture<SeededD
         {
             detail = (await new GetRuleHandler(db).Handle(new GetRule(horn.Id), default))!;
             campaign = await new CreateCampaignHandler(db).Handle(new CreateCampaign(), default);
-            character = await new ImportCharacterHandler(db, db, Broadcaster)
+            character = await new ImportCharacterHandler(db, db, new SharedCharacters(), Broadcaster)
                 .Handle(new ImportCharacter(campaign.Code, Fixture("gnibbo.json")), default);
         }
 

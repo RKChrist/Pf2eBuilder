@@ -36,7 +36,7 @@ public class ExplorationRules(SeededDatabase database) : IClassFixture<SeededDat
         payload["build"]!["name"] = name;
 
         await using var db = database.NewContext();
-        return await new ImportCharacterHandler(db, db, Broadcaster)
+        return await new ImportCharacterHandler(db, db, new SharedCharacters(), Broadcaster)
             .Handle(new ImportCharacter(code, payload.ToJsonString()), default);
     }
 
@@ -123,7 +123,7 @@ public class ExplorationRules(SeededDatabase database) : IClassFixture<SeededDat
         {
             var levelled = JsonNode.Parse(Fixture("gnibbo.json"))!;
             levelled["build"]!["level"] = 8;
-            await new ImportCharacterHandler(db, db, Broadcaster)
+            await new ImportCharacterHandler(db, db, new SharedCharacters(), Broadcaster)
                 .Handle(new ImportCharacter(campaign.Code, levelled.ToJsonString()), default);
         }
 

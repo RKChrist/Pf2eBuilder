@@ -21,7 +21,7 @@ public class SheetReferenceRules(SeededDatabase database) : IClassFixture<Seeded
     {
         await using var db = database.NewContext();
         var campaign = await new CreateCampaignHandler(db).Handle(new CreateCampaign(), default);
-        return await new ImportCharacterHandler(db, db, Broadcaster)
+        return await new ImportCharacterHandler(db, db, new SharedCharacters(), Broadcaster)
             .Handle(new ImportCharacter(campaign.Code, Fixture("gnibbo.json")), default);
     }
 
@@ -126,7 +126,7 @@ public class SheetReferenceRules(SeededDatabase database) : IClassFixture<Seeded
         var feats = payload["build"]!["feats"]!.AsArray();
         feats.Add(new System.Text.Json.Nodes.JsonArray("Punch The Moon", null, "Class Feat", 9));
 
-        var imported = await new ImportCharacterHandler(db, db, Broadcaster)
+        var imported = await new ImportCharacterHandler(db, db, new SharedCharacters(), Broadcaster)
             .Handle(new ImportCharacter(campaign.Code, payload.ToJsonString()), default);
 
         var homebrew = imported.Feats.Single(feat => feat.Name == "Punch The Moon");
@@ -183,7 +183,7 @@ public class SheetReferenceRules(SeededDatabase database) : IClassFixture<Seeded
         // without anything else being touched.
         await using var db = database.NewContext();
         var campaign = await new CreateCampaignHandler(db).Handle(new CreateCampaign(), default);
-        var gnibbo = await new ImportCharacterHandler(db, db, Broadcaster)
+        var gnibbo = await new ImportCharacterHandler(db, db, new SharedCharacters(), Broadcaster)
             .Handle(new ImportCharacter(campaign.Code, Fixture("gnibbo.json")), default);
 
         Assert.False(gnibbo.CanAttempt.Single(a => a.Key == "treat-wounds").Met);

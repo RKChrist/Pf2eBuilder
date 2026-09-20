@@ -62,7 +62,7 @@ public class CampaignRules(SeededDatabase database) : IClassFixture<SeededDataba
     async Task<CharacterSheetView> Import(string code, string pathbuilder)
     {
         await using var db = database.NewContext();
-        return await new ImportCharacterHandler(db, db, Broadcaster)
+        return await new ImportCharacterHandler(db, db, new SharedCharacters(), Broadcaster)
             .Handle(new ImportCharacter(code, pathbuilder), default);
     }
 

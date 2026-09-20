@@ -41,7 +41,8 @@ public static class CharacterSheet
 
         // The armour's own item bonus competes with other item bonuses under the stacking rule
         // rather than being added blindly.
-        if (build.ArmorItemBonus != 0)
+        // A stated armour class already has the armour in it.
+        if (build.ArmorItemBonus != 0 && build.Stated?.ArmorClass is null)
         {
             modifiers.Add(new Modifier(
                 build.ArmorName,
@@ -53,9 +54,11 @@ public static class CharacterSheet
 
         var level = build.Level;
 
-        Breakdown Roll(ProficiencyRank rank, AttributeKind governedBy, StatTarget target) =>
+        var stated = build.Stated;
+
+        Breakdown Roll(ProficiencyRank rank, AttributeKind governedBy, StatTarget target, int? total = null) =>
             Stacking.Resolve(
-                Proficiency.Bonus(rank, level, options) + build.Attributes.Of(governedBy),
+                total ?? Proficiency.Bonus(rank, level, options) + build.Attributes.Of(governedBy),
                 target,
                 modifiers);
 
@@ -76,14 +79,17 @@ public static class CharacterSheet
             builtHitPoints - HitPoints.DrainedLoss(DrainedValue(session), level));
 
         return new Sheet(
-            Domain.ArmorClass.Compute(
-                level, build.ArmorRank, build.Attributes.Dexterity, build.ArmorDexCap, modifiers, options),
-            Roll(build.Fortitude, AttributeKind.Constitution, StatTarget.Fortitude),
-            Roll(build.Reflex, AttributeKind.Dexterity, StatTarget.Reflex),
-            Roll(build.Will, AttributeKind.Wisdom, StatTarget.Will),
-            Roll(build.Perception, AttributeKind.Wisdom, StatTarget.Perception),
+            stated?.ArmorClass is { } armorClass
+                ? Stacking.Resolve(armorClass, StatTarget.ArmorClass, modifiers)
+                : Domain.ArmorClass.Compute(
+                    level, build.ArmorRank, build.Attributes.Dexterity, build.ArmorDexCap, modifiers, options),
+            Roll(build.Fortitude, AttributeKind.Constitution, StatTarget.Fortitude, stated?.Fortitude),
+            Roll(build.Reflex, AttributeKind.Dexterity, StatTarget.Reflex, stated?.Reflex),
+            Roll(build.Will, AttributeKind.Wisdom, StatTarget.Will, stated?.Will),
+            Roll(build.Perception, AttributeKind.Wisdom, StatTarget.Perception, stated?.Perception),
             Stacking.Resolve(
-                10 + Proficiency.Bonus(build.ClassDc, level, options) + build.Attributes.Of(build.KeyAttribute),
+                stated?.ClassDc
+                ?? 10 + Proficiency.Bonus(build.ClassDc, level, options) + build.Attributes.Of(build.KeyAttribute),
                 StatTarget.ClassDc(build.KeyAttribute),
                 modifiers),
             maxHitPoints,
@@ -97,7 +103,11 @@ public static class CharacterSheet
                 .OrderBy(skill => skill.Name, StringComparer.OrdinalIgnoreCase)
                 .Select(skill => new NamedBreakdown(
                     skill.Name,
-                    Roll(skill.Rank, Skills.For(skill.Name) ?? AttributeKind.Intelligence, StatTarget.Skill(skill.Name)),
+                    Roll(
+                        skill.Rank,
+                        Skills.For(skill.Name) ?? AttributeKind.Intelligence,
+                        StatTarget.Skill(skill.Name),
+                        stated?.Skill(skill.Name)),
                     skill.Rank))],
             // A weapon's bonus is the export's own total, so the base is taken whole and only
             // the session's modifiers are stacked onto it.
@@ -105,11 +115,12 @@ public static class CharacterSheet
                 weapon.Display,
                 Stacking.Resolve(weapon.Bonus, StatTarget.Attack(weapon.GovernedBy), modifiers)))],
             build.Spellcasting is { } casting
-                ? Roll(casting.Rank, casting.Attribute, StatTarget.SpellAttack(casting.Attribute))
+                ? Roll(casting.Rank, casting.Attribute, StatTarget.SpellAttack(casting.Attribute), stated?.SpellAttack)
                 : null,
             build.Spellcasting is { } dc
                 ? Stacking.Resolve(
-                    10 + Proficiency.Bonus(dc.Rank, level, options) + build.Attributes.Of(dc.Attribute),
+                    stated?.SpellDc
+                    ?? 10 + Proficiency.Bonus(dc.Rank, level, options) + build.Attributes.Of(dc.Attribute),
                     StatTarget.SpellDc(dc.Attribute),
                     modifiers)
                 : null);

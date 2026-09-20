@@ -37,6 +37,7 @@ public sealed class ImportCharacterValidator : AbstractValidator<ImportCharacter
 public sealed class ImportCharacterHandler(
     ITrackerDbContext tracker,
     IRulesDbContext rules,
+    IWanderersGuideClient wanderersGuide,
     ICampaignBroadcaster broadcaster) : IRequestHandler<ImportCharacter, CharacterSheetView>
 {
     public async Task<CharacterSheetView> Handle(ImportCharacter command, CancellationToken ct)
@@ -51,7 +52,7 @@ public sealed class ImportCharacterHandler(
         var (campaign, _) = await CampaignAccess.LoadAsync(tracker, command.Code, null, ct);
         var code = campaign.Code;
 
-        var parsed = PathbuilderBuild.Parse(command.Pathbuilder);
+        var parsed = PathbuilderBuild.Parse(await ExportOf(command.Pathbuilder, ct));
         var build = await WithSeededGear(parsed, ct);
 
         // Pathbuilder stores one JSON id per player and overwrites it on each export, so it is a
@@ -67,7 +68,7 @@ public sealed class ImportCharacterHandler(
         }
         else
         {
-            character.Apply(build);
+            character.Apply(KeepingWhatALinkCannotBring(build, character));
         }
 
         await tracker.SaveChangesAsync(ct);
@@ -75,6 +76,44 @@ public sealed class ImportCharacterHandler(
         var sheet = SheetViews.Of(character, campaign.EffectApplications);
         await broadcaster.CharacterChangedAsync(code, sheet, ct);
         return sheet;
+    }
+
+    /// <summary>
+    /// A link states numbers and nothing else, so refreshing from one a character that first came
+    /// from a file would empty its attacks, feats and spells. They are kept instead. A level-up
+    /// can leave an attack bonus a point behind until the next file, which is a smaller harm than
+    /// a fighter with no weapons.
+    /// </summary>
+    static Character KeepingWhatALinkCannotBring(Character build, TrackedCharacter existing) =>
+        build.Stated is not null && build.Weapons.IsEmpty && build.Feats.IsEmpty && build.Spells.IsEmpty
+            ? build with { Weapons = existing.Weapons, Feats = existing.Feats, Spells = existing.Spells }
+            : build;
+
+    /// <summary>
+    /// What was pasted is either an export or a link to a character somebody has shared, and a
+    /// link is settled here, at the door, into the same JSON a paste would have been.
+    /// <para>Only the character's number is taken from the link. See
+    /// <see cref="WanderersGuideCharacterId"/> for why the address itself is never fetched.</para>
+    /// </summary>
+    async Task<string> ExportOf(string pasted, CancellationToken ct)
+    {
+        if (!WanderersGuideCharacterId.TryParse(pasted, out var id))
+        {
+            return pasted;
+        }
+
+        return await wanderersGuide.FindCharacterAsync(id, ct) switch
+        {
+            WanderersGuideAnswer.Found found => found.CharacterJson,
+            WanderersGuideAnswer.NotShared => throw new PathbuilderFormatException(
+                "Wanderer's Guide will not show that character to anyone but its owner. In Wanderer's Guide, " +
+                "open the character's options and make it public, or export it to a file and paste that instead."),
+            WanderersGuideAnswer.NotFound => throw new PathbuilderFormatException(
+                $"Wanderer's Guide has no character numbered {id.Value}. Check the link."),
+            _ => throw new PathbuilderFormatException(
+                "Wanderer's Guide could not be reached just now. Try again in a moment, or export the " +
+                "character to a file and paste that instead."),
+        };
     }
 
     /// <summary>

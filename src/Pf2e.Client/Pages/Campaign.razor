@@ -232,7 +232,8 @@
     <div class="panel import">
         <Card Title="Put a character in the campaign">
             <ChildContent>
-                @* Two ways in, because the two builders people use export differently.
+                @* Three ways in, because the builders people use hand a character over differently.
+                   A Wanderer's Guide character its owner has made public can be read from its link.
                    Pathbuilder gives you JSON you can copy. Wanderer's Guide only offers a
                    download, and its file is twelve megabytes, so "paste it" meant finding an
                    editor that would open twelve megabytes of JSON and selecting all of it. *@
@@ -263,6 +264,18 @@
                         </p>
                     }
 
+                    @* The same draft as the paste box below: a link is one more thing that can be
+                       pasted, and the server is what decides which it was given. *@
+                    <TextInput Class="import__link"
+                               Label="Or a Wanderer's Guide link"
+                               Type="url"
+                               InputMode="url"
+                               Autocomplete="off"
+                               Placeholder="https://wanderersguide.app/stat-block/character/70618"
+                               Hint="The character has to be public in Wanderer's Guide. A link brings the numbers a fight needs: hit points, armour class, saves, perception, skills and spell DC. Attacks, feats and spells come with the file."
+                               Value="@(LooksLikeALink(State.PasteDraft) ? State.PasteDraft : null)"
+                               ValueChanged="link => Dispatcher.Dispatch(new PasteDraftChanged(link ?? string.Empty))" />
+
                     <Disclosure Class="import__paste"
                                 Title="Paste it instead"
                                 Glyph="clipboard"
@@ -271,7 +284,7 @@
                                   Rows="5"
                                   Placeholder="Paste the export here"
                                   Hint="In Pathbuilder, choose Export JSON. Paste the JSON itself, or open pathbuilder2e.com/json.php?id=NNNNNN with the number it gives you and copy the page."
-                                  Value="@State.PasteDraft"
+                                  Value="@(LooksLikeALink(State.PasteDraft) ? null : State.PasteDraft)"
                                   ValueChanged="paste => Dispatcher.Dispatch(new PasteDraftChanged(paste ?? string.Empty))" />
                     </Disclosure>
                 </div>
@@ -365,6 +378,11 @@
             Dispatcher.Dispatch(new HitPointsApplied(characterId, amount, direction));
         }
     }
+
+    /// <summary>Only decides which of the two boxes shows the draft. An export opens with a brace
+    /// and a link never does; whether a link is one this app will follow is the server's call.</summary>
+    static bool LooksLikeALink(string draft) =>
+        draft.TrimStart() is { Length: > 0 } text && text[0] is not ('{' or '[');
 
     /// <summary>The cap the server states, read from the one place that states it, so a file
     /// too big is refused here with a sentence rather than at the far end with a 413.</summary>

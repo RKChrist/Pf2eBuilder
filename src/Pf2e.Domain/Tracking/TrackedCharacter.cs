@@ -48,6 +48,9 @@ public sealed class TrackedCharacter
     /// given. Build state: a re-import replaces it and a session never touches it.</summary>
     public int? StatedMaxHitPoints { get; private set; }
 
+    /// <summary>The totals a source stated instead of the parts. Build state, like the line above.</summary>
+    public StatedTotals? Stated { get; private set; }
+
     // Build data that is a list rather than a column. It is read whole and replaced whole on
     // re-import and nothing queries inside it, so it is stored as one JSON value per list and
     // not as two more tables.
@@ -131,6 +134,7 @@ public sealed class TrackedCharacter
         Spells)
     {
         StatedMaxHitPoints = StatedMaxHitPoints,
+        Stated = Stated,
     };
 
     public SessionState ToSession(IEnumerable<EffectApplication> campaignEffects) => new(
@@ -158,6 +162,10 @@ public sealed class TrackedCharacter
         Spellcasting = build.Spellcasting;
         Feats = build.Feats;
         Spells = build.Spells;
+
+        // Only an import can state a total, so only an import replaces them. An edit leaves
+        // them alone, the same way it leaves the weapons alone.
+        Stated = build.Stated;
     }
 
     /// <summary>
