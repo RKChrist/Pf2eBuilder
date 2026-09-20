@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
+using System.Globalization;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -12,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using Pf2e.Api.Configuration;
 using Pf2e.Contracts.Accounts;
 
 namespace Pf2e.Persistence.Tests;
@@ -60,11 +62,20 @@ public sealed class AccountsHost : WebApplicationFactory<Program>, IAsyncLifetim
     /// middleware accepts around a token it must not. Anything less than the real protector
     /// would test this file's idea of the cookie format.
     /// </summary>
-    public string Protect(AuthenticationTicket ticket) =>
+    public string Protect(AuthenticationTicket ticket) => Format.Protect(ticket);
+
+    /// <summary>Reads back what the process put in the browser. The token is not visible to a
+    /// client, so this is the only way a test can say a renewal produced a different one rather
+    /// than merely that some cookie came back.</summary>
+    public AuthenticationTicket Unprotect(string cookie) =>
+        Format.Unprotect(cookie) ?? throw new InvalidOperationException("The cookie did not decrypt.");
+
+    public AuthOptions Auth => Services.GetRequiredService<IOptions<AuthOptions>>().Value;
+
+    ISecureDataFormat<AuthenticationTicket> Format =>
         Services.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>()
                 .Get(CookieAuthenticationDefaults.AuthenticationScheme)
-                .TicketDataFormat!
-                .Protect(ticket);
+                .TicketDataFormat!;
 
     public override async ValueTask DisposeAsync()
     {
@@ -148,14 +159,18 @@ public class AccountSessionRules(AccountsHost host) : IClassFixture<AccountsHost
     /// account, so an implementation that trusted either would answer as the account, which is
     /// exactly the mistake these tests exist to catch.
     /// </summary>
-    string TicketCarrying(string token, string displayName)
+    string TicketCarrying(string token, string displayName, DateTime? signedInAt = null, DateTimeOffset? issued = null)
     {
         var properties = new AuthenticationProperties
         {
-            IssuedUtc = DateTimeOffset.UtcNow,
-            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(12),
+            // Fresh and long, so the cookie handler's own sliding refresh never fires and any
+            // cookie that comes back is one these tests asked for.
+            IssuedUtc = issued ?? DateTimeOffset.UtcNow,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(host.Auth.Cookie.ExpireMinutes),
         };
         properties.StoreTokens([new AuthenticationToken { Name = "access_token", Value = token }]);
+        properties.Items["signed_in_utc"] =
+            (signedInAt ?? DateTime.UtcNow).ToString("O", CultureInfo.InvariantCulture);
 
         var identity = new ClaimsIdentity(
             [new Claim(ClaimTypes.Name, displayName)],
@@ -164,6 +179,23 @@ public class AccountSessionRules(AccountsHost host) : IClassFixture<AccountsHost
         return host.Protect(new AuthenticationTicket(
             new ClaimsPrincipal(identity), properties,
             CookieAuthenticationDefaults.AuthenticationScheme));
+    }
+
+    static string? TokenInside(AuthenticationTicket ticket) =>
+        ticket.Properties.GetTokenValue("access_token");
+
+    static DateTime ExpiryOf(string token) => new JsonWebToken(token).ValidTo;
+
+    async Task<(SessionView Session, string? Cookie)> SessionAndCookie(HttpClient client, string cookie)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "/accounts/session");
+        request.Headers.Add("Cookie", $"{AccountsHost.CookieName}={cookie}");
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var session = (await response.Content.ReadFromJsonAsync<SessionView>(Json))!;
+
+        return (session, CookieIn(response));
     }
 
     static string Token(Guid accountId, string signingKey, DateTime expires) =>
@@ -324,6 +356,119 @@ public class AccountSessionRules(AccountsHost host) : IClassFixture<AccountsHost
             account.DisplayName);
 
         Assert.Null((await SessionOn(client, empty)).Account);
+    }
+
+    /// <summary>A table runs three to five hours. A token good for one, never renewed, would
+    /// sign the GM out in the middle of a fight.</summary>
+    [Fact]
+    public async Task ATokenInTheLastHalfOfItsLifeComesBackFreshlyMintedAndTheSessionGoesOn()
+    {
+        using var client = Client();
+        var (account, _) = await Registered(client);
+
+        var nearlyOut = Token(account.Id, AccountsHost.SigningKey, DateTime.UtcNow.AddMinutes(10));
+        var (session, cookie) = await SessionAndCookie(
+            client, TicketCarrying(nearlyOut, account.DisplayName));
+
+        Assert.NotNull(session.Account);
+        Assert.Equal(account.Id, session.Account.Id);
+
+        Assert.False(string.IsNullOrEmpty(cookie), "The ticket was not renewed.");
+
+        var renewed = TokenInside(host.Unprotect(cookie!));
+
+        Assert.NotNull(renewed);
+        Assert.NotEqual(nearlyOut, renewed);
+        Assert.True(
+            ExpiryOf(renewed) > ExpiryOf(nearlyOut),
+            $"The replacement expires at {ExpiryOf(renewed):O}, no later than {ExpiryOf(nearlyOut):O}.");
+    }
+
+    /// <summary>Re-minting on every request would rewrite the cookie on every page load for no
+    /// gain, and would stop the token's stated lifetime meaning anything by never letting one
+    /// get old.</summary>
+    [Fact]
+    public async Task ATokenStillInTheFirstHalfOfItsLifeIsLeftAlone()
+    {
+        using var client = Client();
+        var (account, _) = await Registered(client);
+
+        var fresh = Token(
+            account.Id, AccountsHost.SigningKey,
+            DateTime.UtcNow.AddMinutes(host.Auth.Jwt.AccessTokenMinutes));
+
+        var (session, cookie) = await SessionAndCookie(
+            client, TicketCarrying(fresh, account.DisplayName));
+
+        Assert.NotNull(session.Account);
+        Assert.Null(cookie);
+    }
+
+    /// <summary>RefreshTokenMinutes is a limit on how long a sign-in may go on being renewed,
+    /// not a second way to be thrown out mid-request, so the token already in the ticket is left
+    /// to run out on its own.</summary>
+    [Fact]
+    public async Task ASignInPastTheRefreshWindowIsNotRenewedEvenWithItsTokenNearlyOut()
+    {
+        using var client = Client();
+        var (account, _) = await Registered(client);
+
+        var tooOld = DateTime.UtcNow.AddMinutes(-(host.Auth.Jwt.RefreshTokenMinutes + 1));
+        var nearlyOut = Token(account.Id, AccountsHost.SigningKey, DateTime.UtcNow.AddMinutes(10));
+
+        var (session, cookie) = await SessionAndCookie(
+            client, TicketCarrying(nearlyOut, account.DisplayName, signedInAt: tooOld));
+
+        Assert.NotNull(session.Account);
+        Assert.Null(cookie);
+    }
+
+    [Fact]
+    public async Task ASignInPastTheRefreshWindowEndsWhenItsTokenFinallyExpires()
+    {
+        using var client = Client();
+        var (account, _) = await Registered(client);
+
+        var tooOld = DateTime.UtcNow.AddMinutes(-(host.Auth.Jwt.RefreshTokenMinutes + 1));
+        var spent = Token(account.Id, AccountsHost.SigningKey, DateTime.UtcNow.AddMinutes(-30));
+
+        var (session, cookie) = await SessionAndCookie(
+            client, TicketCarrying(spent, account.DisplayName, signedInAt: tooOld));
+
+        Assert.Null(session.Account);
+        Assert.Equal(string.Empty, cookie);
+    }
+
+    /// <summary>
+    /// Why the sign-in time is carried separately instead of read off the ticket. Renewing calls
+    /// the cookie handler's RequestRefresh, which stamps IssuedUtc with the current time, so a
+    /// cap measured from it would move forward every time renewal touched it and could never be
+    /// reached. This asserts that difference rather than leaving the comment on
+    /// AccountSession.SignedInAtName to be believed.
+    /// </summary>
+    [Fact]
+    public async Task RenewingMovesTheTicketsIssuedTimeButNotTheSignInItIsMeasuredFrom()
+    {
+        using var client = Client();
+        var (account, _) = await Registered(client);
+
+        var issued = DateTimeOffset.UtcNow.AddMinutes(-20);
+        var signedInAt = DateTime.UtcNow.AddMinutes(-20);
+        var nearlyOut = Token(account.Id, AccountsHost.SigningKey, DateTime.UtcNow.AddMinutes(10));
+
+        var (_, cookie) = await SessionAndCookie(
+            client, TicketCarrying(nearlyOut, account.DisplayName, signedInAt, issued));
+
+        Assert.False(string.IsNullOrEmpty(cookie), "The ticket was not renewed.");
+        var renewed = host.Unprotect(cookie!);
+
+        Assert.True(
+            renewed.Properties.IssuedUtc > issued,
+            "IssuedUtc did not move, so this test no longer shows why the stamp is carried.");
+
+        Assert.Equal(
+            signedInAt.ToString("O", CultureInfo.InvariantCulture),
+            renewed.Properties.Items["signed_in_utc"]);
     }
 
     [Fact]

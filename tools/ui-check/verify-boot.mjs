@@ -54,7 +54,10 @@ const run = (command, args, options) => new Promise((done) => {
 
 // Built once up front so a compile error cannot be mistaken for the refusal this is looking for:
 // both leave a non-zero exit code behind and only one of them is the point.
-const built = await run('dotnet', ['build', project, '-v', 'q', '--nologo'], { shell: true });
+// No shell. Node deprecates passing an argument array with shell:true (DEP0190) because the
+// args are then re-parsed by the shell rather than passed through, and spawn finds dotnet on
+// PATH without one anyway.
+const built = await run('dotnet', ['build', project, '-v', 'q', '--nologo'], {});
 check('the api builds', built.code === 0, built.output.slice(-300));
 
 /**

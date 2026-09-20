@@ -36,18 +36,20 @@ public sealed class SignInHandler(IAccountsDbContext db, IPasswordHasher hasher)
     : IRequestHandler<SignIn, AccountView>
 {
     /// <summary>
-    /// One refusal from two causes, thrown from one place so the two can never drift apart.
-    /// <para>What is left is the time: an address nobody registered is refused without a hash
-    /// being computed, and a wrong password is refused after one, so the two are still
-    /// distinguishable by a caller with a stopwatch. Closing that means verifying against a
-    /// decoy hash, which needs one to exist before the first request.</para>
+    /// One refusal from two causes, thrown from one place so the two can never drift apart, and
+    /// reached by the same amount of work either way. The verification happens even when no
+    /// account matched, against <see cref="SignInDecoy"/>, because two identical sentences that
+    /// arrive at measurably different times are not identical.
     /// </summary>
     public async Task<AccountView> Handle(SignIn command, CancellationToken ct)
     {
         var email = AccountCredentials.Normalise(command.Email);
         var account = await db.Accounts.FirstOrDefaultAsync(a => a.Email == email, ct);
 
-        if (account is null || !hasher.Verify(account.PasswordHash, command.Password))
+        var verified = hasher.Verify(
+            account?.PasswordHash ?? SignInDecoy.For(hasher), command.Password);
+
+        if (account is null || !verified)
         {
             throw new SignInRefusedException();
         }
