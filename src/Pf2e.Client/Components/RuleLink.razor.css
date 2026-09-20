@@ -2,6 +2,10 @@
    stands in and marks itself as a link with colour and a hairline underline, so a rules text
    reads as a rules text and not as a strip of buttons. */
 .rule-link {
+    /* Stated rather than left to the browser, which makes an anchor inline and a button
+       inline-block. A sheet's owned feats are anchors where the export carried an id and buttons
+       where it did not, and without this the two wrap differently in the same list. */
+    display: inline;
     padding: var(--space-0);
     border: none;
     border-radius: var(--radius-chip);
