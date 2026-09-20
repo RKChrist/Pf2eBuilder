@@ -175,7 +175,8 @@ public static class AccountEndpoints
         ClockSkew = TimeSpan.FromSeconds(jwt.ClockSkewSeconds),
     };
 
-    // AuthOptionsValidator refuses to start on a key under thirty-two characters, which is what
-    // makes this safe: HMAC-SHA256 throws on a key shorter than its own block.
+    // Safe only because AuthOptionsValidator refuses to start on a key under thirty-two
+    // characters. HS256 throws rather than signing weakly below its 256-bit hash output, so
+    // without that rule this line would be the one that failed, at the first sign-in.
     static SymmetricSecurityKey KeyOf(AuthJwtOptions jwt) => new(Encoding.UTF8.GetBytes(jwt.SigningKey));
 }

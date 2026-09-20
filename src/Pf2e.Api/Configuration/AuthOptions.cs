@@ -62,8 +62,11 @@ public sealed class AuthJwtOptions
 /// </summary>
 public sealed class AuthOptionsValidator : IValidateOptions<AuthOptions>
 {
-    /// <summary>HMAC-SHA256 refuses a key shorter than its own 256-bit block, so a thirty-one
-    /// character key is not a weak deployment, it is an exception on the first sign-in.</summary>
+    /// <summary>HS256 refuses to build a keyed hash from a key shorter than its 256-bit hash
+    /// output, so a thirty-one character key is not a weak deployment, it is an
+    /// ArgumentOutOfRangeException at the first sign-in. Moving that to boot is the point of the
+    /// rule. AuthOptionsRules pins the number to the library rather than to this sentence.
+    /// </summary>
     public const int MinimumSigningKeyLength = 32;
 
     const int MaxCookieMinutes = 43200;
@@ -131,10 +134,13 @@ public sealed class AuthOptionsValidator : IValidateOptions<AuthOptions>
 
     static string Path(string group, string setting) => $"{AuthOptions.Section}:{group}:{setting}";
 
+    // IsDefined as well as TryParse, because TryParse accepts any integer against any enum, so
+    // "7" would pass as a SameSiteMode and become (SameSiteMode)7 in the cookie options while
+    // the message underneath claimed it had to be one of the four names.
     static void Parses<TEnum>(List<string> failures, string group, string setting, string value)
         where TEnum : struct, Enum
     {
-        if (!Enum.TryParse<TEnum>(value, ignoreCase: true, out _))
+        if (!Enum.TryParse<TEnum>(value, ignoreCase: true, out var parsed) || !Enum.IsDefined(parsed))
         {
             failures.Add($"{Path(group, setting)} is '{value}'. It must be one of " +
                          $"{string.Join(", ", Enum.GetNames<TEnum>())}.");

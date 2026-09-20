@@ -1,4 +1,7 @@
+using System.Text;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.IdentityModel.Tokens;
 using Pf2e.Api.Configuration;
 
 namespace Pf2e.Unit.Tests;
@@ -98,6 +101,27 @@ public class AuthOptionsRules
         Assert.Contains("Strict", refusal);
     }
 
+    /// <summary>A number is not one of the names. Enum.TryParse takes any integer against any
+    /// enum, so without a defined-ness check this passes and becomes (SameSiteMode)7 on the
+    /// cookie, which is neither Lax nor Strict nor None.</summary>
+    [Fact]
+    public void ANumberIsNotASameSiteEvenThoughItParsesAsOne()
+    {
+        var options = Complete();
+        options.Cookie.SameSite = "7";
+
+        Assert.Contains("Auth:Cookie:SameSite", RefusalOf(options));
+    }
+
+    [Fact]
+    public void ANumberIsNotASecurePolicyEither()
+    {
+        var options = Complete();
+        options.Cookie.SecurePolicy = "99";
+
+        Assert.Contains("Auth:Cookie:SecurePolicy", RefusalOf(options));
+    }
+
     [Fact]
     public void ASecurePolicyTheFrameworkDoesNotKnowIsRefused()
     {
@@ -126,6 +150,43 @@ public class AuthOptionsRules
 
         Assert.Contains("Auth:Jwt:AccessTokenMinutes", RefusalOf(options));
     }
+
+    /// <summary>
+    /// Ties the validator's constant to what the signing library actually does, because the
+    /// reason for the number is not obvious and a plausible wrong reason is written down in
+    /// several places elsewhere. Microsoft.IdentityModel advertises a minimum symmetric key of
+    /// 128 bits, which is the check that produces IDX10653, and HS256 then refuses anything
+    /// under its 256-bit hash output when the keyed hash is built, which is IDX10720. So a key
+    /// between the two is not weak, it throws, and it throws at the first sign-in rather than at
+    /// boot. That is the failure the validator is moving forward in time.
+    /// </summary>
+    [Fact]
+    public void AKeyOneCharacterUnderTheMinimumCannotSignAtAll()
+    {
+        var tooShort = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(new string('k', AuthOptionsValidator.MinimumSigningKeyLength - 1)));
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => Sign(tooShort));
+    }
+
+    [Fact]
+    public void AKeyAtTheMinimumSigns()
+    {
+        var enough = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(new string('k', AuthOptionsValidator.MinimumSigningKeyLength)));
+
+        Assert.False(string.IsNullOrEmpty(Sign(enough)));
+    }
+
+    static string Sign(SymmetricSecurityKey key) =>
+        new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor
+        {
+            Issuer = "pf2e-builder",
+            Audience = "pf2e-builder",
+            Claims = new Dictionary<string, object> { ["sub"] = Guid.NewGuid().ToString() },
+            Expires = DateTime.UtcNow.AddMinutes(5),
+            SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256),
+        });
 
     [Fact]
     public void EverythingThatIsWrongIsReportedAtOnceRatherThanOnePerBoot()

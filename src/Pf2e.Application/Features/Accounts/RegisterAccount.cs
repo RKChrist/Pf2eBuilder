@@ -75,10 +75,18 @@ public sealed class RegisterAccountHandler(IAccountsDbContext db, IPasswordHashe
         catch (DbUpdateException)
         {
             // Two registrations of one address at the same moment both see nothing above and
-            // both insert. The unique index is what actually settles it, so whoever loses is
-            // told the address is taken, which is true, rather than handed a 500 that reads as
-            // our fault. This insert is one row against one unique constraint, so there is
-            // nothing else the store could have been objecting to.
+            // both insert, and the unique index is what actually settles it. So the loser is
+            // told the address is taken rather than handed a 500 that reads as our fault.
+            //
+            // Asked rather than assumed, though. A locked database and one nobody has migrated
+            // arrive here too, and answering those with "that address is taken" is a lie that
+            // sends somebody looking for an account that does not exist while the real fault
+            // goes unreported. If the address is not there, this was not that.
+            if (!await db.Accounts.AsNoTracking().AnyAsync(a => a.Email == email, ct))
+            {
+                throw;
+            }
+
             throw new EmailAlreadyRegisteredException(email);
         }
 

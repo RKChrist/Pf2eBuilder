@@ -214,19 +214,34 @@ public class AccountSessionRules(AccountsHost host) : IClassFixture<AccountsHost
         Assert.Contains("httponly", header, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Asked of the token library rather than by looking for a substring. A hand-rolled search
+    /// for the base64 of the subject proves nothing: a JWT is base64url, not base64, and whether
+    /// an encoded fragment appears at all depends on its byte offset inside the payload, so such
+    /// a test passes by alignment luck even against a cookie that is the raw token.
+    /// </summary>
     [Fact]
-    public async Task NothingTheBrowserReceivesContainsTheTokenInAFormItCanRead()
+    public async Task WhatTheBrowserReceivesIsNotAReadableTokenAtAll()
     {
         using var client = Client();
         var (account, cookie) = await Registered(client);
+        var reader = new JsonWebTokenHandler();
 
-        // A readable token would carry the account id base64url-encoded in its payload, which is
-        // the shape a JWT has whether or not anything decodes it.
-        var encodedSubject = Convert.ToBase64String(
-            Encoding.UTF8.GetBytes($"\"sub\":\"{account.Id}\"")).TrimEnd('=');
+        // That this assertion can fail at all, proved here rather than assumed: the same call
+        // says yes to an actual token, so a cookie that were one would not slip through.
+        Assert.True(
+            reader.CanReadToken(Token(account.Id, AccountsHost.SigningKey, DateTime.UtcNow.AddHours(1))),
+            "The check cannot recognise a token, so its refusal of the cookie means nothing.");
 
-        Assert.DoesNotContain(encodedSubject, cookie, StringComparison.Ordinal);
-        Assert.DoesNotContain(account.Id.ToString(), cookie, StringComparison.OrdinalIgnoreCase);
+        Assert.False(
+            reader.CanReadToken(cookie),
+            "The cookie is a token the browser could read.");
+
+        // The ticket is one Data Protection blob, so it has none of a JWT's dot-separated
+        // segments to pull a payload out of either.
+        Assert.False(
+            cookie.Split('.').Length >= 3,
+            "The cookie is shaped like a token even if this library will not read it.");
     }
 
     /// <summary>
@@ -330,7 +345,7 @@ public class AccountSessionRules(AccountsHost host) : IClassFixture<AccountsHost
     }
 
     [Fact]
-    public async Task SigningOutClearsTheCookieAndTheSessionIsNobodyAgain()
+    public async Task SigningOutAnswersNoContentAndTellsTheBrowserToDropTheCookie()
     {
         using var client = Client();
         var (_, cookie) = await Registered(client);
@@ -341,6 +356,31 @@ public class AccountSessionRules(AccountsHost host) : IClassFixture<AccountsHost
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         Assert.Equal(string.Empty, CookieIn(response));
+    }
+
+    /// <summary>
+    /// The limit of a stateless sign-out, asserted rather than assumed. Signing out tells the
+    /// browser to drop its cookie and nothing else, so a copy of that cookie taken beforehand
+    /// still answers as the account until the token inside it expires, which is
+    /// Auth:Jwt:AccessTokenMinutes away. This is not a defect being papered over, it is the
+    /// trade a cookie with no server-side store makes, and it is written down here so that
+    /// nobody reads the test above as proof of something stronger. Ending it on the server would
+    /// need the token's id recorded and checked on every read.
+    /// </summary>
+    [Fact]
+    public async Task ACopyOfTheCookieTakenBeforeSigningOutStillWorksAfterwards()
+    {
+        using var client = Client();
+        var (account, cookie) = await Registered(client);
+
+        var signOut = new HttpRequestMessage(HttpMethod.Delete, "/accounts/session");
+        signOut.Headers.Add("Cookie", $"{AccountsHost.CookieName}={cookie}");
+        Assert.Equal(HttpStatusCode.NoContent, (await client.SendAsync(signOut)).StatusCode);
+
+        var replayed = await SessionOn(client, cookie);
+
+        Assert.NotNull(replayed.Account);
+        Assert.Equal(account.Id, replayed.Account.Id);
     }
 
     [Fact]

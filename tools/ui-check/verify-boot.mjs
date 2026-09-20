@@ -121,9 +121,9 @@ const withKey = await boot({
 });
 check('a signing key lets the process start', withKey.listening, withKey.output.slice(-400));
 
-// The failure that would slip past both checks above: a key short enough that HMAC-SHA256
-// refuses it would start, then throw on the first sign-in, which is a much worse place to find
-// out.
+// The failure that would slip past both checks above. HS256 refuses to build a keyed hash from
+// a key under its 256-bit hash output, so a short one would let the process start and then
+// throw at the first sign-in, which is a much worse place to find out.
 const tooShort = await boot({ ...quiet, Auth__Jwt__SigningKey: 'too-short' });
 check('a key too short to sign with stops the process too',
   refused(tooShort) && !tooShort.listening,

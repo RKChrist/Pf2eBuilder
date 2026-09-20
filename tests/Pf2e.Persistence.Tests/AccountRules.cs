@@ -62,6 +62,42 @@ public class AccountRules(SeededDatabase database) : IClassFixture<SeededDatabas
         await Assert.ThrowsAsync<EmailAlreadyRegisteredException>(() => Register(email));
     }
 
+    /// <summary>
+    /// The invariant rather than the path. Two registrations of one address at once may be
+    /// settled by the check before the insert or by the unique index after it, depending on how
+    /// the two interleave, and both are correct. What must never happen either way is two
+    /// accounts on one address, so that is what is asserted.
+    /// </summary>
+    [Fact]
+    public async Task TwoRegistrationsRacingOnOneAddressLeaveExactlyOneAccount()
+    {
+        var email = FreshEmail();
+
+        var both = await Task.WhenAll(
+            Attempt(() => Register(email, name: "First")),
+            Attempt(() => Register(email, name: "Second")));
+
+        await using var db = database.NewContext();
+        var stored = db.Accounts.Where(a => a.Email == email).ToList();
+
+        Assert.Single(stored);
+        Assert.Equal(1, both.Count(outcome => outcome is null));
+        Assert.Equal(1, both.Count(outcome => outcome is EmailAlreadyRegisteredException));
+    }
+
+    static async Task<Exception?> Attempt(Func<Task<AccountView>> register)
+    {
+        try
+        {
+            await register();
+            return null;
+        }
+        catch (Exception failure)
+        {
+            return failure;
+        }
+    }
+
     [Fact]
     public async Task AnAddressRegisteredInOneSpellingIsTheSameAccountInAnother()
     {
@@ -115,10 +151,13 @@ public class AccountRules(SeededDatabase database) : IClassFixture<SeededDatabas
 
         Assert.Equal(registered.Id, signedIn.Id);
         Assert.Equal("Gnibbo", signedIn.DisplayName);
+
+        // The stored hash itself, not the name of the property. Asserting the name cannot fail
+        // while AccountView has the three fields it has, so it would pass whatever anybody did
+        // to it; the value would not.
+        var stored = await StoredHashFor(signedIn.Id);
         Assert.DoesNotContain(
-            nameof(Domain.Accounts.Account.PasswordHash),
-            System.Text.Json.JsonSerializer.Serialize(signedIn),
-            StringComparison.Ordinal);
+            stored!, System.Text.Json.JsonSerializer.Serialize(signedIn), StringComparison.Ordinal);
     }
 
     [Fact]

@@ -5,6 +5,11 @@
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- The signing key must not be committed, and both the boot refusal and the Development
+         warning tell the operator to set it as a user secret. Without this the secret store has
+         no id to hang off, so `dotnet user-secrets set` fails and the provider is never added,
+         which would make that advice wrong at the only moment anybody reads it. -->
+    <UserSecretsId>pf2e-builder-api</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
