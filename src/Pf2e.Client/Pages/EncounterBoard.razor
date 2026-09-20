@@ -179,8 +179,14 @@
                                         }
                                         @if (adversary && !combatant.Revealed && table.Role == "Dm")
                                         {
+                                            @* Hidden, and what the players call it while it is:
+                                               the two halves of one fact, so they sit together
+                                               and the row's head stays one line on a phone. *@
                                             <span class="turn__hidden">
                                                 <Icon Name="eye-off" />Hidden
+                                            </span>
+                                            <span class="turn__alias" title="What the players see until you reveal it">
+                                                @combatant.Monster?.Alias to players
                                             </span>
                                         }
                                     </div>
@@ -289,9 +295,15 @@
 
                                         @if (adversary)
                                         {
-                                            @* A monster the players have not been shown is not on
-                                               their screen at all, so this is the only way it gets
-                                               there, and a bare toggle would not say so. *@
+                                            <Button Variant="ButtonVariant.Quiet"
+                                                    Class="turn__edit"
+                                                    OnClick="() => _editing = combatant.Id">
+                                                Edit
+                                            </Button>
+
+                                            @* Until this is on, the players have a numbered mob
+                                               and nothing else, so this is the only way its name
+                                               reaches them, and a bare toggle would not say so. *@
                                             <Switch Class="reveal"
                                                     Checked="combatant.Revealed"
                                                     CheckedChanged="on => Dispatcher.Dispatch(new MonsterRevealed(combatant.Id, on))">
@@ -342,6 +354,61 @@
     @if (State.AddingCombatant is { } picker && Table is { } open)
     {
         <div class="adding">
+            <SectionHead Text="A monster" Glyph="skull" Level="3" Class="pf-section--sub">
+                <Aside>
+                    <span class="adding__count">
+                        <span class="adding__count-says">How many</span>
+                        <NumberStepper Label="How many to add" Min="1" Max="20"
+                                       Value="_count" ValueChanged="count => _count = count" />
+                    </span>
+                </Aside>
+            </SectionHead>
+            <SearchField Value="@picker.Query"
+                         ValueChanged="query => Dispatcher.Dispatch(new MonsterQueryChanged(query ?? string.Empty))"
+                         Placeholder="Search 3,786 creatures"
+                         Label="Search the bestiary" />
+
+            <RemoteView T="RuleSearchResult" Data="picker.Found">
+                <NotAsked>
+                    <p class="hint">
+                        Every creature in the ruleset, with the numbers a fight needs. Players see each one as
+                        a numbered mob until you reveal it.
+                    </p>
+                </NotAsked>
+                <Loading>
+                    <div class="pending"><Spinner ShowLabel="true" Label="Searching" /></div>
+                </Loading>
+                <Failed Context="message">
+                    <ErrorState Title="Could not search the bestiary">
+                        <ChildContent>@message</ChildContent>
+                    </ErrorState>
+                </Failed>
+                <Loaded Context="found">
+                    @if (found.Items.Count == 0)
+                    {
+                        <p class="hint">Nothing by that name. You can make it yourself below.</p>
+                    }
+                    else
+                    {
+                        <Card>
+                            <ListContent>
+                                @foreach (var creature in found.Items)
+                                {
+                                    <ListRow Title="@creature.Name"
+                                             Meta="@Line(Glance(creature))"
+                                             OnClick="() => Dispatcher.Dispatch(new CombatantAdded(creature.Id, null, null, Count: _count))" />
+                                }
+                            </ListContent>
+                        </Card>
+                    }
+                </Loaded>
+            </RemoteView>
+
+            <Disclosure Class="adding__own" Title="Make your own" Glyph="plus">
+                <MonsterForm SubmitLabel="@(_count > 1 ? $"Add {_count} to the fight" : "Add to the fight")"
+                             OnSubmit="MakeOwn" />
+            </Disclosure>
+
             @if (Absent(open) is { Count: > 0 } roster)
             {
                 <SectionHead Text="From this campaign" Glyph="person" Level="3"
@@ -369,50 +436,50 @@
                 </Card>
             }
 
-            <SectionHead Text="A monster" Glyph="skull" Level="3" Class="pf-section--sub" />
-            <SearchField Value="@picker.Query"
-                         ValueChanged="query => Dispatcher.Dispatch(new MonsterQueryChanged(query ?? string.Empty))"
-                         Placeholder="Search 3,786 creatures"
-                         Label="Search the bestiary" />
-
-            <RemoteView T="RuleSearchResult" Data="picker.Found">
-                <NotAsked>
-                    <p class="hint">Every creature in the ruleset, with the numbers a fight needs.</p>
-                </NotAsked>
-                <Loading>
-                    <div class="pending"><Spinner ShowLabel="true" Label="Searching" /></div>
-                </Loading>
-                <Failed Context="message">
-                    <ErrorState Title="Could not search the bestiary">
-                        <ChildContent>@message</ChildContent>
-                    </ErrorState>
-                </Failed>
-                <Loaded Context="found">
-                    @if (found.Items.Count == 0)
-                    {
-                        <p class="hint">Nothing by that name.</p>
-                    }
-                    else
-                    {
-                        <Card>
-                            <ListContent>
-                                @foreach (var creature in found.Items)
-                                {
-                                    <ListRow Title="@creature.Name"
-                                             Meta="@Line(Glance(creature))"
-                                             OnClick="() => Dispatcher.Dispatch(new CombatantAdded(creature.Id, null, null))" />
-                                }
-                            </ListContent>
-                        </Card>
-                    }
-                </Loaded>
-            </RemoteView>
         </div>
+    }
+</BottomSheet>
+
+<BottomSheet Open="@(Editing is not null)"
+             Title="@($"Change {Editing?.Name}")"
+             OnClose="() => _editing = null">
+    @if (Editing is { Monster: { } line } changing)
+    {
+        <MonsterForm Initial="@(new EditMonsterRequest(changing.Name, line.MaxHitPoints, line.Level, line.ArmorClass, line.Fortitude, line.Reflex, line.Will, line.Perception))"
+                     SubmitLabel="Save"
+                     Adjustable="true"
+                     OnSubmit="Change" />
     }
 </BottomSheet>
 
 @code {
     CampaignState State => Store.Value;
+
+    /// <summary>How many of a monster the next add brings, and which monster is being changed.
+    /// Both are this screen's own: one DM's open panel, which nothing else reads.</summary>
+    int _count = 1;
+    Guid? _editing;
+
+    CombatantView? Editing =>
+        _editing is { } id ? Table?.Encounter?.Combatants.FirstOrDefault(c => c.Id == id) : null;
+
+    void MakeOwn(EditMonsterRequest own) =>
+        Dispatcher.Dispatch(new CombatantAdded(
+            null, null, null,
+            new HomebrewMonster(
+                own.Name, own.MaxHitPoints, own.Level, own.ArmorClass,
+                own.Fortitude, own.Reflex, own.Will, own.Perception),
+            _count));
+
+    void Change(EditMonsterRequest monster)
+    {
+        if (_editing is { } id)
+        {
+            Dispatcher.Dispatch(new MonsterEdited(id, monster));
+        }
+
+        _editing = null;
+    }
 
     CampaignView? Table =>
         State.Campaign is RemoteData<CampaignView>.Loaded loaded ? loaded.Value : null;

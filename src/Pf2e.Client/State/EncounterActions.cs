@@ -20,9 +20,14 @@ public sealed record MonsterSearchSucceeded(RuleSearchResult Result);
 
 public sealed record MonsterSearchFailed(string Message);
 
-/// <summary>A monster names a creature record and a player names somebody on the roster, so
-/// exactly one of the two is set.</summary>
-public sealed record CombatantAdded(string? RuleId, Guid? CharacterId, string? Name);
+/// <summary>A monster names a creature record, a player names somebody on the roster, and a
+/// monster of the DM's own names itself, so exactly one of the three is set. Count is how many
+/// of a monster, sent as one command because several commands at once is a race the server
+/// loses.</summary>
+public sealed record CombatantAdded(
+    string? RuleId, Guid? CharacterId, string? Name, HomebrewMonster? Homebrew = null, int Count = 1);
+
+public sealed record MonsterEdited(Guid CombatantId, EditMonsterRequest Monster);
 
 /// <summary>Everybody on the roster who is not in the fight yet, as one action rather than one
 /// per character. Adding them as separate actions means separate commands racing each other on

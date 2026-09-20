@@ -330,7 +330,7 @@ check('a trigger or requirement is marked as a gate', await page.eval(
   await page.eval(`[...document.querySelectorAll('.rule-sheet .stat.gate dt')].map(dt => dt.textContent.trim()).join()`));
 check('the source is stated', await page.eval(
   `[...document.querySelectorAll('.rule-sheet dt')].some(dt => dt.textContent.trim() === 'Source')`));
-check.eq('the full text is one clear button', await text('.rule-sheet a.pf-btn.archives'), 'Full rules text on Archives of Nethys');
+check.eq('the way out to the source is one clear button', await text('.rule-sheet a.pf-btn.archives'), 'Open on Archives of Nethys');
 const referenced = await text('.rule-sheet .ref');
 await click('.rule-sheet .ref');
 await sleep(1500);
@@ -616,8 +616,10 @@ await page.viewport(390, 844, true);
 await sleep(300);
 
 // Chrome logs the unknown record's 404 itself; that answer is the point of the check that asked.
+// Two of them, because a record and its description are asked for side by side and a record
+// that does not exist has neither.
 const notFound = page.consoleErrors().filter(entry => entry.includes('status of 404'));
-check.eq('the only 404 is the record asked for on purpose', notFound.length, 1);
+check.eq('the only 404s are the record asked for on purpose and its description', notFound.length, 2);
 const errors = page.consoleErrors().filter(entry => !entry.includes('ERR_BLOCKED_BY_CLIENT') && !entry.includes('status of 404'));
 check('no console errors', errors.length === 0, errors.join(' | '));
 

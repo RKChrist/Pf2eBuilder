@@ -6,7 +6,14 @@
        inline-block. A sheet's owned feats are anchors where the export carried an id and buttons
        where it did not, and without this the two wrap differently in the same list. */
     display: inline;
-    padding: var(--space-0);
+
+    /* The tap floor without the height. Padding on an inline box is part of what a finger can
+       hit and part of what the box measures, and it moves no line: block padding never does on
+       an inline box, and the inline padding is taken back by the margin. So "Lie" is a target
+       the size of a thumb and the sentence it stands in is set exactly as it was. */
+    padding-block: calc((var(--tap-min) - 1lh) / 2);
+    padding-inline: var(--space-3);
+    margin-inline: calc(var(--space-3) * -1);
     border: none;
     border-radius: var(--radius-chip);
     background: transparent;
@@ -29,12 +36,14 @@
     outline-offset: var(--space-1);
 }
 
-/* The tap floor, for a link that is the whole content of its own row or heading. A link inside
-   a sentence must not have it, or every paragraph holding one grows a line. */
+/* A link that is the whole content of its own row or heading also takes the floor as real
+   height, so the row is as tall as the thing in it. A link inside a sentence must not, or every
+   paragraph holding one grows a line. */
 .rule-link--alone {
     display: inline-flex;
     align-items: center;
     min-height: var(--tap-min);
+    padding-block: var(--space-0);
 }
 
 @media (hover: hover) {

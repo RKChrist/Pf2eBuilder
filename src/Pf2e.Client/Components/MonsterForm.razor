@@ -1,0 +1,151 @@
+@* A monster's name and line, for the two times a DM writes one: making a monster that is in no
+   book, and changing one that is already in the fight. One form, because they are the same eight
+   fields and an elite adjustment is only the second case with bigger numbers.
+
+   The draft is this component's own. It is a form open in front of one person, nothing else on
+   the screen reads it, and somebody else's change arriving must not wipe what is half typed.
+   Numbers are typed and not stepped: nobody reaches 175 hit points by pressing plus. *@
+<form class="monster" @onsubmit="Submit" @onsubmit:preventDefault>
+    <TextInput Label="Name"
+               Value="@_name"
+               ValueChanged="name => _name = name ?? string.Empty"
+               Autocomplete="off"
+               Placeholder="Clockwork Heron" />
+
+    <div class="monster__line">
+        @foreach (var field in Fields)
+        {
+            <TextInput Label="@field.Label"
+                       InputMode="numeric"
+                       Autocomplete="off"
+                       Value="@_typed[field.Key]"
+                       ValueChanged="typed => _typed[field.Key] = typed ?? string.Empty"
+                       Error="@(Read(field) is null ? $"{field.Min} to {field.Max}" : null)" />
+        }
+    </div>
+
+    @if (Adjustable)
+    {
+        @* The two adjustments a DM reaches for most, as the rules state them: two to every
+           number on the line, and hit points by the creature's level. *@
+        <div class="pf-cluster">
+            <Button Variant="ButtonVariant.Quiet" OnClick="() => Adjust(+1)">
+                <Icon Name="plus" Class="pf-icon--lead" />Make it elite
+            </Button>
+            <Button Variant="ButtonVariant.Quiet" OnClick="() => Adjust(-1)">
+                <Icon Name="minus" Class="pf-icon--lead" />Make it weak
+            </Button>
+        </div>
+    }
+
+    <Button Variant="ButtonVariant.Primary"
+            Class="monster__go"
+            Disabled="@(Line() is null)"
+            Type="ButtonType.Submit">
+        @SubmitLabel
+    </Button>
+</form>
+
+@code {
+    /// <summary>What the form opens with. Null opens it on a plain first-level creature, for a
+    /// monster being made.</summary>
+    [Parameter] public EditMonsterRequest? Initial { get; set; }
+
+    [Parameter, EditorRequired] public string SubmitLabel { get; set; } = string.Empty;
+
+    [Parameter] public bool Adjustable { get; set; }
+
+    [Parameter] public EventCallback<EditMonsterRequest> OnSubmit { get; set; }
+
+    sealed record Field(string Key, string Label, int Min, int Max);
+
+    /// <summary>The same bounds the server states, so a number it would refuse is marked here.</summary>
+    static readonly Field[] Fields =
+    [
+        new("hp", "Hit points", 1, 9999),
+        new("level", "Level", -1, 30),
+        new("ac", "AC", 0, 99),
+        new("fort", "Fortitude", -10, 99),
+        new("ref", "Reflex", -10, 99),
+        new("will", "Will", -10, 99),
+        new("perc", "Perception", -10, 99),
+    ];
+
+    static readonly EditMonsterRequest Plain = new(string.Empty, 20, 1, 15, 6, 6, 6, 6);
+
+    string _name = string.Empty;
+    readonly Dictionary<string, string> _typed = [];
+    EditMonsterRequest? _opened;
+
+    /// <summary>Only when a different monster is handed in, so a broadcast that re-renders the
+    /// page does not put the numbers back under the DM's fingers.</summary>
+    protected override void OnParametersSet()
+    {
+        var wanted = Initial ?? Plain;
+        if (wanted == _opened)
+        {
+            return;
+        }
+
+        _opened = wanted;
+        Show(wanted);
+    }
+
+    void Show(EditMonsterRequest monster)
+    {
+        _name = monster.Name;
+        _typed["hp"] = monster.MaxHitPoints.ToString();
+        _typed["level"] = monster.Level.ToString();
+        _typed["ac"] = monster.ArmorClass.ToString();
+        _typed["fort"] = monster.Fortitude.ToString();
+        _typed["ref"] = monster.Reflex.ToString();
+        _typed["will"] = monster.Will.ToString();
+        _typed["perc"] = monster.Perception.ToString();
+    }
+
+    int? Read(Field field) =>
+        int.TryParse(_typed.GetValueOrDefault(field.Key), out var number) && number >= field.Min && number <= field.Max
+            ? number
+            : null;
+
+    /// <summary>The line as typed, or null while any of it is something the server would refuse.</summary>
+    EditMonsterRequest? Line()
+    {
+        var numbers = Fields.Select(Read).ToList();
+        return _name.Trim().Length == 0 || numbers.Any(number => number is null)
+            ? null
+            : new EditMonsterRequest(
+                _name.Trim(), numbers[0]!.Value, numbers[1]!.Value, numbers[2]!.Value,
+                numbers[3]!.Value, numbers[4]!.Value, numbers[5]!.Value, numbers[6]!.Value);
+    }
+
+    /// <summary>The hit point step by level is the book's own table for the elite and weak
+    /// adjustments.</summary>
+    void Adjust(int direction)
+    {
+        if (Line() is not { } line)
+        {
+            return;
+        }
+
+        var hitPoints = line.Level switch { <= 1 => 10, <= 4 => 15, <= 19 => 20, _ => 30 };
+        var word = direction > 0 ? "Elite" : "Weak";
+        var other = direction > 0 ? "Weak " : "Elite ";
+
+        Show(line with
+        {
+            Name = line.Name.StartsWith(other, StringComparison.OrdinalIgnoreCase)
+                ? line.Name[other.Length..]
+                : $"{word} {line.Name}",
+            MaxHitPoints = Math.Max(1, line.MaxHitPoints + direction * hitPoints),
+            Level = line.Level + direction,
+            ArmorClass = line.ArmorClass + direction * 2,
+            Fortitude = line.Fortitude + direction * 2,
+            Reflex = line.Reflex + direction * 2,
+            Will = line.Will + direction * 2,
+            Perception = line.Perception + direction * 2,
+        });
+    }
+
+    Task Submit() => Line() is { } line ? OnSubmit.InvokeAsync(line) : Task.CompletedTask;
+}

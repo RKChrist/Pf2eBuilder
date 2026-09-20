@@ -64,13 +64,19 @@ public sealed class TrackerApi(HttpClient http)
     /// <summary>A monster names a creature record; a player names somebody already on the
     /// roster. One route, because it is one command either way.</summary>
     public Task<CampaignView> AddCombatantAsync(
-        string code, string? ruleId, Guid? characterId, string? name, int? initiative, CancellationToken ct) =>
+        string code, string? ruleId, Guid? characterId, string? name, int? initiative, CancellationToken ct,
+        HomebrewMonster? homebrew = null, int count = 1) =>
         SendAsync<CampaignView>(
             Carrying(
                 HttpMethod.Post,
                 $"{Campaign(code)}/encounter/combatants",
-                new AddCombatantRequest(ruleId, characterId, name, initiative)),
+                new AddCombatantRequest(ruleId, characterId, name, initiative, homebrew, count)),
             ct);
+
+    public Task<CampaignView> EditMonsterAsync(
+        string code, Guid combatant, EditMonsterRequest monster, CancellationToken ct) =>
+        SendAsync<CampaignView>(
+            Carrying(HttpMethod.Put, $"{Campaign(code)}/encounter/combatants/{combatant}/monster", monster), ct);
 
     /// <summary>Combatants the rolls do not name have their initiative rolled by the server, so
     /// an empty list rolls the whole encounter.</summary>

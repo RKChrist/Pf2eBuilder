@@ -34,7 +34,13 @@ public sealed class EncounterEffects
     [EffectMethod]
     public Task Handle(CombatantAdded action, IDispatcher dispatcher) =>
         RunAsync(dispatcher, code => _tracker.AddCombatantAsync(
-            code, action.RuleId, action.CharacterId, action.Name, null, CancellationToken.None));
+            code, action.RuleId, action.CharacterId, action.Name, null, CancellationToken.None,
+            action.Homebrew, action.Count));
+
+    [EffectMethod]
+    public Task Handle(MonsterEdited action, IDispatcher dispatcher) =>
+        RunAsync(dispatcher, code => _tracker.EditMonsterAsync(
+            code, action.CombatantId, action.Monster, CancellationToken.None));
 
     /// <summary>One at a time, each awaited. The party is small and the latency is a rounding
     /// error next to a GM tapping four rows by hand, which is what this replaced.</summary>

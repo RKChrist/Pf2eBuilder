@@ -519,3 +519,26 @@
         justify-self: end;
     }
 }
+
+/* What the players are calling this one. A lantern, because it answers "which one is Mob 2",
+   which is a question about place and not about the creature. */
+.turn__alias {
+    padding: var(--space-0) var(--space-2);
+    border-radius: var(--radius-chip);
+    background: var(--highlight-base);
+    color: var(--highlight-text);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
+}
+
+.adding__count {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.adding__count-says {
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+}

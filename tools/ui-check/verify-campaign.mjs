@@ -285,10 +285,11 @@ check('and says nobody is in it yet', await dm.eval(
 
 await clickText(dm, '.fight__acts button', 'Add');
 await waitFor(dm, '.adding .pf-section__label');
-check('the roster is offered before the bestiary', await dm.eval(
+// design/014 turned this round: the owner could not find the bestiary under the roster.
+check('the bestiary is offered before the roster', await dm.eval(
   `(() => {
     const headings = [...document.querySelectorAll('.adding .pf-section__label')].map(h => h.textContent.trim());
-    return headings.join(' | ') === 'From this campaign | A monster';
+    return headings.join(' | ') === 'A monster | From this campaign';
   })()`),
   await dm.eval(`[...document.querySelectorAll('.adding .pf-section__label')].map(h => h.textContent.trim()).join(' | ')`));
 await clickText(dm, '.pf-row__title, .pf-row .title, .pf-row', 'Gnibbo').catch(async () => {

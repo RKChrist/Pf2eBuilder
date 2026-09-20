@@ -1,0 +1,13 @@
+.monster {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+/* Short labels over small numbers, so they take the width as columns the way every other grid of
+   short labels in the app does. */
+.monster__line {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    gap: var(--space-3);
+}
