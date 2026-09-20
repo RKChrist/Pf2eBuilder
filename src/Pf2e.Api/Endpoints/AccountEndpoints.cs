@@ -114,9 +114,14 @@ public static class AccountEndpoints
 
         var validated = await new JsonWebTokenHandler().ValidateTokenAsync(token, Checks(jwt));
 
+        // The empty Guid is stopped here and not left to GetAccountValidator, which refuses it.
+        // This is the boundary the token arrives at, and the route above has no way to say no:
+        // letting a validator refuse a meaningless subject would turn it into a 400 on the one
+        // route that must always answer 200.
         return validated.IsValid
                && validated.Claims.TryGetValue(JwtRegisteredClaimNames.Sub, out var subject)
                && Guid.TryParse(subject as string, out var accountId)
+               && accountId != Guid.Empty
             ? await sender.Send(new GetAccount(accountId), ct)
             : null;
     }

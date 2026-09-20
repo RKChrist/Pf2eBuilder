@@ -295,6 +295,22 @@ public class AccountSessionRules(AccountsHost host) : IClassFixture<AccountsHost
         Assert.Null((await SessionOn(client, empty)).Account);
     }
 
+    /// <summary>A subject that names nobody is still an answer of nobody. It is worth its own
+    /// test because the query behind this route refuses an empty id, so the route would answer
+    /// 400 rather than 200 if the boundary did not stop it first.</summary>
+    [Fact]
+    public async Task AProperlySignedTokenThatNamesNobodyIsStillTwoHundredAndNobody()
+    {
+        using var client = Client();
+        var (account, _) = await Registered(client);
+
+        var empty = TicketCarrying(
+            Token(Guid.Empty, AccountsHost.SigningKey, DateTime.UtcNow.AddHours(1)),
+            account.DisplayName);
+
+        Assert.Null((await SessionOn(client, empty)).Account);
+    }
+
     [Fact]
     public async Task SigningInAgainOnAnotherDeviceAnswersTheSameAccount()
     {
