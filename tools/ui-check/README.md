@@ -133,6 +133,33 @@ you. Because a websocket never appears in resource timings, the hub's destinatio
 through the HTTP negotiate that precedes it, and a missing negotiate fails rather than passes:
 not seeing the hub is not the same as seeing it go to the right place.
 
+## Accounts
+
+    node tools/ui-check/verify-account.mjs http://localhost:5173 http://localhost:5092
+
+Twenty-eight assertions over a sign-in round trip, driven from the client origin rather than by
+curl, because the session cookie has to survive a cross-origin request with credentials and that
+is the arrangement that ships. It asserts what the design turns on as well as what works: that
+script cannot read what carries the session, that a wrong password and an address nobody
+registered answer in the identical words, and that one browser signing out leaves another's
+session alone. A second person is a second browser context, not a second tab, because two tabs
+share a cookie jar and every role check would then be testing one browser against itself.
+
+## Session renewal
+
+    node tools/ui-check/verify-renewal.mjs [port]
+
+Takes about a minute, so it is not in the loop that runs after every change. It starts an API of
+its own with a one-minute token, so the last half of a token's life arrives in thirty seconds,
+and watches a browser stay signed in past the expiry of the token it signed in with.
+
+The unit tests decide when a token should be re-minted. This is the only thing that shows the
+decision is wired to anything: that the renewal runs on every request carrying the cookie, that
+the rewritten ticket reaches the browser as a Set-Cookie, and that the browser carries the new
+one afterwards. It sets the clock skew to zero on purpose. At the default thirty seconds a
+one-minute token stays acceptable until ninety, and the last assertion passed without renewal
+doing anything at all on the first run of this file.
+
 ## Boot check
 
 `verify-boot.mjs` is the only check here with no browser and no running server to point it at.
