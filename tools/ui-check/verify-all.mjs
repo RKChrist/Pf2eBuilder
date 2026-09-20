@@ -31,7 +31,7 @@ const api = process.env.API_URL ?? 'http://localhost:5092';
 // a check somewhere else and it is passed through as typed.
 const KNOWN = {
   account: { needs: 'servers' },
-  boot: { needs: 'build', slow: true },
+  boot: { needs: 'build', builds: true, slow: true },
   camp: { needs: 'servers' },
   campaign: { needs: 'servers' },
   campaigns: { needs: 'servers' },
@@ -103,6 +103,13 @@ if (wanted.some((name) => KNOWN[name].needs === 'servers')) {
   }
 }
 
+// A check that rebuilds the API cannot run while the dev API is running, because that process
+// holds its own build output open and the build fails on a locked DLL. That failure looks
+// exactly like the refusal verify-boot.mjs is there to find, which is the confusion its build
+// step exists to prevent, arriving from the other direction.
+const apiRunning = await reachable(`${api}/health`);
+const blocked = (name) => KNOWN[name].needs === 'build' && KNOWN[name].builds && apiRunning;
+
 const run = (name) => new Promise((done) => {
   const started = Date.now();
   const args = KNOWN[name].args ?? (KNOWN[name].needs === 'servers' ? addresses : []);
@@ -121,8 +128,17 @@ const run = (name) => new Promise((done) => {
 let failed = 0;
 const trouble = [];
 
+const skipped = [];
+
 for (const name of wanted) {
   process.stdout.write(`${name.padEnd(18)}`);
+
+  if (blocked(name)) {
+    skipped.push(name);
+    console.log('skip  it rebuilds the API, which the running dev API has locked');
+    continue;
+  }
+
   const { code, output, seconds } = await run(name);
 
   // Every check in this folder exits with its own failure count, so a non-zero code is the
@@ -143,4 +159,12 @@ for (const [name, output] of trouble) {
 }
 
 console.log(`\n${wanted.length} check(s), ${failed} failing`);
+
+// Said after the count rather than folded into it, because a skipped check is not a passing one
+// and a summary reading green while something never ran is the thing this file is against.
+if (skipped.length > 0) {
+  console.log(`${skipped.join(', ')} did not run. Stop the API with stop.cmd, then: `
+    + `node tools/ui-check/verify-all.mjs ${skipped.join(' ')}`);
+}
+
 process.exit(failed);

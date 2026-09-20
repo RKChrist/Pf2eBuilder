@@ -255,20 +255,26 @@
                                                 @onclick="() => Dispatcher.Dispatch(new CampaignRemembered(seen))">
                                             Continue
                                         </button>
-                                        <button type="button"
-                                                class="pf-btn pf-btn--quiet kept__forget"
-                                                @onclick="() => Dispatcher.Dispatch(new CampaignForgetRequested(seen.Code))">
-                                            Forget
-                                        </button>
+                                        @* Held rather than tapped. It is the only control in
+                                           the app that destroys a DM key, and a thumb on a
+                                           phone finds it next to the button somebody actually
+                                           meant. *@
+                                        <Button Variant="ButtonVariant.Quiet"
+                                                Class="kept__forget"
+                                                Hold="true"
+                                                OnClick="() => Dispatcher.Dispatch(new CampaignForgetRequested(seen.Code))">
+                                            Hold to forget
+                                        </Button>
                                     </span>
                                 </li>
                             }
                         </ul>
 
                         <p class="kept__note">
-                            Forget removes a campaign from this browser and, with it, the DM key this
-                            browser holds for it. Nothing else has a copy of that key, and the campaign
-                            carries on without a GM.
+                            Forgetting removes a campaign from this browser and, with it, the DM key
+                            this browser holds for it. Nothing else has a copy of that key, and the
+                            campaign carries on without a GM, which is why it is held rather than
+                            tapped.
                         </p>
                     </Card>
                 </div>

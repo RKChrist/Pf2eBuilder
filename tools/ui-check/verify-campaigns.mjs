@@ -136,7 +136,51 @@ check('and the monster nobody was shown still on the GM screen',
 
 await click('.leave');
 await wait('.kept');
-check('a table can be forgotten', await click(`.kept__row[data-code="${second}"] .kept__forget`));
+// Held, not clicked. Forgetting is the only thing in the app that destroys a DM key, so the
+// button waits for a press that lasts, and a check that clicked it would be asserting against a
+// control the product does not have.
+const where = async (code) => {
+  const found = await p.eval(`(() => {
+    const el = document.querySelector('.kept__row[data-code="' + ${JSON.stringify(code)} + '"] .kept__forget');
+    if (!el) return null;
+    el.scrollIntoView({ block: 'center' });
+    const r = el.getBoundingClientRect();
+    return JSON.stringify({ x: r.x + r.width / 2, y: r.y + r.height / 2 });
+  })()`);
+  return found ? JSON.parse(found) : null;
+};
+
+const holdForget = async (code) => {
+  const at = await where(code);
+  if (!at) return false;
+  await p.mouseDown(at.x, at.y);
+  await sleep(1200);
+  await p.mouseUp(at.x, at.y);
+  await sleep(900);
+  return true;
+};
+
+// The half that makes the hold worth having. A tap is what a thumb does by accident next to
+// Continue, and it has to cost nothing.
+//
+// A real press rather than el.click(). A programmatic click reports detail 0, which the kit
+// passes straight through on purpose so that a keyboard activation is not asked to hold a key
+// down, and a check that used one would be asserting against a gesture no thumb makes.
+const tapForget = async (code) => {
+  const at = await where(code);
+  if (!at) return false;
+  await p.mouseDown(at.x, at.y);
+  await sleep(80);
+  await p.mouseUp(at.x, at.y);
+  await sleep(900);
+  return true;
+};
+
+check('the control is there to press', await tapForget(second));
+const afterTap = (await kept()).map((row) => row.code);
+check('and a tap on it forgets nothing', afterTap.includes(second), afterTap.join(', '));
+
+check('a table can be forgotten by holding the control that says so', await holdForget(second));
 
 const rest = await kept();
 check('and the forgotten one leaves the list',
