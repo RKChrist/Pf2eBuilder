@@ -182,7 +182,9 @@ public sealed record MonsterStatLineView(
     int Will,
     int Perception,
     string RuleId,
-    IReadOnlyList<string> Traits);
+    IReadOnlyList<string> Traits,
+    /// <summary>What the players are calling this one, so the DM can follow "hit Mob 2".</summary>
+    string Alias);
 
 /// <summary>
 /// One creature in the initiative order. Kind is "PlayerCharacter" or "Adversary".
@@ -245,7 +247,23 @@ public sealed record ChangeHitPointsRequest(int Amount, string Direction);
 
 /// <summary>Name a creature record to add a monster, or a character to add somebody from the
 /// roster. Name is an optional label, so "Ogre 2" is a name the DM can read.</summary>
-public sealed record AddCombatantRequest(string? RuleId, Guid? CharacterId, string? Name, int? Initiative);
+/// <summary>Exactly one of a creature record, a character and a monster the DM wrote. Count is
+/// how many of that monster, and is one when it is left out.</summary>
+public sealed record AddCombatantRequest(
+    string? RuleId, Guid? CharacterId, string? Name, int? Initiative,
+    HomebrewMonster? Homebrew = null, int? Count = null);
+
+/// <summary>A monster that is in no book. Only the name and the hit points are needed to run one;
+/// the rest are the numbers a DM reads off when somebody attacks it.</summary>
+public sealed record HomebrewMonster(
+    string Name, int MaxHitPoints, int Level = 0, int ArmorClass = 0,
+    int Fortitude = 0, int Reflex = 0, int Will = 0, int Perception = 0);
+
+/// <summary>A monster's name and numbers, as the DM wants them now. The whole line is sent, so an
+/// elite adjustment and a typo in the name are the same request.</summary>
+public sealed record EditMonsterRequest(
+    string Name, int MaxHitPoints, int Level, int ArmorClass,
+    int Fortitude, int Reflex, int Will, int Perception);
 
 public sealed record InitiativeRoll(Guid CombatantId, int Initiative);
 

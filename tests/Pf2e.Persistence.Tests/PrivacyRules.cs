@@ -8,7 +8,8 @@ namespace Pf2e.Persistence.Tests;
 
 /// <summary>
 /// The boundary design/006 calls load-bearing: a player's payload never contains a monster's
-/// hit points or stat line, and never contains an unrevealed monster at all.
+/// hit points or stat line, and of an unrevealed monster it contains a place in the order under
+/// a number and nothing else. design/014 is where "nothing at all" became "Mob 1".
 /// <para>These assert the absence in the serialised payload rather than in the screen. A test
 /// that asserted the UI hides the number would pass while the number sat in the JSON, and
 /// anything the browser receives, the browser has.</para>
@@ -113,11 +114,23 @@ public partial class PrivacyRules(SeededDatabase database) : IClassFixture<Seede
         Assert.Contains(MonsterName, forDm);
         Assert.DoesNotContain(MonsterName, forPlayer);
 
-        // Dropped and not blanked. A row with an empty name still tells the players something
-        // is standing there, which is the thing the DM was keeping from them.
-        Assert.DoesNotContain((await Read(campaign.Code)).Encounter!.Combatants, c => c.Kind == "Adversary");
-        Assert.Single((await Read(campaign.Code, campaign.DmKey)).Encounter!.Combatants,
-                      c => c.Kind == "Adversary");
+        // The record it was drawn from names it as surely as its name does.
+        Assert.Contains(FiftyHitPointCreature, forDm);
+        Assert.DoesNotContain(FiftyHitPointCreature, forPlayer);
+
+        // A mob with a number, and that is all: the players know something is standing there
+        // and what to call it, which is what lets them say who they are hitting.
+        var mob = Assert.Single((await Read(campaign.Code)).Encounter!.Combatants, c => c.Kind == "Adversary");
+        Assert.Equal("Mob 1", mob.Name);
+        Assert.False(mob.Revealed);
+        Assert.Null(mob.Monster);
+        Assert.Empty(mob.Effects);
+
+        // And the DM is told what the players are calling it.
+        var theirs = Assert.Single((await Read(campaign.Code, campaign.DmKey)).Encounter!.Combatants,
+                                   c => c.Kind == "Adversary");
+        Assert.Equal(MonsterName, theirs.Name);
+        Assert.Equal("Mob 1", theirs.Monster!.Alias);
     }
 
     [Fact]

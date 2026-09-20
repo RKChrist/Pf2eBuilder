@@ -59,16 +59,29 @@ public sealed class PlayerCombatant : Combatant
 
 /// <summary>
 /// One monster instance. <see cref="Revealed"/> is a boolean and not three steps: unrevealed
-/// means the monster is not in a player's combatant list at all, and revealed means a player
-/// sees the name, the initiative and the conditions. Hit points and the stat line are never in
-/// a player's payload at either setting.
+/// means a player sees a place in the order under <see cref="Alias"/> and nothing else, and
+/// revealed means a player sees the name, the initiative and the conditions. Hit points and the
+/// stat line are never in a player's payload at either setting.
 /// </summary>
 public sealed class MonsterCombatant : Combatant
 {
     public string Name { get; set; } = string.Empty;
 
-    /// <summary>The seeded creature record this was drawn from, for the DM's statblock link.</summary>
+    /// <summary>The seeded creature record this was drawn from, for the DM's statblock link.
+    /// Empty for a monster the DM wrote, which was drawn from nothing.</summary>
     public string RuleId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Which mob this is to the players, counted from one in the order they joined the fight.
+    /// <para>Stored, and not read off a position in the list, because a table says "hit Mob 2"
+    /// all fight and Mob 2 has to stay Mob 2 when Mob 1 dies. A number comes back into use only
+    /// once nothing in the fight holds it, the same rule the creature names follow.</para>
+    /// </summary>
+    public int MobNumber { get; set; }
+
+    /// <summary>What the players call it until it is revealed. It says nothing about what it is,
+    /// which is the point.</summary>
+    public string Alias => $"Mob {MobNumber}";
 
     public required MonsterStatBlock Stats { get; set; }
 

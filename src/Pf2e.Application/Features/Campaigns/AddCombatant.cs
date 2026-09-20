@@ -18,7 +18,8 @@ namespace Pf2e.Application.Features.Campaigns;
 /// diagram says enters Encounter.</para>
 /// </summary>
 public sealed record AddCombatant(
-    string Code, string? DmKey, string? RuleId, Guid? CharacterId, string? Name, int? Initiative = null)
+    string Code, string? DmKey, string? RuleId, Guid? CharacterId, string? Name, int? Initiative = null,
+    HomebrewMonster? Homebrew = null, int Count = 1)
     : IRequest<CampaignView>;
 
 public sealed class AddCombatantValidator : AbstractValidator<AddCombatant>
@@ -28,13 +29,34 @@ public sealed class AddCombatantValidator : AbstractValidator<AddCombatant>
         RuleFor(c => c.Code).Must(CampaignCode.IsValid)
                             .WithMessage("A campaign code is four to twelve letters and digits.");
 
-        // Exactly one, because a request naming both has not said what it wants added.
-        RuleFor(c => c).Must(c => c.RuleId is { Length: > 0 } ^ c.CharacterId is not null)
-                       .WithMessage("Name either a creature record to add as a monster or a character to add.");
+        // Exactly one, because a request naming two has not said what it wants added.
+        RuleFor(c => c).Must(c => new[] { c.RuleId is { Length: > 0 }, c.CharacterId is not null, c.Homebrew is not null }
+                                  .Count(named => named) == 1)
+                       .WithMessage("Name one thing to add: a creature record, a character, or a monster of your own.");
+
+        // A character is one person. Twenty is more goblins than a table can run, and a bound
+        // is what stops a slip of the finger adding three hundred rows.
+        RuleFor(c => c.Count).InclusiveBetween(1, MaxAtOnce);
+        RuleFor(c => c.Count).Equal(1).When(c => c.CharacterId is not null)
+                             .WithMessage("A character joins a fight once.");
+
+        When(c => c.Homebrew is not null, () =>
+        {
+            RuleFor(c => c.Homebrew!.Name).NotEmpty().MaximumLength(128);
+            RuleFor(c => c.Homebrew!.MaxHitPoints).InclusiveBetween(1, 9999);
+            RuleFor(c => c.Homebrew!.Level).InclusiveBetween(-1, 30);
+            RuleFor(c => c.Homebrew!.ArmorClass).InclusiveBetween(0, 99);
+            RuleFor(c => c.Homebrew!.Fortitude).InclusiveBetween(-10, 99);
+            RuleFor(c => c.Homebrew!.Reflex).InclusiveBetween(-10, 99);
+            RuleFor(c => c.Homebrew!.Will).InclusiveBetween(-10, 99);
+            RuleFor(c => c.Homebrew!.Perception).InclusiveBetween(-10, 99);
+        });
 
         RuleFor(c => c.Name).MaximumLength(128).When(c => c.Name is not null);
         RuleFor(c => c.Initiative).InclusiveBetween(-20, 60).When(c => c.Initiative is not null);
     }
+
+    public const int MaxAtOnce = 20;
 }
 
 public sealed class AddCombatantHandler(
@@ -65,16 +87,34 @@ public sealed class AddCombatantHandler(
             CampaignId = campaign.Id,
         };
 
-        var added = command.CharacterId is { } characterId
-            ? AddPlayer(campaign, encounter, characterId)
-            : Added(encounter, await MonsterAsync(encounter, command, ct));
+        // Several of one monster are one command and not several requests, because requests
+        // that overlap are the race the summary above describes.
+        var arrivals = new List<Combatant>();
+        if (command.CharacterId is { } characterId)
+        {
+            if (AddPlayer(campaign, encounter, characterId) is { } player)
+            {
+                arrivals.Add(player);
+            }
+        }
+        else
+        {
+            var template = command.Homebrew is { } own ? Written(own) : await SeededAsync(command, ct);
+            for (var copy = 0; copy < command.Count; copy++)
+            {
+                arrivals.Add(Added(encounter, Monster(encounter, template, command.Name)));
+            }
+        }
 
         // A reinforcement arriving mid-fight takes its initiative now and the marker is left
         // exactly where it was, because whose turn it is has not changed. Rolling initiative
         // again would restart the fight, which is a different thing the DM has a button for.
-        if (added is not null && encounter.Round > 0)
+        if (encounter.Round > 0)
         {
-            added.Initiative = command.Initiative ?? RollInitiativeHandler.Rolled(campaign, added);
+            foreach (var added in arrivals)
+            {
+                added.Initiative = command.Initiative ?? RollInitiativeHandler.Rolled(campaign, added);
+            }
         }
 
         await db.SaveChangesAsync(ct);
@@ -106,7 +146,17 @@ public sealed class AddCombatantHandler(
             : Added(encounter, new PlayerCombatant { Id = characterId, EncounterId = encounter.Id });
     }
 
-    async Task<MonsterCombatant> MonsterAsync(Encounter encounter, AddCombatant command, CancellationToken ct)
+    /// <summary>What a monster is made from, whichever of the two places it came from: a name, the
+    /// record it was drawn from if there is one, and its numbers.</summary>
+    sealed record Template(string Name, string RuleId, MonsterStatBlock Stats);
+
+    static Template Written(HomebrewMonster own) => new(
+        own.Name.Trim(),
+        string.Empty,
+        new MonsterStatBlock(
+            own.Level, own.MaxHitPoints, own.ArmorClass, own.Fortitude, own.Reflex, own.Will, own.Perception, []));
+
+    async Task<Template> SeededAsync(AddCombatant command, CancellationToken ct)
     {
         var record = await rules.RuleRecords.AsNoTracking()
             .Where(r => r.Id == command.RuleId && r.Category == "creature")
@@ -116,15 +166,23 @@ public sealed class AddCombatantHandler(
                 $"No seeded creature has the id {command.RuleId}.");
 
         var mechanics = JsonNode.Parse(record.Mechanics) as JsonObject;
-        var stats = new MonsterStatBlock(
-            record.Level ?? 0,
-            Number(mechanics, "hp"),
-            Number(mechanics, "ac"),
-            Number(mechanics, "fortitude_save"),
-            Number(mechanics, "reflex_save"),
-            Number(mechanics, "will_save"),
-            Number(mechanics, "perception"),
-            [.. record.Traits]);
+        return new Template(
+            record.Name,
+            record.Id,
+            new MonsterStatBlock(
+                record.Level ?? 0,
+                Number(mechanics, "hp"),
+                Number(mechanics, "ac"),
+                Number(mechanics, "fortitude_save"),
+                Number(mechanics, "reflex_save"),
+                Number(mechanics, "will_save"),
+                Number(mechanics, "perception"),
+                [.. record.Traits]));
+    }
+
+    static MonsterCombatant Monster(Encounter encounter, Template template, string? called)
+    {
+        var mobs = encounter.Combatants.OfType<MonsterCombatant>().Select(monster => monster.MobNumber).ToHashSet();
 
         return new MonsterCombatant
         {
@@ -132,10 +190,11 @@ public sealed class AddCombatantHandler(
             // take damage separately.
             Id = Guid.NewGuid(),
             EncounterId = encounter.Id,
-            Name = command.Name is { Length: > 0 } named ? named : Numbered(encounter, record.Name),
-            RuleId = record.Id,
-            Stats = stats,
-            CurrentHitPoints = stats.MaxHitPoints,
+            Name = called is { Length: > 0 } named ? Numbered(encounter, named) : Numbered(encounter, template.Name),
+            RuleId = template.RuleId,
+            Stats = template.Stats,
+            CurrentHitPoints = template.Stats.MaxHitPoints,
+            MobNumber = Enumerable.Range(1, mobs.Count + 1).First(number => !mobs.Contains(number)),
 
             // Unrevealed, so the first thing that happens to a monster is that the players
             // cannot see it. Revealing is the DM's deliberate act.

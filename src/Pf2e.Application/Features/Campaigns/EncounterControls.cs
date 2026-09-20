@@ -49,6 +49,72 @@ public sealed class RevealMonsterHandler(
 }
 
 /// <summary>
+/// The DM changes a monster in the fight: its name, or any number on its line. An elite or weak
+/// adjustment, a boss with more hit points than the book gives it, and a typo are all this.
+/// <para>The whole line is sent and not a patch, so there is one shape to validate and what the
+/// DM sees in the form is what the monster becomes. Hit points it currently has move by as much
+/// as its maximum moved, so raising a fresh monster's maximum leaves it fresh and lowering a
+/// wounded one's does not heal it.</para>
+/// </summary>
+public sealed record EditMonster(string Code, string? DmKey, Guid CombatantId, EditMonsterRequest Monster)
+    : IRequest<CampaignView>;
+
+public sealed class EditMonsterValidator : AbstractValidator<EditMonster>
+{
+    public EditMonsterValidator()
+    {
+        RuleFor(c => c.Code).Must(CampaignCode.IsValid)
+                            .WithMessage("A campaign code is four to twelve letters and digits.");
+        RuleFor(c => c.CombatantId).NotEmpty();
+        RuleFor(c => c.Monster.Name).NotEmpty().MaximumLength(128);
+        RuleFor(c => c.Monster.MaxHitPoints).InclusiveBetween(1, 9999);
+        RuleFor(c => c.Monster.Level).InclusiveBetween(-1, 30);
+        RuleFor(c => c.Monster.ArmorClass).InclusiveBetween(0, 99);
+        RuleFor(c => c.Monster.Fortitude).InclusiveBetween(-10, 99);
+        RuleFor(c => c.Monster.Reflex).InclusiveBetween(-10, 99);
+        RuleFor(c => c.Monster.Will).InclusiveBetween(-10, 99);
+        RuleFor(c => c.Monster.Perception).InclusiveBetween(-10, 99);
+    }
+}
+
+public sealed class EditMonsterHandler(
+    ITrackerDbContext db, IUndoStack undo, ICampaignBroadcaster broadcaster)
+    : IRequestHandler<EditMonster, CampaignView>
+{
+    public async Task<CampaignView> Handle(EditMonster command, CancellationToken ct)
+    {
+        var change = await CampaignAccess.LoadForChangeAsync(
+            db, undo, command.Code, command.DmKey, "a change to a monster", ct);
+        var (campaign, role) = (change.Campaign, change.Role);
+        CampaignAccess.RequireDm(role, "change a monster");
+
+        if (campaign.Encounter?.Find(command.CombatantId) is not MonsterCombatant monster)
+        {
+            throw new CombatantNotFoundException("No monster in this encounter has that id.");
+        }
+
+        var wanted = command.Monster;
+        var moved = wanted.MaxHitPoints - monster.Stats.MaxHitPoints;
+
+        monster.Name = wanted.Name.Trim();
+        monster.Stats = monster.Stats with
+        {
+            Level = wanted.Level,
+            MaxHitPoints = wanted.MaxHitPoints,
+            ArmorClass = wanted.ArmorClass,
+            Fortitude = wanted.Fortitude,
+            Reflex = wanted.Reflex,
+            Will = wanted.Will,
+            Perception = wanted.Perception,
+        };
+        monster.CurrentHitPoints = Math.Clamp(monster.CurrentHitPoints + moved, 0, wanted.MaxHitPoints);
+
+        await db.SaveChangesAsync(ct);
+        return await CampaignAccess.PublishChangeAsync(broadcaster, undo, change, ct);
+    }
+}
+
+/// <summary>
 /// The encounter ends and the campaign returns to Exploration, which is the other half of the
 /// document's state diagram. The encounter and its combatants go with it; effects that outlast
 /// the fight stay, because they belong to the campaign and not to the encounter.

@@ -104,8 +104,14 @@ public static class CampaignEndpoints
             (ISender sender, HttpRequest request, string code, AddCombatantRequest body, CancellationToken ct) =>
                 sender.Send(
                     new AddCombatant(
-                        code, DmKeyOf(request), body.RuleId, body.CharacterId, body.Name, body.Initiative),
+                        code, DmKeyOf(request), body.RuleId, body.CharacterId, body.Name, body.Initiative,
+                        body.Homebrew, body.Count ?? 1),
                     ct));
+
+        app.MapPut("/campaigns/{code}/encounter/combatants/{id:guid}/monster",
+            (ISender sender, HttpRequest request, string code, Guid id,
+             EditMonsterRequest body, CancellationToken ct) =>
+                sender.Send(new EditMonster(code, DmKeyOf(request), id, body), ct));
 
         app.MapPost("/campaigns/{code}/encounter/initiative",
             (ISender sender, HttpRequest request, string code, RollInitiativeRequest? body, CancellationToken ct) =>

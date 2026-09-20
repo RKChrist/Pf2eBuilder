@@ -47,14 +47,18 @@ internal static class CampaignProjection
             campaign.Day);
     }
 
-    /// <summary>The list a viewer is allowed to know exists. For the DM that is everybody; for a
-    /// player it is every character and only the monsters the DM has revealed.</summary>
+    /// <summary>The creatures a viewer may know anything about. For the DM that is everybody; for
+    /// a player it is every character and only the monsters the DM has revealed. An unrevealed
+    /// monster is still in a player's order, as a mob with a number, and that is decided where
+    /// the row is drawn: it is never in this list, so nothing that reads this list can name it.</summary>
     static IEnumerable<Combatant> Visible(ViewerRole role, Encounter encounter) =>
+        InOrder(encounter).Where(combatant => role is ViewerRole.Dm
+                                              || combatant is not MonsterCombatant { Revealed: false });
+
+    static IEnumerable<Combatant> InOrder(Encounter encounter) =>
         encounter.Order()
                  .Select(entry => encounter.Find(entry.Id))
-                 .OfType<Combatant>()
-                 .Where(combatant => role is ViewerRole.Dm
-                                     || combatant is not MonsterCombatant { Revealed: false });
+                 .OfType<Combatant>();
 
     static EncounterView Of(
         ViewerRole role,
@@ -63,10 +67,13 @@ internal static class CampaignProjection
         IReadOnlyList<Combatant> visible,
         IReadOnlySet<Guid> visibleIds) => new(
         encounter.Round,
-        // A player whose turn marker names a monster they cannot see is told only that it is
-        // not their turn, because the id alone would say a hidden creature is acting.
-        encounter.CurrentCombatantId is { } current && visibleIds.Contains(current) ? current : null,
-        [.. visible.Select(combatant => Of(role, combatant, encounter, campaign))],
+        // Everybody in the order has a row now, a mob included, so the marker can always say
+        // whose turn it is. What it points at for a player is a row that says "Mob 2".
+        encounter.CurrentCombatantId,
+        [.. InOrder(encounter).Select(combatant =>
+            role is ViewerRole.Player && combatant is MonsterCombatant { Revealed: false } hidden
+                ? Mob(hidden, encounter)
+                : Of(role, combatant, encounter, campaign))],
         [.. encounter.Reminders
             .Where(reminder => visibleIds.Contains(reminder.CreatureId))
             .Select(reminder => reminder.Text)]);
@@ -92,6 +99,23 @@ internal static class CampaignProjection
             role is ViewerRole.Dm && combatant is MonsterCombatant statted ? StatLine(statted) : null);
     }
 
+    /// <summary>
+    /// All a player is given about a monster nobody has shown them: that something is there,
+    /// what to call it, and where it acts. No name, no record, no traits, no numbers and no
+    /// conditions, because a condition's name can say what the creature is.
+    /// <para>The id is the real one. It is a random number that names nothing, and keeping it
+    /// means the row does not change identity under a player when the DM reveals it.</para>
+    /// </summary>
+    static CombatantView Mob(MonsterCombatant monster, Encounter encounter) => new(
+        monster.Id,
+        monster.Kind.ToString(),
+        monster.Alias,
+        monster.Initiative,
+        encounter.CurrentCombatantId == monster.Id,
+        Revealed: false,
+        [],
+        Monster: null);
+
     static MonsterStatLineView StatLine(MonsterCombatant monster) => new(
         monster.CurrentHitPoints,
         monster.Stats.MaxHitPoints,
@@ -103,7 +127,8 @@ internal static class CampaignProjection
         monster.Stats.Will,
         monster.Stats.Perception,
         monster.RuleId,
-        [.. monster.Stats.Traits]);
+        [.. monster.Stats.Traits],
+        monster.Alias);
 
     /// <summary>
     /// An application reaching a creature the viewer cannot see loses that target, and one that

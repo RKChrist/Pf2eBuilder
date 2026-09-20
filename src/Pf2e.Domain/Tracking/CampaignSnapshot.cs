@@ -13,7 +13,8 @@ public sealed record CombatantSnapshot(
     MonsterStatBlock? Stats,
     int CurrentHitPoints,
     int TemporaryHitPoints,
-    bool Revealed);
+    bool Revealed,
+    int MobNumber = 0);
 
 public sealed record EffectTargetSnapshot(EffectTargetKind Kind, Guid TargetId, int Value, int? RemainingRounds);
 
@@ -113,7 +114,8 @@ public static class CampaignSnapshots
     {
         MonsterCombatant monster => new CombatantSnapshot(
             monster.Id, monster.Kind, monster.Initiative, monster.Name, monster.RuleId,
-            monster.Stats, monster.CurrentHitPoints, monster.TemporaryHitPoints, monster.Revealed),
+            monster.Stats, monster.CurrentHitPoints, monster.TemporaryHitPoints, monster.Revealed,
+            monster.MobNumber),
         _ => new CombatantSnapshot(
             combatant.Id, combatant.Kind, combatant.Initiative,
             string.Empty, string.Empty, null, 0, 0, true),
@@ -201,6 +203,7 @@ public static class CampaignSnapshots
                 monster.CurrentHitPoints = wanted.CurrentHitPoints;
                 monster.TemporaryHitPoints = wanted.TemporaryHitPoints;
                 monster.Revealed = wanted.Revealed;
+                monster.MobNumber = wanted.MobNumber;
             }
         }
     }
