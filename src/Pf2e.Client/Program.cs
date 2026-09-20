@@ -27,6 +27,7 @@ if (string.IsNullOrWhiteSpace(api.BaseUrl))
 }
 
 builder.Services.AddSingleton(Options.Create(api));
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(api.BaseUrl) });
 builder.Services.AddScoped<RulesApi>();
 builder.Services.AddScoped<TrackerApi>();

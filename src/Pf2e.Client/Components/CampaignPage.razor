@@ -20,6 +20,16 @@
         {
             <span class="code__label">Campaign</span>
             <span class="campaign-code">@State.Code</span>
+
+            @* The way to a second table, beside the code because the code is what says which
+               table you are at. It is on the shell rather than on one of the five mode pages,
+               so there is one of it wherever you happen to be standing. *@
+            <button type="button"
+                    class="pf-btn pf-btn--quiet leave"
+                    title="Back to the join form. This browser keeps this campaign and its DM key."
+                    @onclick="() => Dispatcher.Dispatch(new CampaignLeft())">
+                Leave
+            </button>
         }
     </Aside>
 </PageHead>
@@ -168,9 +178,10 @@
         // never ran: the dispatch happened nowhere and the reload silently kept showing the
         // join form. Standalone WebAssembly has no prerender, so interop works from here.
         //
-        // A campaign already open means this is a navigation between modes rather than a fresh
-        // load, and there is nothing to recall.
-        if (State.Campaign is RemoteData<CampaignView>.NotAsked)
+        // Once for the page load, not once for each of the five screens it builds. Asking again
+        // on the next screen would walk somebody who had just left a campaign straight back into
+        // it, which is the whole of leaving undone by a tap on the bottom bar.
+        if (!State.Recalled)
         {
             Dispatcher.Dispatch(new CampaignRecalled());
         }
@@ -213,6 +224,59 @@
                     </EmptyState>
                 </Card>
             </div>
+
+            @* Under the code box, because the code box is for a campaign somebody is reading out
+               to you and this is for the ones you are already in. A GM running two tables opens
+               the other one from here instead of losing it. *@
+            @if (State.Remembered.Count > 0)
+            {
+                <div class="panel">
+                    <Card Title="On this device">
+                        <ul class="kept">
+                            @foreach (var seen in State.Remembered)
+                            {
+                                <li class="kept__row" data-code="@seen.Code">
+                                    <span class="campaign-code">@seen.Code</span>
+
+                                    @if (seen.DmKey is { Length: > 0 })
+                                    {
+                                        <span class="shell__dm" title="This browser holds the DM key for this campaign">DM</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="kept__role">Player</span>
+                                    }
+
+                                    <span class="kept__when">@Opened(seen.LastOpened)</span>
+
+                                    <span class="kept__acts">
+                                        <button type="button"
+                                                class="pf-btn pf-btn--secondary kept__open"
+                                                @onclick="() => Dispatcher.Dispatch(new CampaignRemembered(seen))">
+                                            Continue
+                                        </button>
+                                        <button type="button"
+                                                class="pf-btn pf-btn--quiet kept__forget"
+                                                @onclick="() => Dispatcher.Dispatch(new CampaignForgetRequested(seen.Code))">
+                                            Forget
+                                        </button>
+                                    </span>
+                                </li>
+                            }
+                        </ul>
+
+                        <p class="kept__note">
+                            Forget removes a campaign from this browser and, with it, the DM key this
+                            browser holds for it. Nothing else has a copy of that key, and the campaign
+                            carries on without a GM.
+                        </p>
+                    </Card>
+                </div>
+            }
         </div>
     </text>;
+
+    /// <summary>The day rather than the time, because what tells two campaigns apart at a glance
+    /// is which night they were played on.</summary>
+    static string Opened(DateTimeOffset when) => when.ToLocalTime().ToString("d MMM");
 }

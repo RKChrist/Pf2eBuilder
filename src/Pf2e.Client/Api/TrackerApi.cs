@@ -16,7 +16,9 @@ public sealed class TrackerApi(HttpClient http)
 
     string? _dmKey;
 
-    public void UseDmKey(string key) => _dmKey = key;
+    /// <summary>Null when this browser has no authority over the campaign it is opening, which
+    /// is not the same as never having had any: it may hold a key for a different table.</summary>
+    public void UseDmKey(string? key) => _dmKey = key;
 
     public Task<CreatedCampaignView> CreateCampaignAsync(CancellationToken ct) =>
         SendAsync<CreatedCampaignView>(new HttpRequestMessage(HttpMethod.Post, "campaigns"), ct);

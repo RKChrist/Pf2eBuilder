@@ -49,6 +49,18 @@ public sealed class CampaignEffects
             return;
         }
 
+        // Typing the code of a campaign this browser already holds is continuing it, key and
+        // all. The key is on no screen anywhere, so treating this as a stranger's join would
+        // make a GM a player at their own table for no reason they could see.
+        var known = (await _memory.ReadAllAsync())
+            .FirstOrDefault(campaign => string.Equals(campaign.Code, code, StringComparison.OrdinalIgnoreCase));
+
+        if (known is not null)
+        {
+            dispatcher.Dispatch(new CampaignRemembered(known));
+            return;
+        }
+
         await OpenAsync(code, dispatcher);
     }
 
@@ -86,7 +98,8 @@ public sealed class CampaignEffects
     {
         try
         {
-            await _memory.WriteAsync(new RememberedCampaign(action.Campaign.Code, _state.Value.DmKey));
+            dispatcher.Dispatch(new CampaignsRemembered(
+                await _memory.RememberAsync(action.Campaign.Code, _state.Value.DmKey)));
 
             await _hub.JoinAsync(action.Campaign.Code, _state.Value.DmKey, CancellationToken.None);
             dispatcher.Dispatch(new LiveJoined());
@@ -225,24 +238,27 @@ public sealed class CampaignEffects
         }
     }
 
-    /// <summary>Asked once, on the first paint of a campaign screen. A browser that was in a
-    /// campaign walks back into it holding whatever authority it had.</summary>
+    /// <summary>Asked once, on the first paint of a campaign screen. The list is what the join
+    /// form offers; the head of it is the campaign this browser walks straight back into,
+    /// holding whatever authority it had, which is what makes a reload a non-event.</summary>
     [EffectMethod]
     public async Task Handle(CampaignRecalled _, IDispatcher dispatcher)
     {
-        if (await _memory.ReadAsync() is { } remembered)
+        var remembered = await _memory.ReadAllAsync();
+        dispatcher.Dispatch(new CampaignsRemembered(remembered));
+
+        if (remembered.Count > 0)
         {
-            dispatcher.Dispatch(new CampaignRemembered(remembered));
+            dispatcher.Dispatch(new CampaignRemembered(remembered[0]));
         }
     }
 
     [EffectMethod]
     public async Task Handle(CampaignRemembered action, IDispatcher dispatcher)
     {
-        if (action.Campaign.DmKey is { Length: > 0 } key)
-        {
-            _tracker.UseDmKey(key);
-        }
+        // Set either way. A browser that runs two tables holds a key for one of them, and the
+        // key it held a moment ago must not ride along to the table it is opening now.
+        _tracker.UseDmKey(action.Campaign.DmKey);
 
         try
         {
@@ -254,10 +270,33 @@ public sealed class CampaignEffects
             // The campaign this browser remembered is gone, which is ordinary: the server was
             // restarted, or the table finished weeks ago. Quietly back to the join form rather
             // than an error about something nobody asked for.
-            await _memory.ForgetAsync();
+            dispatcher.Dispatch(new CampaignsRemembered(
+                await _memory.ForgetAsync(action.Campaign.Code)));
             dispatcher.Dispatch(new CampaignForgotten());
         }
     }
+
+    /// <summary>Out of the campaign, holding on to it. The hub group goes with it, because a
+    /// change at the table somebody just left would otherwise arrive on the join form.</summary>
+    [EffectMethod]
+    public async Task Handle(CampaignLeft _, IDispatcher dispatcher)
+    {
+        _tracker.UseDmKey(null);
+
+        try
+        {
+            await _hub.LeaveAsync(CancellationToken.None);
+        }
+        catch (Exception failure) when (failure is not OperationCanceledException)
+        {
+            // A connection that could not be told is a connection that is not carrying anything
+            // either. Leaving is a local act and cannot be made to fail by the network.
+        }
+    }
+
+    [EffectMethod]
+    public async Task Handle(CampaignForgetRequested action, IDispatcher dispatcher) =>
+        dispatcher.Dispatch(new CampaignsRemembered(await _memory.ForgetAsync(action.Code)));
 
     async Task OpenAsync(string code, IDispatcher dispatcher)
     {
