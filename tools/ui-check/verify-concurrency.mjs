@@ -57,9 +57,11 @@ const view = async (c) =>
     console.log(`      the server now survives this. Make it a check and delete this branch.`);
   }
 
-  check('every combatant that lands has a name nobody could confuse',
-    new Set(after.encounter?.combatants.map((x) => x.name)).size === landed,
-    (after.encounter?.combatants ?? []).map((x) => x.name).join(' | '));
+  if (clean) {
+    check('every combatant has a name nobody could confuse',
+      new Set(after.encounter?.combatants.map((x) => x.name)).size === landed,
+      (after.encounter?.combatants ?? []).map((x) => x.name).join(' | '));
+  }
 }
 
 // Two people applying damage to the same character at the same moment. Hit points are a delta

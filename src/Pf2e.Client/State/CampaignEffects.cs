@@ -11,6 +11,7 @@ public sealed class CampaignEffects
     readonly TrackerApi _tracker;
     readonly RulesApi _rules;
     readonly CampaignHub _hub;
+    readonly CampaignMemory _memory;
     readonly IState<CampaignState> _state;
     readonly TimeSpan _debounce;
 
@@ -21,6 +22,7 @@ public sealed class CampaignEffects
         TrackerApi tracker,
         RulesApi rules,
         CampaignHub hub,
+        CampaignMemory memory,
         IState<CampaignState> state,
         IOptions<ApiOptions> options,
         IDispatcher dispatcher)
@@ -28,6 +30,7 @@ public sealed class CampaignEffects
         _tracker = tracker;
         _rules = rules;
         _hub = hub;
+        _memory = memory;
         _state = state;
         _debounce = TimeSpan.FromMilliseconds(options.Value.SearchDebounceMilliseconds);
 
@@ -63,9 +66,9 @@ public sealed class CampaignEffects
         }
     }
 
-    /// <summary>The DM key arrives once, with the campaign that was just created, and is held
-    /// for the rest of the session. Reloading the page makes this browser a player, which is the
-    /// honest consequence of a secret nobody wrote down.</summary>
+    /// <summary>The DM key arrives once, with the campaign that was just created. It goes into
+    /// this browser's own storage immediately, because until it did, reloading the tab turned
+    /// the GM into a spectator for the rest of the session with no way back.</summary>
     [EffectMethod]
     public async Task Handle(CampaignCreated action, IDispatcher dispatcher)
     {
@@ -83,6 +86,8 @@ public sealed class CampaignEffects
     {
         try
         {
+            await _memory.WriteAsync(new RememberedCampaign(action.Campaign.Code, _state.Value.DmKey));
+
             await _hub.JoinAsync(action.Campaign.Code, _state.Value.DmKey, CancellationToken.None);
             dispatcher.Dispatch(new LiveJoined());
 
@@ -217,6 +222,40 @@ public sealed class CampaignEffects
         catch (RulesApiException failure)
         {
             dispatcher.Dispatch(new RuleSearchFailed(failure.Message));
+        }
+    }
+
+    /// <summary>Asked once, on the first paint of a campaign screen. A browser that was in a
+    /// campaign walks back into it holding whatever authority it had.</summary>
+    [EffectMethod]
+    public async Task Handle(CampaignRecalled _, IDispatcher dispatcher)
+    {
+        if (await _memory.ReadAsync() is { } remembered)
+        {
+            dispatcher.Dispatch(new CampaignRemembered(remembered));
+        }
+    }
+
+    [EffectMethod]
+    public async Task Handle(CampaignRemembered action, IDispatcher dispatcher)
+    {
+        if (action.Campaign.DmKey is { Length: > 0 } key)
+        {
+            _tracker.UseDmKey(key);
+        }
+
+        try
+        {
+            dispatcher.Dispatch(new CampaignOpened(
+                await _tracker.GetCampaignAsync(action.Campaign.Code, CancellationToken.None)));
+        }
+        catch (CampaignApiException)
+        {
+            // The campaign this browser remembered is gone, which is ordinary: the server was
+            // restarted, or the table finished weeks ago. Quietly back to the join form rather
+            // than an error about something nobody asked for.
+            await _memory.ForgetAsync();
+            dispatcher.Dispatch(new CampaignForgotten());
         }
     }
 

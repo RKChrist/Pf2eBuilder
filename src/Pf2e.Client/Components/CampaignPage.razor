@@ -146,6 +146,18 @@
             Dispatcher.Dispatch(new ConditionsRequested());
         }
 
+        // Here rather than in OnAfterRender, which is where reading browser storage would
+        // normally belong. FluxorComponent owns that hook and an override of it in a subclass
+        // never ran: the dispatch happened nowhere and the reload silently kept showing the
+        // join form. Standalone WebAssembly has no prerender, so interop works from here.
+        //
+        // A campaign already open means this is a navigation between modes rather than a fresh
+        // load, and there is nothing to recall.
+        if (State.Campaign is RemoteData<CampaignView>.NotAsked)
+        {
+            Dispatcher.Dispatch(new CampaignRecalled());
+        }
+
         if (ExplorationStore.Value.Activities is RemoteData<IReadOnlyList<ExplorationActivityView>>.NotAsked)
         {
             Dispatcher.Dispatch(new ExplorationActivitiesRequested());

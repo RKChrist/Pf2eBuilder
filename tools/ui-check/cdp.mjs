@@ -77,8 +77,18 @@ export async function launch({ headless = false } = {}) {
   };
 }
 
-export async function openPage(browser, url) {
-  const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank' });
+/// A page, optionally in a browser context of its own. Two pages in one context share cookies
+/// and local storage, which is right for two tabs belonging to one person and wrong for two
+/// people at a table: pass { isolated: true } for the second person.
+export async function openPage(browser, { isolated = false } = {}) {
+  const context = isolated
+    ? (await browser.send('Target.createBrowserContext')).browserContextId
+    : undefined;
+
+  const { targetId } = await browser.send('Target.createTarget', {
+    url: 'about:blank',
+    ...(context ? { browserContextId: context } : {}),
+  });
   const { sessionId } = await browser.send('Target.attachToTarget', { targetId, flatten: true });
   const s = (method, params) => browser.send(method, params, sessionId);
 
@@ -150,7 +160,6 @@ export async function openPage(browser, url) {
     },
   };
 
-  if (url) await page.goto(url);
   return page;
 }
 

@@ -9,7 +9,7 @@ const url = `file:///${GALLERY.replace(/\\/g, '/')}`;
 
 const check = reporter();
 const browser = await launch({ headless: false });
-const page = await openPage(browser, url);
+const page = await openPage(browser);
 
 const centre = async (selector, nth = 0) =>
   page.eval(`(() => {

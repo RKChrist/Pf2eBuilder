@@ -136,6 +136,19 @@ public sealed record CampaignCreated(CreatedCampaignView Created);
 
 public sealed record CampaignFailed(string Message);
 
+/// <summary>Ask this browser whether it was already in a campaign. Dispatched once, on the first
+/// paint of any campaign screen, so a reload lands back where it left off instead of on the
+/// join form.</summary>
+public sealed record CampaignRecalled;
+
+/// <summary>It was. The key rides along, because coming back as a player is the failure this
+/// whole path exists to prevent.</summary>
+public sealed record CampaignRemembered(RememberedCampaign Campaign);
+
+/// <summary>The remembered campaign is not there any more, so this browser stops claiming to be
+/// in it. Quiet on purpose: nothing was lost that the person was looking at.</summary>
+public sealed record CampaignForgotten;
+
 /// <summary>A command whose answer is the whole campaign. It replaces the loaded value without
 /// reopening, because reopening would rejoin a hub connection that is already in the right
 /// groups.</summary>
@@ -253,6 +266,22 @@ public static class CampaignReducers
     [ReducerMethod]
     public static CampaignState On(CampaignState state, CampaignCreated action) =>
         state with { DmKey = action.Created.DmKey };
+
+    [ReducerMethod]
+    public static CampaignState On(CampaignState state, CampaignRemembered action) => state with
+    {
+        Code = action.Campaign.Code,
+        DmKey = action.Campaign.DmKey,
+        Campaign = new RemoteData<CampaignView>.Loading(),
+    };
+
+    [ReducerMethod]
+    public static CampaignState On(CampaignState state, CampaignForgotten _) => state with
+    {
+        Code = string.Empty,
+        DmKey = null,
+        Campaign = new RemoteData<CampaignView>.NotAsked(),
+    };
 
     // Each of the two ways in clears the other, because two half filled ways to say the same
     // thing is a screen that cannot say which one it will send. The first version claimed this

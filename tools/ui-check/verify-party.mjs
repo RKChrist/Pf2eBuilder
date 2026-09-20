@@ -178,7 +178,9 @@ await one.closeSheet();
 
 // A second page joined to the same code is the only way to tell a live push from a local
 // re-render, which is the whole reason the hub exists.
-const two = driver(await openPage(browser));
+// Isolated: this is the second person at the table, not the first one opening a tab. Sharing
+// storage would let it restore the same campaign instead of joining with the code.
+const two = driver(await openPage(browser, { isolated: true }));
 await two.page.viewport(1440, 900, false);
 await two.page.goto(`${client}/party`);
 await two.waitFor('.join');

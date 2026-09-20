@@ -16,8 +16,8 @@ const pathbuilder = readFileSync('tests/Pf2e.Persistence.Tests/Fixtures/gnibbo.j
 const check = reporter();
 const browser = await launch({ headless: process.env.HEADED !== '1' });
 
-async function screen(width, height, mobile) {
-  const page = await openPage(browser);
+async function screen(width, height, mobile, isolated = false) {
+  const page = await openPage(browser, { isolated });
   await page.viewport(width, height, mobile);
   if (mobile) await page.coarse(true);
   return page;
@@ -421,7 +421,9 @@ check('saving an edit changes the number it feeds', Number(afterAc) === Number(b
 check('and the editor closed', !(await dm.eval(`!!document.querySelector('.editor')`)));
 
 // A player: same campaign, no key, a second tab.
-const player = await screen(390, 844, true);
+// Isolated, because a player is a different device. Sharing the GM's storage would hand them
+// the DM key and every check below would be testing one browser against itself.
+const player = await screen(390, 844, true, true);
 await player.goto(`${client}campaign`);
 await waitFor(player, '.pf-input');
 await type(player, '.pf-input', code);

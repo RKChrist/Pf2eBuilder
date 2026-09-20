@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Pf2e.Client;
 using Pf2e.Client.Api;
 using Pf2e.Client.Catalog;
+using Pf2e.Client.State;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
@@ -30,6 +31,7 @@ builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(api.BaseU
 builder.Services.AddScoped<RulesApi>();
 builder.Services.AddScoped<TrackerApi>();
 builder.Services.AddScoped<CampaignHub>();
+builder.Services.AddScoped<CampaignMemory>();
 builder.Services.AddFluxor(options => options.ScanAssemblies(typeof(App).Assembly));
 
 await builder.Build().RunAsync();
