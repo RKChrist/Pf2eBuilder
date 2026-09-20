@@ -71,27 +71,37 @@ const boot = (env) => new Promise((done) => {
 
   let output = '';
   let listening = false;
+  let killed = false;
+  const stop = () => {
+    killed = true;
+    child.kill();
+  };
+
   const watch = (data) => {
     output += data;
     if (!listening && output.includes('Now listening')) {
       listening = true;
-      child.kill();
+      stop();
     }
   };
 
   child.stdout.on('data', watch);
   child.stderr.on('data', watch);
 
-  const giveUp = setTimeout(() => child.kill(), 60000);
+  const giveUp = setTimeout(stop, 60000);
   child.on('close', (code) => {
     clearTimeout(giveUp);
-    done({ code, output, listening });
+    done({ code, output, listening, killed });
   });
 });
 
+// A process we killed reports a null exit code, and `null !== 0` is true, so a hang would read
+// as a refusal. Stopping on its own is the claim, so it has to have stopped on its own.
+const refused = (boot) => typeof boot.code === 'number' && boot.code !== 0 && !boot.killed;
+
 const without = await boot({ ...quiet, Auth__Jwt__SigningKey: '' });
-check('no signing key stops the process', without.code !== 0 && !without.listening,
-  `exit ${without.code}, listening ${without.listening}`);
+check('no signing key stops the process', refused(without) && !without.listening,
+  `exit ${without.code}, killed ${without.killed}, listening ${without.listening}`);
 check('and the refusal names the setting to add', without.output.includes('Auth:Jwt:SigningKey'),
   without.output.slice(-400));
 
@@ -106,7 +116,8 @@ check('a signing key lets the process start', withKey.listening, withKey.output.
 // out.
 const tooShort = await boot({ ...quiet, Auth__Jwt__SigningKey: 'too-short' });
 check('a key too short to sign with stops the process too',
-  tooShort.code !== 0 && !tooShort.listening, `exit ${tooShort.code}`);
+  refused(tooShort) && !tooShort.listening,
+  `exit ${tooShort.code}, killed ${tooShort.killed}`);
 check('and that refusal names the setting as well',
   tooShort.output.includes('Auth:Jwt:SigningKey'), tooShort.output.slice(-400));
 
