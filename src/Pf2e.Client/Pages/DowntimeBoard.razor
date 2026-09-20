@@ -64,7 +64,8 @@
                                         @if (chosen.Skill is { } skill)
                                         {
                                             <span class="spending__skill">
-                                                @skill @Signed(SkillOf(character, skill))
+                                                <RuleLink Ref='@(new RuleRef.Named("skill", skill))' />
+                                                @Signed(SkillOf(character, skill))
                                             </span>
                                         }
                                     </p>

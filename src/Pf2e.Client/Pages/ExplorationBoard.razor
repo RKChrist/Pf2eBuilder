@@ -78,7 +78,9 @@
                                     .OrderByDescending(a => a.Modifier).ThenBy(a => a.Name, StringComparer.Ordinal))
                                 {
                                     <div class="try" data-try="@attempt.Key">
-                                        <span class="try__name">@attempt.Name</span>
+                                        <span class="try__name">
+                                            <RuleLink Ref='@(new RuleRef.Named("action", attempt.Name))' />
+                                        </span>
                                         <span class="try__skill">@attempt.Skill</span>
                                         <span class="try__value">@Signed(attempt.Modifier)</span>
                                     </div>
@@ -96,7 +98,9 @@
                                             .OrderBy(a => a.Name, StringComparer.Ordinal))
                                         {
                                             <div class="try try--barred" data-try="@attempt.Key">
-                                                <span class="try__name">@attempt.Name</span>
+                                                <span class="try__name">
+                                                    <RuleLink Ref='@(new RuleRef.Named("action", attempt.Name))' />
+                                                </span>
                                                 <span class="try__skill">
                                                     needs @attempt.Required.ToLowerInvariant() in @attempt.Skill
                                                 </span>

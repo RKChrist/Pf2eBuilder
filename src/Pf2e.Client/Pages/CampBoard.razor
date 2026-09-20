@@ -4,7 +4,6 @@
 @inject IState<ConditionsState> ConditionsStore
 @inject IState<ExplorationState> ExplorationStore
 @inject IDispatcher Dispatcher
-@inject NavigationManager Navigation
 
 <PageTitle>Camp</PageTitle>
 
@@ -70,7 +69,7 @@
                         {
                             <div class="camp__entry">
                                 <dt>
-                                    @activity.Name
+                                    <RuleLink Ref='@(new RuleRef.Named("action", activity.Name))' />
                                     <span class="camp__cost">@activity.Minutes min</span>
                                 </dt>
                                 <dd>@activity.What</dd>
@@ -122,9 +121,10 @@
                                 @foreach (var entry in group.Activities)
                                 {
                                     <li class="activity" data-activity="@entry.Activity.RuleId">
-                                        <a class="activity__name" href="@Navigation.Rule(entry.Activity.RuleId)">
-                                            @entry.Activity.Name
-                                        </a>
+                                        <RuleLink Ref='@(new RuleRef.Id(entry.Activity.RuleId))'
+                                                  Label="@entry.Activity.Name"
+                                                  Alone="true"
+                                                  Class="activity__name" />
                                         @if (entry.Activity.Requires is { Length: > 0 } requires)
                                         {
                                             <p class="activity__needs">@requires</p>
