@@ -100,6 +100,13 @@ internal sealed record PathbuilderBuild(Character Build, int ArmorPotency)
                 throw new PathbuilderFormatException($"That export carries no character name. {PasteAdvice}");
             }
 
+            if (Marks(build) < EnoughMarkers)
+            {
+                throw new PathbuilderFormatException(
+                    $"That JSON names \"{Short(name)}\" and says nothing else a character export says: " +
+                    $"no class, ancestry, attributes or proficiencies. {PasteAdvice}");
+            }
+
             var abilities = Object(build, "abilities");
             var proficiencies = Object(build, "proficiencies");
             var attributes = Object(build, "attributes");
@@ -341,6 +348,39 @@ internal sealed record PathbuilderBuild(Character Build, int ArmorPotency)
     }
 
     /// <summary>The export states final scores, not modifiers, and a missing one reads as 10.</summary>
+    // What a Pathbuilder build states about a character, as against what any JSON object might
+    // happen to carry. A name was the whole gate, so tools/tokens/package.json imported as a
+    // level 1 character called "pf2e-tokens" and could be put in a fight.
+    static readonly (string Key, JsonValueKind Kind)[] Markers =
+    [
+        ("class", JsonValueKind.String),
+        ("ancestry", JsonValueKind.String),
+        ("keyability", JsonValueKind.String),
+        ("level", JsonValueKind.Number),
+        ("abilities", JsonValueKind.Object),
+        ("proficiencies", JsonValueKind.Object),
+        ("attributes", JsonValueKind.Object),
+        ("feats", JsonValueKind.Array),
+        ("equipment", JsonValueKind.Array),
+    ];
+
+    /// <summary>Three of the nine. An export states all of them and a file that is not one
+    /// states none, so the line is drawn where a hand-trimmed build, or a field Pathbuilder
+    /// stops writing one day, is still somebody's character.</summary>
+    const int EnoughMarkers = 3;
+
+    static int Marks(JsonElement? build) =>
+        build is { ValueKind: JsonValueKind.Object } element
+            ? Markers.Count(marker =>
+                element.TryGetProperty(marker.Key, out var value) && value.ValueKind == marker.Kind)
+            : 0;
+
+    /// <summary>The name goes in the refusal because reading "pf2e-tokens" back is what tells
+    /// somebody they pasted the wrong file. Cut short, because a name from a file that is not
+    /// an export can be anything at all.</summary>
+    static string Short(string name) =>
+        name.Length <= 40 ? name : string.Concat(name.AsSpan(0, 40), "...");
+
     static int Score(JsonElement? parent, string name) => Ability.Modifier(Int(parent, name, 10));
 
     /// <summary>The export states rank bonuses of 0, 2, 4, 6 or 8 rather than ranks, and

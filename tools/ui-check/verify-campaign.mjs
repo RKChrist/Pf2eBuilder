@@ -531,6 +531,30 @@ const errors = [...dm.consoleErrors(), ...player.consoleErrors()]
   .filter(e => !e.includes('ERR_BLOCKED_BY_CLIENT'));
 check('no console errors', errors.length === 0, errors.join(' | ').slice(0, 300));
 
+// Every JSON file with a name in it used to be a character. This one arrived as a level 1
+// "pf2e-tokens" with AC 10 and one hit point, and could be put in a fight.
+await clickText(dm, '.shell__party', 'Party');
+await waitFor(dm, '.pf-textarea');
+await type(dm, '.pf-textarea', JSON.stringify({
+  name: 'pf2e-tokens',
+  version: '1.0.0',
+  private: true,
+  scripts: { build: 'style-dictionary build' },
+}));
+await sleep(400);
+await clickText(dm, 'button', 'Import');
+await until(dm, `!!document.querySelector('.import__trouble')`, 12000);
+
+const refusal = await dm.eval(`document.querySelector('.import__trouble')?.textContent.trim() ?? ''`);
+check('a file that is not a character export is refused by name',
+  refusal.includes('pf2e-tokens') && refusal.includes('no class, ancestry'), refusal);
+check('and nobody joined the party',
+  await dm.eval(`[...document.querySelectorAll('.character__name')].map(e => e.textContent.trim()).join()`)
+    .then(names => names === 'Gnibbo'),
+  await dm.eval(`[...document.querySelectorAll('.character__name')].map(e => e.textContent.trim()).join()`));
+
+await type(dm, '.pf-textarea', '');
+
 // The markup is the courtesy. This is the rule.
 const refused = await player.eval(`(async () => {
   const answer = await fetch(

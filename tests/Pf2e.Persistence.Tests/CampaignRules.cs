@@ -335,8 +335,20 @@ public class CampaignRules(SeededDatabase database) : IClassFixture<SeededDataba
         var noName = await Assert.ThrowsAsync<PathbuilderFormatException>(
             () => Import(campaign.Code, "{\"success\":true,\"build\":{\"level\":7}}"));
 
+        // Every JSON file in this repo with a name in it used to be a character. This one
+        // arrived as a level 1 "pf2e-tokens" with AC 10 and a single hit point, and could be
+        // added to a fight.
+        var notACharacter = await Assert.ThrowsAsync<PathbuilderFormatException>(
+            () => Import(campaign.Code, """
+                {"name":"pf2e-tokens","version":"1.0.0","private":true,
+                 "scripts":{"build":"style-dictionary build"},
+                 "devDependencies":{"style-dictionary":"^4.0.0"}}
+                """));
+
         Assert.Contains("Pathbuilder", notJson.Message);
         Assert.Contains("no character name", noName.Message);
+        Assert.Contains("pf2e-tokens", notACharacter.Message);
+        Assert.Contains("no class, ancestry", notACharacter.Message);
         Assert.Empty((await Read(campaign.Code)).Characters);
     }
 
