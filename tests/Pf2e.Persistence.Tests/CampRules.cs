@@ -79,6 +79,62 @@ public class CampRules(SeededDatabase database) : IClassFixture<SeededDatabase>
         Assert.Equal(30, (await Camp(campaign, gnibbo.Id, "identify-magic")).ElapsedMinutes);
     }
 
+    async Task<CampaignView> Pass(CreatedCampaignView campaign, int minutes, bool asDm = true)
+    {
+        await using var db = database.NewContext();
+        return await new PassTimeHandler(db, Undo, Broadcaster)
+            .Handle(new PassTime(campaign.Code, asDm ? campaign.DmKey : null, minutes), default);
+    }
+
+    [Fact]
+    public async Task AnHourOnTheRoadEndsTheImmunityAnHourAtCampWouldHave()
+    {
+        var campaign = await NewCampaign();
+        var gnibbo = await Import(campaign.Code, "Gnibbo");
+        await Camp(campaign, gnibbo.Id, "treat-wounds");
+
+        var halfway = await Pass(campaign, 30);
+        Assert.Equal(40, halfway.ElapsedMinutes);
+        Assert.Equal(30, halfway.Characters.Single().TreatWoundsImmuneFor);
+        await Assert.ThrowsAsync<StillImmuneException>(() => Camp(campaign, gnibbo.Id, "treat-wounds"));
+
+        Assert.Equal(0, (await Pass(campaign, 30)).Characters.Single().TreatWoundsImmuneFor);
+        await Camp(campaign, gnibbo.Id, "treat-wounds");
+    }
+
+    [Fact]
+    public async Task OnlyTheDmMovesTheWorldOnAndNotByMoreThanADay()
+    {
+        var campaign = await NewCampaign();
+
+        await Assert.ThrowsAsync<NotTheDmException>(() => Pass(campaign, 10, asDm: false));
+        Assert.False(new PassTimeValidator().Validate(new PassTime(campaign.Code, campaign.DmKey, 0)).IsValid);
+        Assert.False(new PassTimeValidator().Validate(new PassTime(campaign.Code, campaign.DmKey, 24 * 60 + 1)).IsValid);
+        Assert.True(new PassTimeValidator().Validate(new PassTime(campaign.Code, campaign.DmKey, 24 * 60)).IsValid);
+    }
+
+    [Fact]
+    public async Task UndoPutsTheClockBackAlongWithEverythingElse()
+    {
+        var campaign = await NewCampaign();
+        var gnibbo = await Import(campaign.Code, "Gnibbo");
+        await Pass(campaign, 60);
+        await Camp(campaign, gnibbo.Id, "treat-wounds");
+
+        CampaignView undone;
+        await using (var db = database.NewContext())
+        {
+            undone = await new UndoLastChangeHandler(db, Undo, Broadcaster)
+                .Handle(new UndoLastChange(campaign.Code, campaign.DmKey), default);
+        }
+
+        // The ten minutes of Treat Wounds came back, and so did the mark it left: a clock put
+        // back to before the treatment with the treatment still recorded read as immune for
+        // seventy minutes.
+        Assert.Equal(60, undone.ElapsedMinutes);
+        Assert.Equal(0, undone.Characters.Single().TreatWoundsImmuneFor);
+    }
+
     [Fact]
     public async Task TreatingSomebodyTwiceInTheSameHourIsRefusedWithTheTimeLeft()
     {

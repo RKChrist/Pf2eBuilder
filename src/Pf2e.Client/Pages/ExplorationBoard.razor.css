@@ -83,3 +83,17 @@
 .trying__rest {
     margin-top: var(--space-3);
 }
+
+.passing {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--tap-separation);
+    margin-top: var(--space-3);
+}
+
+.passing__says {
+    margin-inline-end: var(--space-1);
+    color: var(--text-muted);
+    font-size: var(--font-size-data);
+}

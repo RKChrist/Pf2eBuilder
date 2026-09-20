@@ -74,6 +74,9 @@ public sealed record CampActivityTaken(Guid CharacterId, string Activity);
 
 public sealed record NightRested;
 
+/// <summary>The DM says this much time has gone by on the road.</summary>
+public sealed record TimePassed(int Minutes);
+
 public sealed record ExplorationActivitiesLoaded(IReadOnlyList<ExplorationActivityView> Activities);
 
 public sealed record ExplorationActivitiesFailed(string Message);

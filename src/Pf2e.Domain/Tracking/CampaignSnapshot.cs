@@ -2,7 +2,11 @@ using System.Collections.Immutable;
 
 namespace Pf2e.Domain.Tracking;
 
-public sealed record CharacterHealthSnapshot(Guid Id, int CurrentHitPoints, int TemporaryHitPoints, int HeroPoints);
+/// <param name="TreatedAtMinute">Kept with the clock below, because the two are one fact: a
+/// character treated at minute 40 of a campaign that has been put back to minute 30 would read
+/// as immune for longer than an hour.</param>
+public sealed record CharacterHealthSnapshot(
+    Guid Id, int CurrentHitPoints, int TemporaryHitPoints, int HeroPoints, int? TreatedAtMinute);
 
 public sealed record CombatantSnapshot(
     Guid Id,
@@ -50,7 +54,8 @@ public sealed record CampaignSnapshot(
     CampaignMode Mode,
     ImmutableArray<CharacterHealthSnapshot> Characters,
     ImmutableArray<EffectSnapshot> Effects,
-    EncounterSnapshot? Encounter);
+    EncounterSnapshot? Encounter,
+    int ElapsedMinutes);
 
 /// <summary>Taking and putting back, as functions over the campaign.</summary>
 public static class CampaignSnapshots
@@ -59,9 +64,11 @@ public static class CampaignSnapshots
         label,
         campaign.Mode,
         [.. campaign.Characters.Select(c =>
-            new CharacterHealthSnapshot(c.Id, c.CurrentHitPoints, c.TemporaryHitPoints, c.HeroPoints))],
+            new CharacterHealthSnapshot(
+                c.Id, c.CurrentHitPoints, c.TemporaryHitPoints, c.HeroPoints, c.TreatedAtMinute))],
         [.. campaign.EffectApplications.Select(Of)],
-        campaign.Encounter is { } encounter ? Of(encounter) : null);
+        campaign.Encounter is { } encounter ? Of(encounter) : null,
+        campaign.ElapsedMinutes);
 
     /// <summary>
     /// Puts the campaign back where the snapshot found it. Combatants and effects are reconciled
@@ -73,6 +80,11 @@ public static class CampaignSnapshots
     {
         campaign.Mode = snapshot.Mode;
 
+        // Time is something a command changes like anything else: ten minutes of Treat Wounds,
+        // a night's rest, an hour on the road. Undo that left the clock where it was undid the
+        // healing and kept the hour.
+        campaign.ElapsedMinutes = snapshot.ElapsedMinutes;
+
         foreach (var health in snapshot.Characters)
         {
             if (campaign.Characters.FirstOrDefault(c => c.Id == health.Id) is not { } character)
@@ -83,6 +95,7 @@ public static class CampaignSnapshots
             character.CurrentHitPoints = health.CurrentHitPoints;
             character.TemporaryHitPoints = health.TemporaryHitPoints;
             character.HeroPoints = health.HeroPoints;
+            character.TreatedAtMinute = health.TreatedAtMinute;
         }
 
         RestoreEffects(campaign, snapshot.Effects);

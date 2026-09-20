@@ -49,6 +49,10 @@ public static class CampaignEndpoints
              CampActivityRequest body, CancellationToken ct) =>
                 sender.Send(new TakeCampActivity(code, DmKeyOf(request), id, body.Activity), ct));
 
+        app.MapPost("/campaigns/{code}/time",
+            (ISender sender, HttpRequest request, string code, PassTimeRequest body, CancellationToken ct) =>
+                sender.Send(new PassTime(code, DmKeyOf(request), body.Minutes), ct));
+
         app.MapPost("/campaigns/{code}/rest",
             (ISender sender, HttpRequest request, string code, CancellationToken ct) =>
                 sender.Send(new RestForTheNight(code, DmKeyOf(request)), ct));

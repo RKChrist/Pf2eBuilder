@@ -162,6 +162,10 @@ public sealed class TrackerApi(HttpClient http)
                 new CampActivityRequest(activity)),
             ct);
 
+    public Task<CampaignView> PassTimeAsync(string code, int minutes, CancellationToken ct) =>
+        SendAsync<CampaignView>(
+            Carrying(HttpMethod.Post, $"{Campaign(code)}/time", new PassTimeRequest(minutes)), ct);
+
     public Task<CampaignView> RestAsync(string code, CancellationToken ct) =>
         SendAsync<CampaignView>(new HttpRequestMessage(HttpMethod.Post, $"{Campaign(code)}/rest"), ct);
 

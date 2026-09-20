@@ -284,6 +284,8 @@ public sealed record SetInitiativeRequest(int Initiative);
 
 public sealed record RevealMonsterRequest(bool Revealed);
 
+public sealed record PassTimeRequest(int Minutes);
+
 /// <summary>
 /// The fields that feed the calculator, in the form the screen edits them. Everything here is
 /// the build layer; the session layer is not in this value and an edit does not touch it.

@@ -28,18 +28,36 @@
             <button type="button"
                     class="pick @(option.Key == Chosen ? "pick--on" : null)"
                     data-pick="@option.Key"
-                    title="@option.What"
+                    aria-description="@option.What"
                     aria-pressed="@(option.Key == Chosen ? "true" : "false")"
+                    @onmouseenter="() => _looking = option"
+                    @onmouseleave="() => _looking = null"
+                    @onfocus="() => _looking = option"
+                    @onblur="() => _looking = null"
                     @onclick="() => Pick(option.Key)">
                 @option.Name
             </button>
         }
     </div>
 
-    @if (Chosen is { Length: > 0 } && Says is { Length: > 0 } says)
-    {
-        <p class="choose__says">@says</p>
-    }
+    @* One line under the chips, which says what the chip being pointed at does and otherwise what
+       the chosen one does. It replaces a tooltip, which takes a second to arrive, cannot be
+       reached by a keyboard and does not exist on a phone. Always there once anything could
+       fill it, so pointing along the row does not make the page jump. *@
+    <p class="choose__says @(_looking is not null ? "choose__says--looking" : null)">
+        @if (_looking is { } looking)
+        {
+            <strong>@looking.Name.</strong> @looking.What
+        }
+        else if (Chosen is { Length: > 0 } && Says is { Length: > 0 } says)
+        {
+            <strong>@Options.FirstOrDefault(option => option.Key == Chosen)?.Name.</strong> @says
+        }
+        else
+        {
+            <span class="choose__hint">Point at one to see what it does.</span>
+        }
+    </p>
 
     @ChildContent
 </div>
@@ -72,6 +90,10 @@
 
     /// <summary>Anything the choice brings with it, such as a task level and its DC.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>The chip under the pointer or holding focus, which is this component's own
+    /// business: nobody else at the table needs to know where one person's mouse is.</summary>
+    Choice? _looking;
 
     /// <summary>Tapping the chosen one again clears it, which is how a row of chips is expected
     /// to behave and saves hunting for the "nothing" option.</summary>
