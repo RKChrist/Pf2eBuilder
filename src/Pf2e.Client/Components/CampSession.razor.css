@@ -678,3 +678,20 @@
 .writing ::deep .writing__dc {
     max-width: 14rem;
 }
+
+.survivors {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+    gap: var(--space-4);
+}
+
+.survivor {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.survivor__who {
+    font-size: var(--font-size-data);
+    font-weight: var(--font-weight-semibold);
+}

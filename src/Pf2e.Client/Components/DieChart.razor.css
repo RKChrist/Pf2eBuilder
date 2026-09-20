@@ -1,0 +1,85 @@
+.die {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: var(--space-0);
+    max-width: 44rem;
+}
+
+/* Twenty equal cells in one row at any width: a die has twenty faces and the picture is the
+   proportion, so it must not wrap into two rows of ten that read as two different things. */
+.die__faces {
+    display: grid;
+    grid-template-columns: repeat(20, minmax(0, 1fr));
+    gap: var(--border-hair);
+    border-radius: var(--radius-chip);
+    overflow: clip;
+}
+
+.die__face {
+    display: grid;
+    place-items: center;
+    block-size: var(--space-6);
+    background: var(--degree);
+    color: var(--surface-raised);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-bold);
+    font-variant-numeric: tabular-nums;
+}
+
+.die__face--crit-success,
+.die__key--crit-success { --degree: var(--outcome-critical-success); }
+
+.die__face--success,
+.die__key--success { --degree: var(--outcome-success); }
+
+.die__face--failure,
+.die__key--failure { --degree: var(--outcome-failure); }
+
+.die__face--crit-failure,
+.die__key--crit-failure { --degree: var(--outcome-critical-failure); }
+
+/* The face to beat, marked with the lantern the rest of the app uses for "here". */
+.die__face--needs {
+    box-shadow: inset 0 calc(var(--border-focus) * -1) 0 0 var(--highlight-base),
+                inset 0 var(--border-focus) 0 0 var(--highlight-base);
+}
+
+.die__says {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    font-size: var(--font-size-data);
+}
+
+.die__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+    font-size: var(--font-size-chip);
+}
+
+/* The swatch says which colour is which, and the words say it without the colour. */
+.die__key {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    color: var(--text-secondary);
+}
+
+.die__key::before {
+    content: '';
+    inline-size: var(--space-3);
+    block-size: var(--space-3);
+    border-radius: var(--radius-chip);
+    background: var(--degree);
+}
+
+/* Under 480px twenty numbers do not fit, so the cells keep their colour and drop their numbers.
+   The sentence underneath still says the face to beat. */
+@media (max-width: 480px) {
+    .die__face {
+        color: transparent;
+        block-size: var(--space-5);
+    }
+}

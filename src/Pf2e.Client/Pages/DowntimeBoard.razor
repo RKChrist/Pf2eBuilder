@@ -71,6 +71,14 @@
                                     </p>
                                 }
                             </div>
+
+                            @* The DC table as a picture. "DC 24" is a number; what the player is
+                               asking is what they need on the die, and whether a critical failure
+                               is even possible, which is what decides how hard a task to take. *@
+                            @if (character.DowntimeDc is { } against && chosen.Skill is { } rolled)
+                            {
+                                <DieChart Modifier="SkillOf(character, rolled)" Dc="against" />
+                            }
                         }
                         </ChildContent>
                     </ActivityChooser>

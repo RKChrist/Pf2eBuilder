@@ -105,6 +105,19 @@
                     <RuleLink Ref='@(new RuleRef.Named("action", "Identify Magic"))' />, which are further down this page.
                 </p>
 
+                @* Each character's Survival against the Zone DC, as the die. Who should be the
+                   one to prepare the campsite is the first thing a party decides, and this
+                   answers it at a glance. *@
+                <div class="survivors">
+                    @foreach (var character in Table.Characters)
+                    {
+                        <div class="survivor" data-survivor="@character.Id">
+                            <span class="survivor__who">@character.Name, Survival @SheetFormat.Signed(SheetFormat.SkillOf(character, "Survival"))</span>
+                            <DieChart Modifier="@SheetFormat.SkillOf(character, "Survival")" Dc="Camp.ZoneDc" />
+                        </div>
+                    }
+                </div>
+
                 @* The four degrees of success as four doors, because what matters about this roll is
                    what it opens and shuts for the rest of the evening. *@
                 <div class="outcomes" role="group" aria-label="How Prepare Campsite went">

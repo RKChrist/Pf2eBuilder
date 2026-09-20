@@ -99,6 +99,22 @@ await wait(`document.querySelector('.downtime .pick[data-pick]')`);
 await p.eval(`document.querySelector('.downtime .pick[data-pick]').focus()`);
 await sleep(400);
 assert((await text('.downtime .choose__says')).length > 20, "a day's work explains itself the same way", (await text('.downtime .choose__says')).slice(0, 70));
+
+// The DC as a die. Gnibbo crafts with Crafting against a level 7 task, and the
+// picture has to agree with the rule: the face to beat is the DC less the modifier.
+await click('.downtime .pick[data-pick="craft"]');
+await wait(`document.querySelector('.downtime .die')`, 10000);
+const die = await p.eval(`(() => {
+  const dc = Number(document.querySelector('.spending__dc-value').textContent);
+  const modifier = Number(document.querySelector('.spending__skill').textContent.replace(/[^0-9+-]/g, ''));
+  const faces = [...document.querySelectorAll('.downtime .die__face')];
+  return { dc, modifier, count: faces.length,
+           needs: Number(document.querySelector('.downtime .die__face--needs')?.textContent ?? 0),
+           says: document.querySelector('.downtime .die__needs').textContent.trim() };
+})()`);
+assert(die.count === 20, 'a DC is drawn as the twenty faces of the die');
+assert(die.needs === Math.min(20, Math.max(2, die.dc - die.modifier)) || die.needs === die.dc - die.modifier,
+  'and the face to beat is the DC less the modifier', JSON.stringify(die));
 await shot('4-downtime');
 
 console.log(`console errors: ${p.consoleErrors().length}`);
