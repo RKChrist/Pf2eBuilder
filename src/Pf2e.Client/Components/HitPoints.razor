@@ -1,0 +1,32 @@
+@* How hurt somebody is, as a bar and as a number.
+
+   The bar answers "who is in trouble" across a whole party or a whole initiative order without
+   reading anything; the number answers "how much is left" for one creature. A table asks both,
+   so it shows both, and one component means the fight, the camp and the party card cannot
+   answer them differently. *@
+<span class="hits @(Current <= 0 ? "hits--down" : null)">
+    <span class="hits__track" aria-hidden="true">
+        <span class="hits__fill" style="width: @Percent%"></span>
+    </span>
+    <span class="hits__count">
+        <Icon Name="heart" /><span class="hits__now">@Current</span><span class="hits__of">/@Max</span>
+    </span>
+    @if (Temporary > 0)
+    {
+        <span class="hits__temp">+@Temporary temp</span>
+    }
+    @if (Current <= 0)
+    {
+        <span class="hits__state">Down</span>
+    }
+</span>
+
+@code {
+    [Parameter, EditorRequired] public int Current { get; set; }
+
+    [Parameter, EditorRequired] public int Max { get; set; }
+
+    [Parameter] public int Temporary { get; set; }
+
+    int Percent => Max <= 0 ? 0 : Math.Clamp(Current * 100 / Max, 0, 100);
+}

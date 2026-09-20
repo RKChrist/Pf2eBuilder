@@ -12,6 +12,13 @@
    One component rather than three copies, because the question is the same on all three pages
    and the answer drifting between them is how a tracker stops being trusted. *@
 <div class="strip" data-strip="@Character.Id">
+    @if (ShowHitPoints)
+    {
+        <HitPoints Current="Character.CurrentHitPoints"
+                   Max="Character.MaxHitPoints"
+                   Temporary="Character.TemporaryHitPoints" />
+    }
+
     <ul class="strip__row">
         @foreach (var reading in Defences(Character))
         {
@@ -93,6 +100,10 @@
     [Parameter] public bool ShowAttacks { get; set; } = true;
 
     [Parameter] public bool ShowEffects { get; set; } = true;
+
+    /// <summary>Whether to lead with how hurt they are. On the fight page the row draws them
+    /// itself, because a monster has hit points and no sheet to read them off.</summary>
+    [Parameter] public bool ShowHitPoints { get; set; }
 
     /// <summary>
     /// One number, with the breakdown it opens and how far something has moved it.

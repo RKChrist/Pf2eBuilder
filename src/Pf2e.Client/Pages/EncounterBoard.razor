@@ -120,10 +120,31 @@
                                     <Icon Name="@(adversary ? "skull" : "person")"
                                           Class="turn__kind"
                                           Label="@(adversary ? "Adversary" : "Player character")" />
-                                    <span class="turn__called">@combatant.Name</span>
+                                    @if (combatant.Monster is { RuleId: { Length: > 0 } record })
+                                    {
+                                        <a class="turn__called turn__called--record"
+                                           href="@Navigation.Rule(record)"
+                                           title="@($"What {combatant.Name} can do")">@combatant.Name</a>
+                                    }
+                                    else
+                                    {
+                                        <span class="turn__called">@combatant.Name</span>
+                                    }
                                     @if (vitals?.Level is { } level)
                                     {
                                         <span class="turn__level">Level @level</span>
+                                    }
+                                    @if (combatant.Monster is { Traits.Count: > 0 } kinds)
+                                    {
+                                        @* Half the rules in a fight turn on these: whether it is
+                                           undead, whether it can be flanked, whether it is a
+                                           minion. They were in the payload and on no screen. *@
+                                        <span class="turn__traits">
+                                            @foreach (var trait in kinds.Traits)
+                                            {
+                                                <TraitLink Name="@trait" />
+                                            }
+                                        </span>
                                     }
                                     @if (adversary && !combatant.Revealed && table.Role == "Dm")
                                     {
@@ -144,26 +165,9 @@
                                 <div class="turn__body">
                                     @if (vitals is { } seen)
                                     {
-                                        @* Hit points as a bar and as a number. The bar answers
-                                           "who is in trouble" across the whole order at a glance;
-                                           the number answers "how much is left" for one creature,
-                                           and a fight asks both. *@
-                                        <div class="hits @(seen.Current <= 0 ? "hits--down" : null)">
-                                            <span class="hits__track" aria-hidden="true">
-                                                <span class="hits__fill" style="width: @seen.Percent%"></span>
-                                            </span>
-                                            <span class="hits__count">
-                                                <Icon Name="heart" /><span class="hits__now">@seen.Current</span><span class="hits__of">/@seen.Max</span>
-                                            </span>
-                                            @if (seen.Temporary > 0)
-                                            {
-                                                <span class="hits__temp">+@seen.Temporary temp</span>
-                                            }
-                                            @if (seen.Current <= 0)
-                                            {
-                                                <span class="hits__state">Down</span>
-                                            }
-                                        </div>
+                                        <HitPoints Current="seen.Current"
+                                                   Max="seen.Max"
+                                                   Temporary="seen.Temporary" />
 
                                         @* A character's numbers come from the strip the other
                                            mode pages use, so every one of them opens the sheet
@@ -411,10 +415,7 @@
     /// line out, so this is reading what arrived rather than deciding what to hide.
     /// </summary>
     sealed record Seen(
-        int Current, int Max, int Temporary, int? Level, IReadOnlyList<Reading> Defences)
-    {
-        public int Percent => Max <= 0 ? 0 : Math.Clamp(Current * 100 / Max, 0, 100);
-    }
+        int Current, int Max, int Temporary, int? Level, IReadOnlyList<Reading> Defences);
 
     /// <summary>A character's numbers are on the sheet in the same payload and a monster's are on
     /// its stat line. Both go through the one defence table, so the order never differs by row.</summary>

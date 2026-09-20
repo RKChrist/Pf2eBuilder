@@ -37,7 +37,7 @@
                         <Numbers>
                             @* A day's work is a skill roll, so whatever is on the character
                                belongs on the page that chooses the work. *@
-                            <StatStrip Character="character" ShowAttacks="false" />
+                            <StatStrip Character="character" ShowAttacks="false" ShowHitPoints="true" />
                         </Numbers>
                         <ChildContent>
                         @if (ExplorationStore.Value.DowntimeNamed(character.DowntimeActivity) is { } chosen)

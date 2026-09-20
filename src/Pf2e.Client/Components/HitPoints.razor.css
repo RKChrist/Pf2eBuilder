@@ -1,0 +1,71 @@
+.hits {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.hits__track {
+    flex: none;
+    width: 5rem;
+    height: 0.6rem;
+    border: var(--border-hair) solid var(--line-subtle);
+    border-radius: var(--radius-chip);
+    background: var(--surface-sunken);
+    overflow: hidden;
+}
+
+.hits__fill {
+    display: block;
+    height: 100%;
+    border-radius: var(--radius-chip);
+    background: var(--accent-base);
+}
+
+.hits__count {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-family-data);
+    font-size: var(--font-size-data);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+}
+
+.hits__count .pf-icon {
+    margin-inline-end: var(--space-1);
+}
+
+.hits__now {
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.hits__of {
+    color: var(--text-muted);
+}
+
+.hits__temp {
+    color: var(--accent-base);
+    font-size: var(--font-size-chip);
+    font-variant-numeric: tabular-nums;
+}
+
+/* At nothing left the bar stops being a measure and becomes a state, so it says the state. */
+.hits--down .hits__fill {
+    background: var(--danger-base);
+}
+
+.hits--down .hits__now,
+.hits--down .hits__count {
+    color: var(--danger-base);
+}
+
+.hits__state {
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-chip);
+    background: var(--danger-base);
+    color: var(--text-on-danger);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--font-tracking-wide);
+    text-transform: uppercase;
+}

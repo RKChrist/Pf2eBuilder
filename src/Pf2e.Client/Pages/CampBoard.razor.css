@@ -4,23 +4,23 @@
 
 .camping {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-2) var(--space-3);
+    flex-direction: column;
+    gap: var(--space-2);
     padding: var(--space-3) 0;
     border-top: var(--border-hair) solid var(--line-subtle);
 }
 
 .camping__who {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-3);
     min-width: 0;
 }
 
 .camping__name {
     font-size: var(--font-size-body);
+    font-weight: var(--font-weight-semibold);
 }
 
 /* Not a warning. Being immune to Treat Wounds for an hour is the normal consequence of having
@@ -113,17 +113,29 @@
 }
 
 .activity__name {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
     min-height: var(--tap-min);
-    align-content: center;
-    color: var(--text-primary);
+    color: var(--accent-base);
     font-size: var(--font-size-body);
     font-weight: var(--font-weight-medium);
     text-decoration: none;
 }
 
+/* The chevron says the name opens the rule, which sixteen boxes with a word in each did not. */
+.activity__name::after {
+    content: "";
+    flex: none;
+    width: 0.4em;
+    height: 0.4em;
+    border-top: var(--border-strong) solid currentColor;
+    border-right: var(--border-strong) solid currentColor;
+    transform: rotate(45deg);
+}
+
 .activity__name:hover {
-    color: var(--accent-base);
+    color: var(--accent-press);
     text-decoration: underline;
 }
 
