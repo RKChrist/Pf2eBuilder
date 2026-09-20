@@ -2,7 +2,21 @@
 
 <main class="page">
     <header class="site-head">
+        <a class="brand" href="/" aria-label="Pathfinder 2e Rules, home">
+            @* Three actions: the turn every player at the table already reads. *@
+            <svg class="brand__mark" viewBox="0 0 40 24" aria-hidden="true" focusable="false">
+                <path d="M7 3 13 12 7 21 1 12Z" />
+                <path d="M20 3 26 12 20 21 14 12Z" />
+                <path d="M33 3 39 12 33 21 27 12Z" />
+            </svg>
+            <span class="brand__name">PF2e Rules</span>
+        </a>
         <GlobalSearch />
+        <button type="button" class="theme" data-theme-toggle title="Switch between light and dark">
+            <Icon Name="moon" Class="theme__to-dark" />
+            <Icon Name="sun" Class="theme__to-light" />
+            <span class="visually-hidden">Switch between light and dark</span>
+        </button>
         <AccountBadge />
     </header>
 

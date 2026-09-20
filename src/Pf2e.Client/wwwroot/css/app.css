@@ -44,6 +44,14 @@ button {
 
 a {
     color: var(--accent-base);
+    text-underline-offset: 0.15em;
+}
+
+/* Text somebody drags across is theirs for the moment, in the app's colour rather than the
+   browser's blue. */
+::selection {
+    background: var(--accent-wash);
+    color: var(--text-primary);
 }
 
 :focus-visible {
@@ -105,7 +113,7 @@ a {
 
 @media (min-width: 1024px) {
     .page {
-        margin-inline: var(--layout-bottom-bar) var(--space-0);
+        margin-inline: var(--layout-rail) var(--space-0);
         padding-bottom: var(--space-5);
     }
 
@@ -118,7 +126,7 @@ a {
     .bar {
         inset-block: var(--space-0);
         inset-inline-end: auto;
-        width: var(--layout-bottom-bar);
+        width: var(--layout-rail);
     }
 }
 
@@ -181,7 +189,8 @@ a {
     top: 0;
     z-index: 20;
     padding: var(--space-3) var(--layout-gutter);
-    background: var(--surface-page);
+    background: color-mix(in srgb, var(--surface-page) 86%, transparent);
+    backdrop-filter: blur(12px) saturate(1.4);
     border-bottom: var(--border-hair) solid var(--line-subtle);
 }
 
@@ -191,11 +200,86 @@ a {
     container-type: inline-size;
 }
 
-/* The search field takes what is left after who you are, rather than the two splitting it
-   evenly: the field is what the header is for. */
-.site-head > :first-child {
+/* The search field takes what is left after the name of the app and who you are, rather than
+   the three splitting it evenly: the field is what the header is for. */
+.site-head > .site-search {
     flex: 1 1 auto;
     min-inline-size: 0;
+    margin-inline-end: auto;
+}
+
+/* The turn every player already reads, three actions, as the app's own mark. It is the way home
+   from anywhere, which on a phone the bottom bar's first item also is, so the name beside it
+   waits for a viewport with room. */
+.brand {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--tap-min);
+    padding-inline-end: var(--space-2);
+    border-radius: var(--radius-control);
+    color: var(--text-primary);
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-subhead);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: var(--font-tracking-tight);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.brand__mark {
+    inline-size: 2.4em;
+    block-size: 1.45em;
+    fill: var(--accent-base);
+}
+
+.brand__mark path:last-child {
+    fill: var(--highlight-base);
+}
+
+.brand__name {
+    display: none;
+}
+
+.theme {
+    flex: none;
+    display: grid;
+    place-items: center;
+    inline-size: var(--tap-min);
+    block-size: var(--tap-min);
+    padding: var(--space-0);
+    border: none;
+    border-radius: var(--radius-control);
+    background: transparent;
+    color: var(--text-secondary);
+    transition: background-color var(--motion-duration-quick) var(--motion-easing-exit);
+}
+
+.theme .pf-icon {
+    font-size: var(--font-size-subhead);
+}
+
+:root[data-theme='dark'] .theme__to-dark,
+:root:not([data-theme='dark']) .theme__to-light {
+    display: none;
+}
+
+@media (hover: hover) {
+    .theme:hover {
+        background: var(--accent-tint);
+        color: var(--accent-base);
+    }
+}
+
+@media (min-width: 600px) {
+    .brand__name {
+        display: inline;
+    }
+
+    .site-head {
+        gap: var(--space-4);
+    }
 }
 
 .site-search {
