@@ -5,7 +5,7 @@
 @inject IJSRuntime Js
 
 <BottomSheet Open="@(Sheet.Value.Name is not null)" Title="@(Sheet.Value.Name ?? "Trait")" OnClose="Close"
-             Class="pf-sheet--dock trait-sheet">
+             Class="trait-sheet">
     @if (Sheet.Value.Name is { } name)
     {
         <p class="kind">Trait</p>
