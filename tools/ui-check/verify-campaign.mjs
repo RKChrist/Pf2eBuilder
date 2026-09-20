@@ -135,8 +135,7 @@ const owned = await dm.eval(`(() => {
   return {
     summary: panel.querySelector('.owned__count').textContent.trim(),
     kinds: [...panel.querySelectorAll('.pf-section__label')].map(h => h.textContent.trim()),
-    openable: panel.querySelectorAll('a.owned__entry').length,
-    unopenable: [...panel.querySelectorAll('.owned__entry--unknown .owned__entry-kind')].map(e => e.textContent.trim()),
+    openable: panel.querySelectorAll('.owned__entry a.rule-link').length,
     named: [...panel.querySelectorAll('.owned__entry-name')].map(e => e.textContent.trim()),
   };
 })()`);
@@ -144,7 +143,9 @@ check('the party panel counts what each character has', /\d+ feats, \d+ spells/.
 check('grouped the way a character sheet is', owned.kinds.includes('Class Feat') && owned.kinds.includes('Cantrip'),
   owned.kinds.join(', '));
 // Three of the bard's names are pre-Remaster ones whose records are called something else now.
-// The rename index closes them, so every name on this sheet opens something.
+// The rename index closes them, so every name on this sheet opens something. Every name is a
+// RuleLink either way, so the anchor is what says the export arrived carrying an id: a name the
+// index missed would render as a button that goes looking when it is tapped.
 check('every one of them opens its rule', owned.openable === owned.named.length,
   `${owned.openable} of ${owned.named.length}`);
 check('including the pre-Remaster ones', owned.named.includes('Inspire Competence'),
