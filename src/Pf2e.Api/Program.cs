@@ -12,6 +12,7 @@ using Pf2e.Api.Endpoints;
 using Pf2e.Api.Hubs;
 using Pf2e.Application;
 using Pf2e.Application.Abstractions;
+using Pf2e.Application.Features.Accounts;
 using Pf2e.Application.Features.Campaigns;
 using Pf2e.Infrastructure;
 using Pf2e.Infrastructure.Configuration;
@@ -191,6 +192,26 @@ app.UseExceptionHandler(handler => handler.Run(async context =>
         return;
     }
 
+    // Taken, not invalid: the request was well formed and somebody got there first. The same
+    // family as an empty undo stack, and the same status code.
+    if (error is EmailAlreadyRegisteredException taken)
+    {
+        context.Response.StatusCode = StatusCodes.Status409Conflict;
+        await context.Response.WriteAsJsonAsync(new { title = taken.Message });
+        return;
+    }
+
+    // Unauthorized rather than forbidden, and the one place in this file where the sentence is
+    // deliberately uninformative: an address nobody registered and a wrong password answer
+    // identically, because two sentences would turn the sign-in form into a way to ask which
+    // addresses have accounts.
+    if (error is SignInRefusedException refused)
+    {
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        await context.Response.WriteAsJsonAsync(new { title = refused.Message });
+        return;
+    }
+
     // Forbidden rather than unauthorized: the campaign is there and this caller is not its DM.
     if (error is NotTheDmException notTheDm)
     {
@@ -274,8 +295,18 @@ if (!string.IsNullOrWhiteSpace(clientRoot))
     app.UseStaticFiles();
 }
 
+// After CORS, so a cross-origin preflight is answered before anything asks who is calling, and
+// after the static files, so serving a script does not decrypt a cookie to no purpose. Before
+// the routes, because that is the only place the ticket can be read from.
+//
+// No route is authorized by this. Every route that existed before accounts still answers a
+// browser with no cookie at all, which is what the seven verifiers in tools/ui-check assume.
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapRules();
 app.MapCampaigns();
+app.MapAccounts();
 app.MapHub<CampaignHub>(app.Services.GetRequiredService<IOptions<RealtimeOptions>>().Value.HubPath);
 
 app.MapGet("/health", async (RulesDbContext db) => Results.Ok(new
