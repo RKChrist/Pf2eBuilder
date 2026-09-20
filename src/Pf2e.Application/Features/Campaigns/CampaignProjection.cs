@@ -96,7 +96,7 @@ internal static class CampaignProjection
             [.. effects.Select(SheetViews.Of)],
             // The only place a monster's numbers reach a payload, and the only condition that
             // lets them. A player projection cannot reach this expression.
-            role is ViewerRole.Dm && combatant is MonsterCombatant statted ? StatLine(statted) : null);
+            role is ViewerRole.Dm && combatant is MonsterCombatant statted ? StatLine(statted, effects) : null);
     }
 
     /// <summary>
@@ -116,7 +116,26 @@ internal static class CampaignProjection
         [],
         Monster: null);
 
-    static MonsterStatLineView StatLine(MonsterCombatant monster) => new(
+    /// <summary>
+    /// A monster's numbers go through the same stacking rule a character's do, so frightened 1
+    /// on a goblin is armour class 15 on the DM's screen and not a sum done in somebody's head
+    /// while four people wait. The stat block's number is the base, taken whole, the way a
+    /// weapon's bonus is: a creature's line is printed finished and has no parts to rebuild.
+    /// </summary>
+    static MonsterNumbersNow Now(MonsterCombatant monster, IEnumerable<ActiveEffect> effects)
+    {
+        var modifiers = effects.SelectMany(effect => effect.Modifiers()).ToList();
+        int With(int stated, StatTarget target) => Stacking.Resolve(stated, target, modifiers).Total;
+
+        return new MonsterNumbersNow(
+            With(monster.Stats.ArmorClass, StatTarget.ArmorClass),
+            With(monster.Stats.Fortitude, StatTarget.Fortitude),
+            With(monster.Stats.Reflex, StatTarget.Reflex),
+            With(monster.Stats.Will, StatTarget.Will),
+            With(monster.Stats.Perception, StatTarget.Perception));
+    }
+
+    static MonsterStatLineView StatLine(MonsterCombatant monster, IEnumerable<ActiveEffect> effects) => new(
         monster.CurrentHitPoints,
         monster.Stats.MaxHitPoints,
         monster.TemporaryHitPoints,
@@ -128,7 +147,8 @@ internal static class CampaignProjection
         monster.Stats.Perception,
         monster.RuleId,
         [.. monster.Stats.Traits],
-        monster.Alias);
+        monster.Alias,
+        Now(monster, effects));
 
     /// <summary>
     /// An application reaching a creature the viewer cannot see loses that target, and one that

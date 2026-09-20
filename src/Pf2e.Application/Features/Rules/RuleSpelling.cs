@@ -38,6 +38,7 @@ internal static class RuleSpelling
 
     static async Task<IReadOnlyList<(string Word, int Names)>> ReadAsync(IRulesDbContext db, CancellationToken ct) =>
         [.. (await db.RuleRecords.AsNoTracking().Select(r => r.Name).ToListAsync(ct))
+            .Concat(await db.RuleAliases.AsNoTracking().Select(alias => alias.Was).ToListAsync(ct))
             .SelectMany(name => name.ToLowerInvariant()
                 .Split([' ', '-', '\'', '(', ')', ',', '/', ':'], StringSplitOptions.RemoveEmptyEntries)
                 .Distinct())

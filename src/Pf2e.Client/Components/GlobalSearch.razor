@@ -51,6 +51,13 @@
                             </div>
                         }
 
+                        @if (found.FormerNames is { Count: > 0 } former
+                             && found.Items.FirstOrDefault(item => former.ContainsKey(item.Id)) is { } renamed)
+                        {
+                            <p class="note read-as" role="status">
+                                <strong>@former[renamed.Id]</strong>&nbsp;is called&nbsp;<strong>@renamed.Name</strong>&nbsp;now
+                            </p>
+                        }
                         @if (found.SearchedFor is { } meant)
                         {
                             <p class="note read-as" role="status">Searching for <strong>@meant</strong></p>

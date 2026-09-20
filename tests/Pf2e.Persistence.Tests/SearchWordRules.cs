@@ -39,6 +39,34 @@ public class SearchWordRules(SeededDatabase database) : IClassFixture<SeededData
         Assert.Contains(found.Items, rule => rule.Name == finds);
     }
 
+    [Theory]
+    [InlineData("magic missile", "Force Barrage", "Magic Missile")]
+    [InlineData("inspire courage", "Courageous Anthem", "Inspire Courage")]
+    [InlineData("flat footed", "Off-Guard", "Flat-Footed")]
+    [InlineData("power attack", "Vicious Swing", "Power Attack")]
+    public async Task ANameTheRemasterRetiredFindsWhatItBecameAndSaysWhatItWas(string typed, string now, string was)
+    {
+        var found = await Search(typed);
+
+        var record = Assert.Single(found.Items, rule => rule.Name == now);
+        Assert.Equal(was, found.FormerNames![record.Id]);
+    }
+
+    [Fact]
+    public async Task AMonsterTheRemasterReplacedIsFoundByTheNameOnTheOldStatBlock()
+    {
+        var found = await Search("young red dragon", "creature");
+
+        var dragon = Assert.Single(found.Items);
+        Assert.Equal("Young Red Dragon", found.FormerNames![dragon.Id]);
+    }
+
+    [Fact]
+    public async Task ARecordFoundUnderItsOwnNameIsNotToldWhatItUsedToBe()
+    {
+        Assert.Null((await Search("force barrage")).FormerNames);
+    }
+
     [Fact]
     public async Task AWordThatMatchesSomethingIsNeverSecondGuessed()
     {

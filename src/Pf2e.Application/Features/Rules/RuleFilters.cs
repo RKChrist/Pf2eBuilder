@@ -30,6 +30,37 @@ internal static class RuleFilters
         return records;
     }
 
+    /// <summary>
+    /// Records whose name holds every word, and records that used to be called something that
+    /// does.
+    /// <para>The Remaster renamed a great deal and the table did not get the memo: people type
+    /// Magic Missile, Flat-Footed and Young Red Dragon, and the ruleset holds Force Barrage,
+    /// Off-Guard and a dragon of another colour. The rename index the importer already uses for
+    /// old exports answers all three.</para>
+    /// </summary>
+    public static IQueryable<RuleRecord> Called(
+        this IQueryable<RuleRecord> records, IQueryable<RuleAlias> aliases, string? name)
+    {
+        if (Words(name).Count == 0)
+        {
+            return records;
+        }
+
+        var renamed = aliases.WasContains(name).Select(alias => alias.NowId);
+        return records.NameContains(name).Union(records.Where(r => renamed.Contains(r.Id)));
+    }
+
+    public static IQueryable<RuleAlias> WasContains(this IQueryable<RuleAlias> aliases, string? name)
+    {
+        foreach (var word in Words(name))
+        {
+            var pattern = $"%{Escaped(word)}%";
+            aliases = aliases.Where(alias => EF.Functions.Like(alias.Was, pattern, Escape));
+        }
+
+        return aliases;
+    }
+
     /// <summary>Bounded, because each word is a clause and a pasted paragraph is not a search.</summary>
     public static IReadOnlyList<string> Words(string? name) =>
         [.. (name ?? string.Empty)

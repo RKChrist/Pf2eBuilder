@@ -184,7 +184,14 @@ public sealed record MonsterStatLineView(
     string RuleId,
     IReadOnlyList<string> Traits,
     /// <summary>What the players are calling this one, so the DM can follow "hit Mob 2".</summary>
-    string Alias);
+    string Alias,
+    /// <summary>The line with whatever is on the monster counted, which is what a player's attack
+    /// is compared against. The five numbers above stay the monster's own, because those are what
+    /// the DM edits: saving a frightened goblin's armour class back as its armour class would
+    /// make the penalty permanent.</summary>
+    MonsterNumbersNow? Now = null);
+
+public sealed record MonsterNumbersNow(int ArmorClass, int Fortitude, int Reflex, int Will, int Perception);
 
 /// <summary>
 /// One creature in the initiative order. Kind is "PlayerCharacter" or "Adversary".

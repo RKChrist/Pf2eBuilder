@@ -28,7 +28,11 @@ public sealed record RuleSearchResult(
     int PageSize,
     /// <summary>What was searched for instead, when a word typed is in no name at all and a
     /// close one is. Null when the search ran exactly as typed, which is nearly always.</summary>
-    string? SearchedFor = null);
+    string? SearchedFor = null,
+    /// <summary>By record id, the old name that brought a record onto this page when its present
+    /// name would not have: Magic Missile for Force Barrage. Null when nothing here was renamed
+    /// into the search.</summary>
+    IReadOnlyDictionary<string, string>? FormerNames = null);
 
 /// <summary>How many records match in each category that has any, so a screen can say how much
 /// is behind a door before anyone opens it.</summary>

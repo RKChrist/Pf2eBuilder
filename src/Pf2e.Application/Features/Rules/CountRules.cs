@@ -26,7 +26,7 @@ public sealed class CountRulesHandler(IRulesDbContext db) : IRequestHandler<Coun
     {
         // The same correction the list applies, so the counts beside a list never disagree with it.
         var records = db.RuleRecords.AsNoTracking()
-            .NameContains(await RuleSpelling.CorrectAsync(db, query.Name, ct));
+            .Called(db.RuleAliases.AsNoTracking(), await RuleSpelling.CorrectAsync(db, query.Name, ct));
 
         List<CategoryCount> counts;
         if (query.Trait is { Length: > 0 } trait)

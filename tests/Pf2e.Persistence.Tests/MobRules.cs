@@ -146,6 +146,40 @@ public class MobRules(SeededDatabase database) : IClassFixture<SeededDatabase>
     }
 
     [Fact]
+    public async Task AFrightenedMonstersLineDropsAndTheNumbersTheDmEditsDoNot()
+    {
+        var campaign = await Campaign();
+        var monster = Assert.Single((await Add(campaign, Seeded(campaign))).Encounter!.Combatants);
+        var own = monster.Monster!;
+
+        CampaignView answered;
+        await using (var db = database.NewContext())
+        {
+            answered = await new ApplyEffectHandler(db, Undo, Broadcaster).Handle(
+                new ApplyEffect(
+                    campaign.Code, campaign.DmKey, Guid.NewGuid(),
+                    new EffectSpec("Frightened", "Seeded", "frightened", 2, null, []),
+                    [new EffectTargetSpec("Monster", monster.Id)]),
+                default);
+        }
+
+        var line = Assert.Single(answered.Encounter!.Combatants).Monster!;
+
+        // Frightened is a status penalty to every check and DC, and armour class is a DC.
+        Assert.Equal(own.ArmorClass - 2, line.Now!.ArmorClass);
+        Assert.Equal(own.Fortitude - 2, line.Now.Fortitude);
+        Assert.Equal(own.Perception - 2, line.Now.Perception);
+
+        // What the DM would edit is still the stat block's, or saving the form would make the
+        // penalty the monster's own.
+        Assert.Equal(own.ArmorClass, line.ArmorClass);
+        Assert.Equal(own.Fortitude, line.Fortitude);
+
+        // And a player is told none of it.
+        Assert.Null(Assert.Single((await Read(campaign, asDm: false)).Encounter!.Combatants).Monster);
+    }
+
+    [Fact]
     public async Task OnlyTheDmChangesAMonster()
     {
         var campaign = await Campaign();

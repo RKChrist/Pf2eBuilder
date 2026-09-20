@@ -45,13 +45,14 @@ public sealed class SearchRulesHandler(IRulesDbContext db) : IRequestHandler<Sea
         var searchedFor = name == query.Name ? null : name;
 
         var records = db.RuleRecords.AsNoTracking()
+            .Called(db.RuleAliases.AsNoTracking(), name)
             .InCategory(query.Category)
-            .NameContains(name)
             .LevelBetween(query.MinLevel, query.MaxLevel);
 
         if (query.Trait is { Length: > 0 } trait)
         {
-            return await ByTrait(records, trait, query, ct) with { SearchedFor = searchedFor };
+            var byTrait = await ByTrait(records, trait, query, ct);
+            return byTrait with { SearchedFor = searchedFor, FormerNames = await FormerNames(byTrait.Items, name, ct) };
         }
 
         var total = await records.CountAsync(ct);
@@ -60,8 +61,33 @@ public sealed class SearchRulesHandler(IRulesDbContext db) : IRequestHandler<Sea
             .Take(query.PageSize)
             .ToListAsync(ct);
 
+        var items = page.Select(RuleSummaries.Of).ToList();
         return new RuleSearchResult(
-            [.. page.Select(RuleSummaries.Of)], total, query.Page, query.PageSize, searchedFor);
+            items, total, query.Page, query.PageSize, searchedFor, await FormerNames(items, name, ct));
+    }
+
+    /// <summary>What each record on this page used to be called, for the ones that are here
+    /// because of what they used to be called. Null when none are, which is nearly always.</summary>
+    async Task<IReadOnlyDictionary<string, string>?> FormerNames(
+        IReadOnlyList<RuleSummary> items, string? name, CancellationToken ct)
+    {
+        var words = RuleFilters.Words(name);
+        var found = items
+            .Where(item => !words.All(word => item.Name.Contains(word, StringComparison.OrdinalIgnoreCase)))
+            .Select(item => item.Id)
+            .ToList();
+        if (found.Count == 0)
+        {
+            return null;
+        }
+
+        var was = await db.RuleAliases.AsNoTracking()
+            .WasContains(name)
+            .Where(alias => found.Contains(alias.NowId))
+            .ToListAsync(ct);
+
+        return was.GroupBy(alias => alias.NowId)
+                  .ToDictionary(group => group.Key, group => group.OrderBy(alias => alias.Was.Length).First().Was);
     }
 
     static IOrderedQueryable<RuleRecord> Ranked(IQueryable<RuleRecord> records, string? name)

@@ -12,6 +12,10 @@
     {
         <p class="summary">@Summary(known)</p>
     }
+    @foreach (var (now, was) in Renamed)
+    {
+        <p class="read-as" role="status"><strong>@was</strong> is called <strong>@now</strong> now.</p>
+    }
     @if (ReadAs is { } meant)
     {
         @* Said, because results for a word nobody typed are otherwise a mystery. *@
@@ -127,6 +131,14 @@ else
     SearchState State => Store.Value;
 
     RuleCounts? Counts => State.Counts is RemoteData<RuleCounts>.Loaded loaded ? loaded.Value : null;
+
+    /// <summary>The records on this page that are here under a name they no longer have, so
+    /// somebody who typed Magic Missile is told why they are looking at Force Barrage. A few at
+    /// most: past that it is a list, and the results are already one.</summary>
+    IEnumerable<(string Now, string Was)> Renamed =>
+        State.HasQuery && State.Results is RemoteData<RuleSearchResult>.Loaded { Value: { FormerNames: { } former } page }
+            ? page.Items.Where(item => former.ContainsKey(item.Id)).Take(3).Select(item => (item.Name, former[item.Id]))
+            : [];
 
     string? ReadAs =>
         State.HasQuery && State.Results is RemoteData<RuleSearchResult>.Loaded { Value.SearchedFor: { } meant }

@@ -214,7 +214,9 @@
                                             <ul class="defences">
                                                 @foreach (var defence in seen.Defences)
                                                 {
-                                                    <li class="defence" data-defence="@defence.Short">
+                                                    <li class="defence @(defence.Moved < 0 ? "defence--down" : defence.Moved > 0 ? "defence--up" : null)"
+                                                        data-defence="@defence.Short"
+                                                        title="@(defence.Moved != 0 ? $"{defence.Own} with nothing on it" : null)">
                                                         <span class="defence__label">@defence.Short</span>
                                                         <span class="defence__value">@defence.Value</span>
                                                     </li>
@@ -518,7 +520,10 @@
     }
 
     /// <summary>One defence on a row, already written the way it reads.</summary>
-    sealed record Reading(string Short, string Value);
+    /// <param name="Moved">Below zero where something on the creature is lowering the number,
+    /// above where something is raising it, and zero where it is the creature's own.</param>
+    /// <param name="Own">What it reads with nothing on the creature, said when it has moved.</param>
+    sealed record Reading(string Short, string Value, int Moved = 0, string? Own = null);
 
     /// <summary>
     /// What a row can say about a creature. Null where the viewer is not shown the numbers at
@@ -539,7 +544,11 @@
                 monster.MaxHitPoints,
                 monster.TemporaryHitPoints,
                 monster.Level,
-                [.. Defences.All.Select(d => new Reading(d.Line.Short, d.Write(d.OfMonster(monster))))]);
+                [.. Defences.All.Select(d => new Reading(
+                    d.Line.Short,
+                    d.Write(d.Now(monster)),
+                    d.Now(monster) - d.OfMonster(monster),
+                    d.Write(d.OfMonster(monster))))]);
         }
 
         if (table.Characters.FirstOrDefault(c => c.Id == combatant.Id) is not { } character)

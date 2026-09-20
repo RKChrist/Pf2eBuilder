@@ -28,8 +28,8 @@ public sealed class CountTraitsHandler(IRulesDbContext db) : IRequestHandler<Cou
         // Traits are a JSON array behind a value converter, so the counting happens here; only
         // the one column it needs is read.
         var lists = await db.RuleRecords.AsNoTracking()
+            .Called(db.RuleAliases.AsNoTracking(), await RuleSpelling.CorrectAsync(db, query.Name, ct))
             .InCategory(query.Category)
-            .NameContains(await RuleSpelling.CorrectAsync(db, query.Name, ct))
             .LevelBetween(query.MinLevel, query.MaxLevel)
             .Select(r => r.Traits)
             .ToListAsync(ct);

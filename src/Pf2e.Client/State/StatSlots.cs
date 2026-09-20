@@ -82,8 +82,13 @@ public sealed record StatAddress(StatSlot? Slot = null, string? Skill = null, st
 public sealed record DefenceLine(
     StatSlot Slot,
     Func<CharacterSheetView, BreakdownSummary?> OfCharacter,
-    Func<MonsterStatLineView, int> OfMonster)
+    Func<MonsterStatLineView, int> OfMonster,
+    Func<MonsterNumbersNow, int> OfMonsterNow)
 {
+    /// <summary>The number to compare a roll against right now, which is the stat block's own
+    /// until something is on the monster.</summary>
+    public int Now(MonsterStatLineView monster) => monster.Now is { } now ? OfMonsterNow(now) : OfMonster(monster);
+
     public StatLine Line => StatSlots.Of(Slot);
 
     /// <summary>A difficulty reads 25 and a roll reads +11, because one is compared against and
@@ -96,10 +101,10 @@ public static class Defences
 {
     public static readonly IReadOnlyList<DefenceLine> All =
     [
-        new(StatSlot.ArmorClass, c => c.ArmorClass, m => m.ArmorClass),
-        new(StatSlot.Fortitude, c => c.Fortitude, m => m.Fortitude),
-        new(StatSlot.Reflex, c => c.Reflex, m => m.Reflex),
-        new(StatSlot.Will, c => c.Will, m => m.Will),
-        new(StatSlot.Perception, c => c.Perception, m => m.Perception),
+        new(StatSlot.ArmorClass, c => c.ArmorClass, m => m.ArmorClass, n => n.ArmorClass),
+        new(StatSlot.Fortitude, c => c.Fortitude, m => m.Fortitude, n => n.Fortitude),
+        new(StatSlot.Reflex, c => c.Reflex, m => m.Reflex, n => n.Reflex),
+        new(StatSlot.Will, c => c.Will, m => m.Will, n => n.Will),
+        new(StatSlot.Perception, c => c.Perception, m => m.Perception, n => n.Perception),
     ];
 }
