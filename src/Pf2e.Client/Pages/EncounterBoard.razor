@@ -118,6 +118,10 @@
                                         <span class="turn__initiative">@combatant.Initiative</span>
                                     }
 
+                                    @* Who this is, in one block, so the button that takes
+                                       them out of the fight stays beside the initiative rather
+                                       than being pushed to a line of its own by three traits. *@
+                                    <div class="turn__who">
                                     <Icon Name="@(adversary ? "skull" : "person")"
                                           Class="turn__kind"
                                           Label="@(adversary ? "Adversary" : "Player character")" />
@@ -135,24 +139,8 @@
                                     {
                                         <span class="turn__level">Level @level</span>
                                     }
-                                    @if (combatant.Monster is { Traits.Count: > 0 } kinds)
-                                    {
-                                        @* Half the rules in a fight turn on these: whether it is
-                                           undead, whether it can be flanked, whether it is a
-                                           minion. They were in the payload and on no screen. *@
-                                        <span class="turn__traits">
-                                            @foreach (var trait in kinds.Traits)
-                                            {
-                                                <TraitLink Name="@trait" />
-                                            }
-                                        </span>
-                                    }
-                                    @if (adversary && !combatant.Revealed && table.Role == "Dm")
-                                    {
-                                        <span class="turn__hidden">
-                                            <Icon Name="eye-off" />Hidden
-                                        </span>
-                                    }
+                                    </div>
+
                                     @if (table.Role == "Dm")
                                     {
                                         <Button Variant="ButtonVariant.Quiet"
@@ -164,12 +152,36 @@
                                 </div>
 
                                 <div class="turn__body">
+                                    @* What this creature is and how it is doing, on one line.
+                                       Half the rules in a fight turn on the traits: whether it
+                                       is undead, whether it can be flanked, whether it is a
+                                       minion. *@
+                                    <div class="turn__facts">
+                                        @if (vitals is { } hurt)
+                                        {
+                                            <HitPoints Current="hurt.Current"
+                                                       Max="hurt.Max"
+                                                       Temporary="hurt.Temporary" />
+                                        }
+                                        @if (combatant.Monster is { Traits.Count: > 0 } kinds)
+                                        {
+                                            <span class="turn__traits">
+                                                @foreach (var trait in kinds.Traits)
+                                                {
+                                                    <TraitLink Name="@trait" />
+                                                }
+                                            </span>
+                                        }
+                                        @if (adversary && !combatant.Revealed && table.Role == "Dm")
+                                        {
+                                            <span class="turn__hidden">
+                                                <Icon Name="eye-off" />Hidden
+                                            </span>
+                                        }
+                                    </div>
+
                                     @if (vitals is { } seen)
                                     {
-                                        <HitPoints Current="seen.Current"
-                                                   Max="seen.Max"
-                                                   Temporary="seen.Temporary" />
-
                                         @* A character's numbers come from the strip the other
                                            mode pages use, so every one of them opens the sheet
                                            that explains it and is marked while something is
@@ -177,7 +189,14 @@
                                            with nothing behind it, so it stays a plain list. *@
                                         @if (Sheet(table, combatant) is { } sheet)
                                         {
-                                            <StatStrip Character="sheet" ShowEffects="false" />
+                                            @* Attacks on the row whose turn it is and nowhere
+                                               else. They are three chips per character, they
+                                               wrap to two lines on a phone, and nobody rolls
+                                               them except on that character's own turn, which
+                                               is the moment they appear. *@
+                                            <StatStrip Character="sheet"
+                                                       ShowEffects="false"
+                                                       ShowAttacks="combatant.IsCurrentTurn" />
                                         }
                                         else
                                         {

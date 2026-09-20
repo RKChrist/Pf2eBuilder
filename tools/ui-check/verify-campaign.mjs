@@ -384,6 +384,32 @@ check.eq('exactly one combatant is on turn', rolled.current, 1);
 check('and the shell says which round it is', rolled.round === 'Round 1', String(rolled.round));
 await shot(dm, 'dm-03-initiative');
 
+// Six creatures came to 3,737 pixels on a phone, which is four screens to read one fight.
+// Measured rather than eyeballed, because the three things that cost it were each a line that
+// wrapped: the row's head, the damage controls, and a set of attack bonuses on every character
+// whether or not anybody was about to roll them.
+const shape = await dm.eval(`(() => {
+  const h = (el) => el ? Math.round(el.getBoundingClientRect().height) : 0;
+  return [...document.querySelectorAll('.turn')].map(turn => ({
+    who: turn.querySelector('.turn__called').textContent.trim(),
+    now: turn.classList.contains('turn--now'),
+    head: h(turn.querySelector('.turn__head')),
+    amount: h(turn.querySelector('.amount')),
+    attacks: turn.querySelectorAll('.num--attack').length,
+    character: !!turn.querySelector('[data-strip]'),
+  }));
+})()`);
+
+const oneLine = 60;
+check('every row says who it is on one line', shape.every(row => row.head < oneLine),
+  JSON.stringify(shape.map(row => [row.who, row.head])));
+check('and takes damage on one line', shape.every(row => row.amount > 0 && row.amount < oneLine),
+  JSON.stringify(shape.map(row => [row.who, row.amount])));
+// Both directions, so the check cannot pass by nobody having any.
+check('attack bonuses are on the row whose turn it is and nowhere else',
+  shape.every(row => (row.attacks > 0) === (row.now && row.character)),
+  JSON.stringify(shape.map(row => [row.who, row.now, row.character, row.attacks])));
+
 const first = await dm.eval(`document.querySelector('.turn--now .turn__called').textContent.trim()`);
 await clickText(dm, '.fight__acts button', 'Next turn');
 await sleep(900);
