@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Pf2e.Application.Abstractions;
 using Pf2e.Infrastructure.Configuration;
 using Pf2e.Infrastructure.Persistence;
+using Pf2e.Infrastructure.Rules;
 using Pf2e.Infrastructure.Security;
 
 namespace Pf2e.Infrastructure;
@@ -37,6 +38,15 @@ public static class DependencyInjection
         services.AddSingleton<IUndoStack, MemoryUndoStack>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddScoped<RulesSeeder>();
+
+        services.AddSection<RuleTextOptions>(config, RuleTextOptions.Section);
+        services.AddHttpClient<IRuleTextSource, AonRuleTextSource>((provider, http) =>
+        {
+            var text = provider.GetRequiredService<IOptions<RuleTextOptions>>().Value;
+            http.BaseAddress = new Uri(text.Endpoint);
+            http.Timeout = TimeSpan.FromSeconds(text.TimeoutSeconds);
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("Pf2eBuilder/1.0 (table companion; one record per open)");
+        });
         return services;
     }
 }

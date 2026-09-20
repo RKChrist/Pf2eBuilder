@@ -92,6 +92,12 @@ public sealed record RuleDetail(
     IReadOnlyList<EffectModifierView> Modifiers,
     IReadOnlyList<RuleLink> Links);
 
+/// <summary>A record's description, in a small subset of Markdown: paragraphs, bold, italics, lists
+/// and rules. Null <paramref name="Markdown"/> with <paramref name="Reached"/> true means the source
+/// has no words for this record; with it false, the source could not be asked and asking again
+/// later may work.</summary>
+public sealed record RuleText(string? Markdown, string SourceUrl, bool Reached);
+
 /// <summary>The value <paramref name="Value"/> of field <paramref name="Field"/> is the record <paramref name="Id"/>.</summary>
 public sealed record RuleLink(string Field, string Value, string Id);
 

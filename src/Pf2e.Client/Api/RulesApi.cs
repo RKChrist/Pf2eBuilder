@@ -36,6 +36,10 @@ public sealed class RulesApi(HttpClient http)
         return found.Items.FirstOrDefault(item => item.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
     }
 
+    /// <summary>A record's description. Null when the ruleset has no record by that id.</summary>
+    public async Task<RuleText?> GetRuleTextAsync(string id, CancellationToken ct) =>
+        await GetAsync<RuleText>(new UrlBuilder($"rules/{Uri.EscapeDataString(id)}/text").ToString(), ct, missingIsNull: true);
+
     public Task<TraitCounts> CountTraitsAsync(string category, string? name, int? minLevel, int? maxLevel, CancellationToken ct) =>
         GetAsync<TraitCounts>(new UrlBuilder("rules/traits")
             .Add("Category", category)

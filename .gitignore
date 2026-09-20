@@ -24,3 +24,6 @@ src/Pf2e.Client/wwwroot/css/tokens.css
 artifacts/
 sample-character-gnibbo.json
 einar-wanderers-guide.json
+
+# Descriptions fetched one record at a time from Archives of Nethys. The repository holds no prose.
+App_Data/

@@ -71,6 +71,20 @@
                 </dl>
             }
 
+            @switch (Detail.Value.Text)
+            {
+                case RemoteData<RuleText>.Loading:
+                    <div class="prose prose--waiting" aria-hidden="true"><span></span><span></span><span></span></div>
+                    break;
+                case RemoteData<RuleText>.Loaded { Value.Markdown: { Length: > 0 } words }:
+                    <div class="prose">@Prose.Render(words)</div>
+                    break;
+                case RemoteData<RuleText>.Loaded { Value.Reached: false }:
+                case RemoteData<RuleText>.Missing:
+                    <p class="prose__none">The description could not be fetched just now. The numbers here are from the ruleset.</p>
+                    break;
+            }
+
             @if (after.Count > 0)
             {
                 <dl class="mechanics">
@@ -83,7 +97,7 @@
             }
 
             <a class="pf-btn pf-btn--secondary pf-btn--full archives" href="@rule.Summary.SourceUrl" target="_blank" rel="noopener">
-                Full rules text on Archives of Nethys
+                Open on Archives of Nethys
             </a>
         </Loaded>
     </RemoteView>

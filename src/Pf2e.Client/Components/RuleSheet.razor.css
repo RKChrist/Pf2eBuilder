@@ -174,3 +174,78 @@
         color: var(--accent-press);
     }
 }
+
+/* ---------------------------------------------------------------- the description
+
+   The record's own words, which are what somebody opened the panel to read. Prose keeps the
+   normal leading and the body size; everything else in the panel is data and is set tighter. */
+.prose {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    color: var(--text-primary);
+    font-size: var(--font-size-body);
+    line-height: var(--font-leading-normal);
+    overflow-wrap: anywhere;
+}
+
+.prose ::deep p,
+.prose ::deep ul {
+    margin: var(--space-0);
+}
+
+.prose ::deep ul {
+    padding-inline-start: var(--space-5);
+}
+
+.prose ::deep hr {
+    inline-size: 100%;
+    margin: var(--space-0);
+    border: none;
+    border-top: var(--border-hair) solid var(--line-subtle);
+}
+
+.prose ::deep strong {
+    font-weight: var(--font-weight-bold);
+}
+
+.prose ::deep .prose__table {
+    overflow-x: auto;
+}
+
+.prose ::deep table {
+    border-collapse: collapse;
+    font-size: var(--font-size-data);
+    line-height: var(--font-leading-snug);
+}
+
+.prose ::deep :is(th, td) {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: var(--border-hair) solid var(--line-subtle);
+    text-align: start;
+    vertical-align: top;
+}
+
+.prose ::deep th {
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Three bars where the sentences will be, so the panel does not jump when they land. */
+.prose--waiting span {
+    block-size: 0.9em;
+    border-radius: var(--radius-chip);
+    background: var(--surface-sunken);
+}
+
+.prose--waiting span:last-child {
+    inline-size: 60%;
+}
+
+.prose__none {
+    flex: none;
+    color: var(--text-muted);
+    font-size: var(--font-size-data);
+}

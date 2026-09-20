@@ -113,6 +113,9 @@ public static class MechanicsDisplay
         "source_category",
         "primary_source_category",
         "actions_number",
+        // The traits again, as one string. The chips at the top of the panel are the same list and
+        // each of those can be tapped.
+        "trait_raw",
         // Every rank from the spell's own to 10th as a list of numbers; the heighten row already
         // says the same thing in words.
         "heighten_level",
