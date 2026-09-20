@@ -3,19 +3,36 @@
 // (pointer: coarse) reports.
 import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
+import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
-// Overridable so two checkouts can each drive their own Chrome at once.
-const PORT = Number(process.env.CDP_LAUNCH_PORT ?? 9333);
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function endpoint() {
+/// A port nobody is on, asked of the operating system rather than picked.
+///
+/// A fixed port is the same port a browser from an earlier run is still sitting on, and Chrome
+/// answers a second --remote-debugging-port on a taken port by exiting quietly. The run then
+/// attached to that older browser and drove its profile: same cookies, same localStorage, same
+/// remembered campaign. Checks that open "a fresh browser" were reusing one for hours, and a
+/// clock that should have started at zero came back at twenty-two hours.
+///
+/// CDP_LAUNCH_PORT still forces one, for attaching a debugger by hand.
+const freePort = () => new Promise((resolve, reject) => {
+  const probe = createServer();
+  probe.once('error', reject);
+  probe.listen(0, '127.0.0.1', () => {
+    const { port } = probe.address();
+    probe.close(() => resolve(port));
+  });
+});
+
+async function endpoint(port) {
   for (let i = 0; i < 100; i++) {
     try {
-      const r = await fetch(`http://127.0.0.1:${PORT}/json/version`);
+      const r = await fetch(`http://127.0.0.1:${port}/json/version`);
       return (await r.json()).webSocketDebuggerUrl;
     } catch {
       await sleep(100);
@@ -26,8 +43,9 @@ async function endpoint() {
 
 export async function launch({ headless = false } = {}) {
   const profile = mkdtempSync(join(tmpdir(), 'pf-cdp-'));
+  const port = Number(process.env.CDP_LAUNCH_PORT) || (await freePort());
   const args = [
-    `--remote-debugging-port=${PORT}`,
+    `--remote-debugging-port=${port}`,
     `--user-data-dir=${profile}`,
     '--no-first-run',
     '--no-default-browser-check',
@@ -38,7 +56,7 @@ export async function launch({ headless = false } = {}) {
   if (headless) args.unshift('--headless=new');
   const proc = spawn(CHROME, args, { stdio: 'ignore', detached: false });
 
-  const ws = new WebSocket(await endpoint());
+  const ws = new WebSocket(await endpoint(port));
   await new Promise((res, rej) => {
     ws.addEventListener('open', res, { once: true });
     ws.addEventListener('error', rej, { once: true });
