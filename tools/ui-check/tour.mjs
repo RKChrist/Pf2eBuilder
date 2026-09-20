@@ -22,7 +22,8 @@ await p.viewport(Number(width), Number(height), mobile);
 
 const shot = async (name) => {
   await sleep(700);
-  const { data } = await p.send('Page.captureScreenshot', { format: 'png' });
+  // FULL=1 photographs the whole page and not the window, for a screen that is mostly below it.
+  const { data } = await p.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: !!process.env.FULL });
   writeFileSync(join(outDir, `${name}.png`), Buffer.from(data, 'base64'));
   console.log('shot', name);
 };

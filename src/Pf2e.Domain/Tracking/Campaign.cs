@@ -35,6 +35,9 @@ public sealed class Campaign
     /// </summary>
     public int Day { get; set; } = 1;
 
+    /// <summary>Where the party is in its evening, its camp book and tonight's meal.</summary>
+    public CampSite Camp { get; set; } = CampSite.Fresh;
+
     public List<TrackedCharacter> Characters { get; init; } = [];
 
     /// <summary>Every effect in play, on characters and on monsters alike. They hang off the

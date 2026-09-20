@@ -1,0 +1,557 @@
+@inject IDispatcher Dispatcher
+
+@* A camping session, the way the rules run one: five steps in a line, and under the line the
+   step somebody is looking at.
+
+   The line is a diagram and not a list because the order is the rule. What a party may do at
+   step 2 depends on what it rolled at step 1, what it eats at step 3 is what it cooked at step 2,
+   and a table that can see where it is in that line stops asking whether it is time to cook yet.
+
+   Looking at a step is this screen's own business, so a player can read ahead while the table is
+   still making camp. Moving the table along the line is the DM's, and every screen follows. *@
+<div class="session" data-step="@Camp.Step">
+    <ol class="steps" aria-label="The five steps of a camping session">
+        @foreach (var step in Steps)
+        {
+            var here = step.Key == Camp.Step;
+            var done = step.Number < Number(Camp.Step);
+            <li class="steps__step @(here ? "steps__step--here" : null) @(done ? "steps__step--done" : null) @(step.Key == Viewing ? "steps__step--viewing" : null)">
+                <button type="button"
+                        class="steps__face"
+                        data-step="@step.Key"
+                        aria-current="@(here ? "step" : null)"
+                        aria-pressed="@(step.Key == Viewing ? "true" : "false")"
+                        @onclick="() => _viewing = step.Key">
+                    <span class="steps__number" aria-hidden="true">
+                        @if (done)
+                        {
+                            <Icon Name="check" />
+                        }
+                        else
+                        {
+                            @step.Number
+                        }
+                    </span>
+                    <span class="steps__name">@step.Name</span>
+                    <span class="steps__time">@Time(step)</span>
+                    @if (here)
+                    {
+                        <span class="steps__here">The table is here</span>
+                    }
+                </button>
+            </li>
+        }
+    </ol>
+
+    @{ var looking = Steps.First(step => step.Key == Viewing); }
+
+    <section class="step" aria-label="@looking.Name" data-viewing="@looking.Key">
+        <header class="step__head">
+            <h2 class="step__name"><span class="step__number">Step @looking.Number</span> @looking.Name</h2>
+            @if (IsDm && looking.Key != Camp.Step)
+            {
+                <Button Variant="ButtonVariant.Primary"
+                        Class="step__move"
+                        OnClick="() => Dispatcher.Dispatch(new CampStepSet(looking.Key))">
+                    Move the table here
+                </Button>
+            }
+        </header>
+        <p class="step__says">@looking.Says</p>
+
+        @switch (looking.Key)
+        {
+            case "PrepareCampsite":
+                <div class="zone">
+                    @if (IsDm)
+                    {
+                        <Select TValue="string"
+                                Class="zone__pick"
+                                Label="Where you are camping"
+                                Options="ZoneOptions"
+                                Value="@(Zones.Any(zone => zone.Name == Camp.ZoneName) ? Camp.ZoneName : Elsewhere)"
+                                ValueChanged="PickZone" />
+                        <TextInput Class="zone__dc" Label="Zone DC" InputMode="numeric"
+                                   Value="@Camp.ZoneDc.ToString()"
+                                   ValueChanged="typed => SetDcs(typed, null)" />
+                        <TextInput Class="zone__dc" Label="Encounter DC" InputMode="numeric"
+                                   Value="@Camp.EncounterDc.ToString()"
+                                   ValueChanged="typed => SetDcs(null, typed)" />
+                    }
+                    else
+                    {
+                        <p class="zone__where">@(Camp.ZoneName ?? "Somewhere in the wild")</p>
+                    }
+                </div>
+
+                <div class="dcs">
+                    <div class="dc">
+                        <span class="dc__value">@Camp.ZoneDc</span>
+                        <span class="dc__label">Zone DC</span>
+                        <span class="dc__says">Prepare Campsite and most Camping checks</span>
+                    </div>
+                    <div class="dc @(Camp.EncounterDcTonight != Camp.EncounterDc ? "dc--moved" : null)">
+                        <span class="dc__value">@Camp.EncounterDcTonight</span>
+                        <span class="dc__label">Encounter DC tonight</span>
+                        <span class="dc__says">A flat check. Meeting it means something finds the camp.</span>
+                    </div>
+                </div>
+
+                <p class="step__do">
+                    <RuleLink Ref='@(new RuleRef.Named("action", "Prepare Campsite"))' /> is a Survival check against
+                    the Zone DC and takes two hours. Meanwhile the others can
+                    <RuleLink Ref='@(new RuleRef.Named("action", "Treat Wounds"))' />,
+                    <RuleLink Ref='@(new RuleRef.Named("action", "Repair"))' /> or
+                    <RuleLink Ref='@(new RuleRef.Named("action", "Identify Magic"))' />, which are further down this page.
+                </p>
+
+                @* Each character's Survival against the Zone DC, as the die. Who should be the
+                   one to prepare the campsite is the first thing a party decides, and this
+                   answers it at a glance. *@
+                <div class="survivors">
+                    @foreach (var character in Table.Characters)
+                    {
+                        <div class="survivor" data-survivor="@character.Id">
+                            <span class="survivor__who">@character.Name, Survival @SheetFormat.Signed(SheetFormat.SkillOf(character, "Survival"))</span>
+                            <DieChart Modifier="@SheetFormat.SkillOf(character, "Survival")" Dc="Camp.ZoneDc" />
+                        </div>
+                    }
+                </div>
+
+                @* The four degrees of success as four doors, because what matters about this roll is
+                   what it opens and shuts for the rest of the evening. *@
+                <div class="outcomes" role="group" aria-label="How Prepare Campsite went">
+                    @foreach (var outcome in Outcomes)
+                    {
+                        <button type="button"
+                                class="outcome outcome--@outcome.Tone @(Camp.Campsite == outcome.Key ? "outcome--on" : null)"
+                                data-outcome="@outcome.Key"
+                                disabled="@(!IsDm)"
+                                aria-pressed="@(Camp.Campsite == outcome.Key ? "true" : "false")"
+                                @onclick="() => Dispatcher.Dispatch(new CampsiteRecorded(Camp.Campsite == outcome.Key ? null : outcome.Key))">
+                            <span class="outcome__name">@outcome.Name</span>
+                            <span class="outcome__means">@outcome.Campsite</span>
+                        </button>
+                    }
+                </div>
+                break;
+
+            case "CampingActivities":
+                @if (!Camp.ActivitiesAllowed)
+                {
+                    <p class="step__shut" role="status">
+                        <Icon Name="warn" Class="pf-icon--lead" />The campsite is a mess. It is good enough to rest in and to
+                        prepare for the day, and not for Camping activities, so tonight this step is skipped.
+                    </p>
+                }
+                else
+                {
+                    @if (Camp.ActivityPenalty != 0)
+                    {
+                        <p class="step__shut" role="status">
+                            <Icon Name="warn" Class="pf-icon--lead" />A poor campsite: every Camping activity that needs a check takes
+                            a @Camp.ActivityPenalty penalty tonight.
+                        </p>
+                    }
+
+                    @* Who is acting, chosen once, and then one tap per activity: the degree of
+                       success. Each character's four activities are drawn as four pips, because
+                       "how many has Gnibbo got left" is the question and a count answers it. *@
+                    <div class="actors" role="group" aria-label="Who is taking the activity">
+                        @foreach (var character in Table.Characters)
+                        {
+                            var taken = Camp.Taken.Count(take => take.CharacterId == character.Id);
+                            <button type="button"
+                                    class="actor @(character.Id == Acting ? "actor--on" : null)"
+                                    data-actor="@character.Id"
+                                    aria-pressed="@(character.Id == Acting ? "true" : "false")"
+                                    @onclick="() => _acting = character.Id">
+                                <span class="actor__name">@character.Name</span>
+                                <span class="actor__pips" aria-label="@($"{taken} of 4 activities taken")">
+                                    @for (var pip = 0; pip < 4; pip++)
+                                    {
+                                        <span class="actor__pip @(pip < taken ? "actor__pip--used" : null)"></span>
+                                    }
+                                </span>
+                            </button>
+                        }
+                    </div>
+
+                    <ul class="doing">
+                        @foreach (var activity in Offered)
+                        {
+                            var closed = IsClosed(activity.Name);
+                            var takes = Camp.Taken.Where(take => Same(take.Activity, activity.Name)).ToList();
+                            <li class="act @(closed ? "act--closed" : null)" data-act="@activity.Name">
+                                <div class="act__what">
+                                    @if (activity.RuleId is { } record)
+                                    {
+                                        <RuleLink Ref='@(new RuleRef.Id(record))' Label="@activity.Name" Class="act__name" />
+                                    }
+                                    else
+                                    {
+                                        <span class="act__name act__name--own">@activity.Name</span>
+                                        <span class="act__own">Your table's own</span>
+                                    }
+                                    @if (activity.Needs is { Length: > 0 } needs)
+                                    {
+                                        <span class="act__needs">Needs: @needs</span>
+                                    }
+                                    @if (activity.Does is { Length: > 0 } does)
+                                    {
+                                        <span class="act__needs">@does</span>
+                                    }
+                                    @foreach (var take in takes)
+                                    {
+                                        <span class="act__took act__took--@Tone(take.Outcome)">
+                                            @NameOf(take.CharacterId): @Spoken(take.Outcome)
+                                        </span>
+                                    }
+                                </div>
+                                @if (closed)
+                                {
+                                    <span class="act__done"><Icon Name="check" Class="pf-icon--lead" />Done for tonight</span>
+                                }
+                                else if (Acting is { } actor)
+                                {
+                                    <div class="act__roll" role="group" aria-label="@($"How {activity.Name} went for {NameOf(actor)}")">
+                                        @foreach (var outcome in Outcomes)
+                                        {
+                                            <button type="button"
+                                                    class="roll roll--@outcome.Tone"
+                                                    title="@outcome.Name"
+                                                    data-roll="@outcome.Key"
+                                                    disabled="@(Camp.Taken.Count(take => take.CharacterId == actor) >= 4)"
+                                                    @onclick="() => Dispatcher.Dispatch(new CampingActivityTaken(actor, activity.Name, outcome.Key))">
+                                                @outcome.Short
+                                            </button>
+                                        }
+                                    </div>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+                break;
+
+            case "Eating":
+                <div class="larder">
+                    <div class="larder__count">
+                        <span class="larder__label">Basic ingredients</span>
+                        <NumberStepper Label="Basic ingredients" Min="0" Max="9999" Value="Camp.BasicIngredients"
+                                       ValueChanged="count => Dispatcher.Dispatch(new CampSuppliesSet(count, Camp.SpecialIngredients))" />
+                    </div>
+                    <div class="larder__count">
+                        <span class="larder__label">Special ingredients</span>
+                        <NumberStepper Label="Special ingredients" Min="0" Max="9999" Value="Camp.SpecialIngredients"
+                                       ValueChanged="count => Dispatcher.Dispatch(new CampSuppliesSet(Camp.BasicIngredients, count))" />
+                    </div>
+                    <p class="larder__says">
+                        A basic meal uses two basic ingredients and a day's rations for each serving. A special meal uses
+                        what its recipe says. <RuleLink Ref='@(new RuleRef.Named("action", "Hunt and Gather"))' /> is how you
+                        find more.
+                    </p>
+                </div>
+
+                <div class="plates">
+                    @foreach (var character in Table.Characters)
+                    {
+                        var plate = Camp.Meals.FirstOrDefault(meal => meal.CharacterId == character.Id);
+                        <div class="plate" data-plate="@character.Id">
+                            <span class="plate__who">@character.Name</span>
+                            <div class="plate__choices" role="group" aria-label="@($"What {character.Name} is eating")">
+                                <button type="button" class="pick @(plate?.Kind == "Rations" ? "pick--on" : null)"
+                                        @onclick='() => Dispatcher.Dispatch(new MealChosen(character.Id, "Rations", null))'>Rations</button>
+                                <button type="button" class="pick @(plate?.Kind == "BasicMeal" ? "pick--on" : null)"
+                                        @onclick='() => Dispatcher.Dispatch(new MealChosen(character.Id, "BasicMeal", null))'>Basic meal</button>
+                                @foreach (var recipe in Recipes)
+                                {
+                                    <button type="button" class="pick @(plate?.RecipeId == recipe.Id ? "pick--on" : null)"
+                                            data-recipe="@recipe.Id"
+                                            @onclick='() => Dispatcher.Dispatch(new MealChosen(character.Id, "SpecialMeal", recipe.Id))'>@recipe.Name</button>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <p class="step__do">
+                    Whoever took <RuleLink Ref='@(new RuleRef.Named("action", "Cook Basic Meal"))' /> or
+                    <RuleLink Ref='@(new RuleRef.Named("action", "Cook Special Meal"))' /> rolls now, once everybody has chosen.
+                    A sickened character cannot eat a special meal.
+                </p>
+                break;
+
+            case "Resting":
+                @* The rules print this as a table of eight rows. For one party it is one picture:
+                   this many watches, this long each, and a check every four hours. *@
+                @if (Camp.EachWatchMinutes > 0)
+                {
+                    <div class="watches" role="img"
+                         aria-label="@($"{Table.Characters.Count} watches of {Duration.Spoken(Camp.EachWatchMinutes)} each, {Duration.Spoken(Camp.RestMinutes)} in all")">
+                        <div class="watches__bar">
+                            @foreach (var character in Table.Characters.Take(9))
+                            {
+                                <span class="watches__watch"><span class="watches__who">@character.Name</span></span>
+                            }
+                            @foreach (var check in EncounterChecks)
+                            {
+                                <span class="watches__check" style="inset-inline-start: @(check * 100 / Camp.RestMinutes)%"
+                                      title="@($"Encounter check at {Duration.Spoken(check)}")"></span>
+                            }
+                        </div>
+                        <div class="watches__scale"><span>Camp settles</span><span>@Duration.Spoken(Camp.RestMinutes)</span></div>
+                    </div>
+                    <p class="step__do">
+                        <strong>@Table.Characters.Count on watch in turn, @Duration.Spoken(Camp.EachWatchMinutes) each.</strong>
+                        Everybody gets eight hours and somebody is always awake, which takes
+                        @Duration.Spoken(Camp.RestMinutes). Each mark on the bar is a flat check against Encounter DC
+                        @Camp.EncounterDcTonight, one every four hours.
+                    </p>
+                }
+                else
+                {
+                    <p class="step__do">One person cannot keep a watch and sleep. Eight hours, and a flat check against
+                        Encounter DC @Camp.EncounterDcTonight every four.</p>
+                }
+
+                @if (IsDm)
+                {
+                    <Button Variant="ButtonVariant.Primary" Class="step__act" OnClick="() => Dispatcher.Dispatch(new NightRested())">
+                        <Icon Name="moon" Class="pf-icon--lead" />Rest for the night
+                    </Button>
+                }
+                break;
+
+            case "DailyPreparations":
+                <p class="step__do">
+                    Spells, focus, gear and breaking camp, all in the half hour. Staying another night here means
+                    preparing the campsite again, which takes one hour the second time and goes the way it went the first.
+                </p>
+                @if (IsDm)
+                {
+                    <Button Variant="ButtonVariant.Primary" Class="step__act" OnClick="() => Dispatcher.Dispatch(new CampBroken())">
+                        <Icon Name="sun" Class="pf-icon--lead" />Break camp
+                    </Button>
+                }
+                break;
+        }
+    </section>
+
+    @* The camp book: what this table has written down for itself. The ruleset has the activity
+       of cooking a special meal and none of the meals, so every recipe lives here. *@
+    <section class="book" aria-label="Camp book">
+        <header class="step__head">
+            <h2 class="step__name">Your camp book</h2>
+        </header>
+        <p class="step__says">
+            Recipes your party knows and Camping activities of your own. Anybody at the table can write in it.
+        </p>
+
+        @if (Camp.Book.Count > 0)
+        {
+            <ul class="entries">
+                @foreach (var entry in Camp.Book.OrderBy(entry => entry.Kind).ThenBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase))
+                {
+                    <li class="entry" data-entry="@entry.Id">
+                        <span class="entry__kind entry__kind--@entry.Kind.ToLowerInvariant()">@(entry.Kind == "Recipe" ? "Recipe" : "Activity")</span>
+                        <span class="entry__name">@entry.Name</span>
+                        @if (entry.Dc is { } dc)
+                        {
+                            <span class="entry__dc">DC @dc</span>
+                        }
+                        <span class="entry__does">@entry.Does</span>
+                        <Button Variant="ButtonVariant.Quiet" Class="entry__out"
+                                OnClick="() => Dispatcher.Dispatch(new CampEntryRemoved(entry.Id))">
+                            <Icon Name="close" Label="@($"Take {entry.Name} out of the book")" />
+                        </Button>
+                    </li>
+                }
+            </ul>
+        }
+
+        <Disclosure Class="book__add" Title="Write something in" Glyph="plus">
+            <form class="writing" @onsubmit="Write" @onsubmit:preventDefault>
+                <SegmentedControl TValue="string" Label="What it is" Options="Kinds"
+                                  Value="@_kind" ValueChanged="kind => _kind = kind ?? Recipe" />
+                <TextInput Label="Name" Value="@_name" ValueChanged="name => _name = name ?? string.Empty"
+                           Placeholder="@(_kind == Recipe ? "Hearty stew" : "Sing rounds")" Autocomplete="off" />
+                @if (_kind == Recipe)
+                {
+                    <TextInput Class="writing__dc" Label="Cooking DC" InputMode="numeric" Value="@_dc"
+                               ValueChanged="dc => _dc = dc ?? string.Empty"
+                               Hint="Survival or Cooking Lore. It varies by recipe." />
+                }
+                <TextArea Label="What it does" Rows="4" Value="@_does" ValueChanged="does => _does = does ?? string.Empty"
+                          Placeholder="@(_kind == Recipe ? "What it costs, and what a success, a critical success and a critical failure do." : "The check, and what each result does.")" />
+                <Button Variant="ButtonVariant.Primary" Type="ButtonType.Submit" Disabled="@(_name.Trim().Length == 0)">
+                    Write it in
+                </Button>
+            </form>
+        </Disclosure>
+    </section>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public CampaignView Table { get; set; } = default!;
+
+    /// <summary>The ruleset's Camping activities, which this component does not fetch.</summary>
+    [Parameter] public IReadOnlyList<CampingActivityView> Activities { get; set; } = [];
+
+    const string Recipe = "Recipe";
+    const string Elsewhere = "Somewhere else";
+
+    CampSiteView Camp => Table.Camp;
+
+    bool IsDm => Table.Role == "Dm";
+
+    string? _viewing;
+    Guid? _acting;
+    string _kind = Recipe, _name = string.Empty, _does = string.Empty, _dc = string.Empty;
+    string? _followed;
+
+    /// <summary>The step on screen. It follows the table when the table moves, and otherwise
+    /// stays where this person put it.</summary>
+    string Viewing => _viewing ?? Camp.Step;
+
+    Guid? Acting => _acting ?? Table.Characters.FirstOrDefault()?.Id;
+
+    protected override void OnParametersSet()
+    {
+        if (_followed != Camp.Step)
+        {
+            _followed = Camp.Step;
+            _viewing = null;
+        }
+    }
+
+    sealed record StepInfo(string Key, int Number, string Name, string Says);
+
+    static readonly StepInfo[] Steps =
+    [
+        new("PrepareCampsite", 1, "Prepare a campsite",
+            "One of you finds a site and sets it up. How that goes decides what the rest of the evening allows."),
+        new("CampingActivities", 2, "Camping activities",
+            "Each activity is taken by one of you and takes two hours. Nobody takes more than four in a day, no two of you take the same one at once, and once somebody succeeds at an activity it is done for tonight."),
+        new("Eating", 3, "Eating",
+            "Everybody chooses what they eat. A character only gains from the first meal they eat at this camp."),
+        new("Resting", 4, "Resting",
+            "Eight hours each, in watches of equal length, with a check for a random encounter every four hours."),
+        new("DailyPreparations", 5, "Daily preparations",
+            "Half an hour to get ready for the day. The Encounter DC goes back to normal."),
+    ];
+
+    static int Number(string step) => Steps.First(info => info.Key == step).Number;
+
+    string Time(StepInfo step) => step.Key switch
+    {
+        "PrepareCampsite" => "2 hours",
+        "CampingActivities" => Camp.Taken.Count == 0 ? "2 hours each" : $"{Duration.Spoken(Camp.Taken.Count * 120)} so far",
+        "Eating" => "No time",
+        "Resting" => Duration.Spoken(Math.Max(480, Camp.RestMinutes)),
+        _ => "30 minutes",
+    };
+
+    /// <summary>The four degrees, with what each means for a campsite. Tone is the outcome ramp's
+    /// own, so a critical failure here is the colour a critical failure is everywhere.</summary>
+    sealed record OutcomeInfo(string Key, string Name, string Short, string Tone, string Campsite);
+
+    static readonly OutcomeInfo[] Outcomes =
+    [
+        new("CriticalSuccess", "Critical success", "Crit", "crit-success",
+            "The perfect spot. Encounter DC 2 higher for a day, and no encounter check for the first hour of activities."),
+        new("Success", "Success", "Success", "success", "A serviceable camp. Everything works as written."),
+        new("Failure", "Failure", "Fail", "failure", "It will do. Camping activities that need a check take a -2 penalty."),
+        new("CriticalFailure", "Critical failure", "Crit fail", "crit-failure",
+            "A mess. No Camping activities tonight, and a flat check against the Encounter DC now."),
+    ];
+
+    static string Tone(string outcome) => Outcomes.First(info => info.Key == outcome).Tone;
+
+    static string Spoken(string outcome) => Outcomes.First(info => info.Key == outcome).Name.ToLowerInvariant();
+
+    string NameOf(Guid characterId) => Table.Characters.FirstOrDefault(c => c.Id == characterId)?.Name ?? "Somebody";
+
+    static bool Same(string a, string b) => string.Equals(a.Trim(), b.Trim(), StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>The server decides this for real and refuses with the rule. It is mirrored here so
+    /// an activity that is shut looks shut before anybody taps it.</summary>
+    bool IsClosed(string activity) =>
+        !Same(activity, "Cook Special Meal")
+        && Camp.Taken.Any(take => Same(take.Activity, activity) && take.Outcome is "CriticalSuccess" or "Success");
+
+    sealed record Offer(string Name, string? RuleId, string? Needs, string? Does);
+
+    /// <summary>The ruleset's activities and then the table's own, in one list, because at the
+    /// table they are one list.</summary>
+    IEnumerable<Offer> Offered =>
+        Activities.Select(activity => new Offer(activity.Name, activity.RuleId, activity.Requires, null))
+            .Concat(Camp.Book.Where(entry => entry.Kind == "Activity")
+                .Select(entry => new Offer(entry.Name, null, null, entry.Does)));
+
+    IEnumerable<CampEntryView> Recipes => Camp.Book.Where(entry => entry.Kind == Recipe);
+
+    /// <summary>When during the rest the GM checks for an encounter: every four hours.</summary>
+    IEnumerable<int> EncounterChecks =>
+        Enumerable.Range(1, Math.Max(0, (Camp.RestMinutes - 1) / 240)).Select(check => check * 240);
+
+    static readonly IReadOnlyList<ChoiceOption<string>> Kinds =
+        [new(Recipe, "A recipe"), new("Activity", "A Camping activity")];
+
+    /// <summary>The Camping Zones table from the Kingmaker Companion Guide: a zone, the DC for
+    /// camping checks there, and the flat check for a random encounter.</summary>
+    sealed record Zone(string Name, int ZoneDc, int EncounterDc);
+
+    static readonly Zone[] Zones =
+    [
+        new("Brevoy", 14, 12), new("Rostland Hinterlands", 15, 12), new("Greenbelt", 16, 14),
+        new("Tuskwater", 18, 12), new("Kamelands", 19, 12), new("Narlmarches", 20, 14),
+        new("Sellen Hills", 20, 12), new("Dunsward", 18, 12), new("Nomen Heights", 24, 12),
+        new("Tors of Levenies", 28, 16), new("Hooktongue", 32, 14), new("Drelev", 28, 12),
+        new("Tiger Lords", 28, 12), new("Rushlight", 26, 12), new("Glenebon Lowlands", 30, 12),
+        new("Pitax", 29, 12), new("Glenebon Uplands", 35, 12), new("Numeria", 36, 12),
+        new("Thousand Voices", 43, 14), new("Branthlend Mountains", 41, 16),
+    ];
+
+    static readonly IReadOnlyList<ChoiceOption<string>> ZoneOptions =
+    [
+        new(Elsewhere, "Somewhere else (set the DCs yourself)"),
+        .. Zones.Select(zone => new ChoiceOption<string>(zone.Name, $"{zone.Name} (Zone DC {zone.ZoneDc}, Encounter DC {zone.EncounterDc})")),
+    ];
+
+    void PickZone(string? name)
+    {
+        if (Zones.FirstOrDefault(zone => zone.Name == name) is { } zone)
+        {
+            Dispatcher.Dispatch(new CampZoneSet(zone.Name, zone.ZoneDc, zone.EncounterDc));
+        }
+        else
+        {
+            Dispatcher.Dispatch(new CampZoneSet(null, Camp.ZoneDc, Camp.EncounterDc));
+        }
+    }
+
+    /// <summary>A DC typed by hand is somewhere the table does not list, so the name goes.</summary>
+    void SetDcs(string? zoneDc, string? encounterDc)
+    {
+        var zone = int.TryParse(zoneDc, out var typedZone) ? typedZone : Camp.ZoneDc;
+        var encounter = int.TryParse(encounterDc, out var typedEncounter) ? typedEncounter : Camp.EncounterDc;
+        if (zone is >= 5 and <= 60 && encounter is >= 2 and <= 20)
+        {
+            Dispatcher.Dispatch(new CampZoneSet(null, zone, encounter));
+        }
+    }
+
+    void Write()
+    {
+        if (_name.Trim().Length == 0)
+        {
+            return;
+        }
+
+        Dispatcher.Dispatch(new CampEntrySaved(
+            Guid.NewGuid(), _kind, _name.Trim(), _does.Trim(),
+            _kind == Recipe && int.TryParse(_dc, out var dc) && dc is >= 5 and <= 60 ? dc : null));
+        (_name, _does, _dc) = (string.Empty, string.Empty, string.Empty);
+    }
+}

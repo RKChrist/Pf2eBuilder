@@ -211,7 +211,7 @@ await shot(dm, 'dm-09-attempts');
 
 // Camp: the ten-minute activities and the clock they add to. Its own page, reachable from every
 // mode, because stopping to Treat Wounds is not a mode the table is in.
-await clickText(dm, '.shell__party', 'Camp');
+await dm.eval(`document.querySelector('.shell__mode-link[data-page="Camp"]').click()`);
 await waitFor(dm, '[data-camping]');
 check('the camp panel starts at no time at all', await dm.eval(
   `document.querySelector('.clock__value')?.textContent.trim() ?? ''`).then(t => t === 'no time at all'),
@@ -232,7 +232,10 @@ check('another activity moves the clock on', await dm.eval(
   `document.querySelector('.clock__value')?.textContent.trim() ?? ''`).then(t => t === '20 minutes'),
   await dm.eval(`document.querySelector('.clock__value')?.textContent.trim() ?? ''`));
 
-await clickText(dm, '.camp__rest', 'Rest for the night');
+// The night's rest is step 4 of the camping session now, where the rules put it.
+await dm.eval(`document.querySelector('.steps__face[data-step="Resting"]').click()`);
+await sleep(600);
+await clickText(dm, '.step__act', 'Rest for the night');
 const morning = await dm.eval(`({
   clock: document.querySelector('.clock__value')?.textContent.trim() ?? '',
   immune: document.querySelector('.camping__immune')?.textContent.trim() ?? 'none',
@@ -467,8 +470,9 @@ check('a player joins with the code alone and sees the party', await player.eval
 // The strip is navigation for everybody, so a player gets the links: they can look at the camp
 // page while the party is still walking. What a player does not get is the table moving when
 // they tap one.
-check('a player can navigate the modes too', await player.eval(
-  `document.querySelectorAll('.shell__mode-link').length`).then(n => n === 3),
+check('a player can navigate the three modes and the camp tab too', await player.eval(
+  `document.querySelectorAll('.shell__mode-link[data-mode]').length === 3
+   && document.querySelectorAll('.shell__mode-link[data-page="Camp"]').length === 1`),
   await player.eval(`document.querySelectorAll('.shell__mode-link').length`));
 check('and is not marked as the DM', !(await player.eval(`!!document.querySelector('.shell__dm')`)));
 
@@ -574,7 +578,7 @@ const einar = `[...document.querySelectorAll('.character')]
 check("a Wanderer's Guide export imports beside a Pathbuilder one",
   await dm.eval(`!!${einar}`));
 
-const before = await dm.eval(`${einar}?.querySelector('.hits__of')?.textContent.trim() ?? ''`);
+const before = await dm.eval(`${einar}?.querySelector('.hp__max')?.textContent.trim() ?? ''`);
 await dm.eval(`[...${einar}.querySelectorAll('.acts button')]
   .find(b => b.textContent.trim() === 'Edit')?.click()`);
 await waitFor(dm, '.editor');
@@ -597,7 +601,7 @@ await sleep(400);
 await clickText(dm, '.editor__acts button', 'Save');
 await sleep(1200);
 
-const after = await dm.eval(`${einar}?.querySelector('.hits__of')?.textContent.trim() ?? ''`);
+const after = await dm.eval(`${einar}?.querySelector('.hp__max')?.textContent.trim() ?? ''`);
 check('and moving it moves the maximum on the card',
   Number(after.replace('/', '')) === Number(before.replace('/', '')) + 1, `${before} -> ${after}`);
 

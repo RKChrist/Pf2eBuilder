@@ -15,6 +15,44 @@ public sealed record TakeCampActivity(string Code, string? DmKey, Guid Character
 /// <summary>Eight hours. The DM's, because it moves the world on rather than one character.</summary>
 public sealed record RestForTheNight(string Code, string? DmKey) : IRequest<CampaignView>;
 
+/// <summary>
+/// Time goes by while the party travels. The clock only ever moved at camp, so a DM who said "an
+/// hour later you reach the ford" had no way to tell the app, and a character Treated before
+/// setting out stayed immune for as long as the party kept walking.
+/// <para>The DM's, for the same reason a night's rest is: it moves the world on.</para>
+/// </summary>
+public sealed record PassTime(string Code, string? DmKey, int Minutes) : IRequest<CampaignView>;
+
+public sealed class PassTimeValidator : AbstractValidator<PassTime>
+{
+    /// <summary>A day. Longer than that is downtime, which counts in days and has its own page.</summary>
+    public const int MostAtOnce = 24 * 60;
+
+    public PassTimeValidator()
+    {
+        RuleFor(c => c.Code).Must(CampaignCode.IsValid)
+                            .WithMessage("A campaign code is four to twelve letters and digits.");
+        RuleFor(c => c.Minutes).InclusiveBetween(1, MostAtOnce);
+    }
+}
+
+public sealed class PassTimeHandler(
+    ITrackerDbContext db, IUndoStack undo, ICampaignBroadcaster broadcaster)
+    : IRequestHandler<PassTime, CampaignView>
+{
+    public async Task<CampaignView> Handle(PassTime command, CancellationToken ct)
+    {
+        var change = await CampaignAccess.LoadForChangeAsync(
+            db, undo, command.Code, command.DmKey, "time passing", ct);
+        CampaignAccess.RequireDm(change.Role, "let time pass");
+
+        change.Campaign.ElapsedMinutes += command.Minutes;
+
+        await db.SaveChangesAsync(ct);
+        return await CampaignAccess.PublishChangeAsync(broadcaster, undo, change, ct);
+    }
+}
+
 public sealed class TakeCampActivityValidator : AbstractValidator<TakeCampActivity>
 {
     public TakeCampActivityValidator()
@@ -94,7 +132,13 @@ public sealed class RestForTheNightHandler(
         var campaign = change.Campaign;
         CampaignAccess.RequireDm(change.Role, "call a night's rest");
 
-        campaign.ElapsedMinutes += NightsRest.Minutes;
+        // Eight hours each, and longer on the clock once there are enough people to keep watch:
+        // the rules' Watches and Rest table, which is one formula.
+        var (rest, _) = Watches.For(campaign.Characters.Count);
+        campaign.ElapsedMinutes += Math.Max(NightsRest.Minutes, rest);
+
+        // What comes after the night is getting ready for the day.
+        campaign.Camp = campaign.Camp with { Step = CampStep.DailyPreparations };
 
         foreach (var character in campaign.Characters)
         {

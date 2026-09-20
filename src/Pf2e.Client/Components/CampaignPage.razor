@@ -63,11 +63,28 @@
                         }
                     </a>
                 }
+
+                @* Not a mode: the table can be at camp in any of the three, and the DM opening this
+                   tab does not move anybody. It sits in the strip because it is a page of the same
+                   weight as the three beside it, and as a link on the far side it was missed. *@
+                <a class="shell__mode-link shell__mode-link--page @(Active("/campaign/camp") ? "on" : null)"
+                   data-page="Camp"
+                   href="/campaign/camp"
+                   aria-current="@(Active("/campaign/camp") ? "page" : null)">
+                    <Icon Name="tent" Class="pf-icon--lead" />Camp
+                </a>
             </div>
 
             <p class="shell__where" role="status">
-                <a class="shell__party" href="/campaign">Party</a>
-                <a class="shell__party" href="/campaign/camp">Camp</a>
+                @* The two pages that are not a mode: who is at the table, and what they do when
+                   they stop. They said nothing about which one you were on, and Camp read as a
+                   footnote beside a strip three times its size. *@
+                <a class="shell__party @(Active("/campaign") || Active("/party") ? "on" : null)"
+                   href="/campaign"
+                   aria-current="@(Active("/campaign") || Active("/party") ? "page" : null)">
+                    <Icon Name="person" Class="pf-icon--lead" />Party
+                </a>
+
                 @if (table.Encounter is { Round: > 0 } fight)
                 {
                     <span class="shell__round">Round @fight.Round</span>

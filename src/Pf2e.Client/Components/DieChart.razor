@@ -1,0 +1,64 @@
+@* A DC as a picture: the twenty faces of the die, each in the colour of what it gets you.
+
+   The colours are the outcome ramp's, and every face also carries its number and the chart says
+   the four counts in words underneath, so it reads the same in greyscale and to a screen
+   reader. *@
+<figure class="die" aria-label="@Spoken">
+    <div class="die__faces" aria-hidden="true">
+        @foreach (var (face, degree) in Faces)
+        {
+            <span class="die__face die__face--@Tone(degree) @(face == Needs ? "die__face--needs" : null)">@face</span>
+        }
+    </div>
+    <figcaption class="die__says">
+        <strong class="die__needs">@Headline</strong>
+        <span class="die__legend">
+            @foreach (var (degree, count) in Counts)
+            {
+                <span class="die__key die__key--@Tone(degree)">@Name(degree) on @count of 20</span>
+            }
+        </span>
+    </figcaption>
+</figure>
+
+@code {
+    [Parameter, EditorRequired] public int Modifier { get; set; }
+
+    [Parameter, EditorRequired] public int Dc { get; set; }
+
+    IReadOnlyList<(int Face, Degree Degree)> Faces => DieFaces.All(Modifier, Dc);
+
+    int? Needs => DieFaces.Needs(Modifier, Dc);
+
+    IEnumerable<(Degree Degree, int Count)> Counts =>
+        Faces.GroupBy(face => face.Degree)
+             .OrderByDescending(group => group.Key)
+             .Select(group => (group.Key, group.Count()));
+
+    string Headline => Needs switch
+    {
+        null => "No face of the die succeeds",
+        1 => "Every face succeeds",
+        { } face => $"Succeeds on a {face} or better",
+    };
+
+    string Spoken =>
+        $"{SheetFormat.Signed(Modifier)} against DC {Dc}. {Headline}. "
+        + string.Join(", ", Counts.Select(count => $"{Name(count.Degree).ToLowerInvariant()} on {count.Count} of 20"));
+
+    static string Tone(Degree degree) => degree switch
+    {
+        Degree.CriticalSuccess => "crit-success",
+        Degree.Success => "success",
+        Degree.Failure => "failure",
+        _ => "crit-failure",
+    };
+
+    static string Name(Degree degree) => degree switch
+    {
+        Degree.CriticalSuccess => "Critical success",
+        Degree.Success => "Success",
+        Degree.Failure => "Failure",
+        _ => "Critical failure",
+    };
+}

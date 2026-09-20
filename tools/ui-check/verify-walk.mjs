@@ -13,6 +13,8 @@
 import { launch, openPage, sleep } from './cdp.mjs';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 
+// Overridable so a second checkout can be walked on its own port while the first is in use.
+const base = process.env.BASE ?? 'http://localhost:5173';
 const out = process.env.SHOTS ?? null;
 const selftest = process.argv.includes('--selftest');
 if (out) mkdirSync(out, { recursive: true });
@@ -166,7 +168,7 @@ const shoot = async (label, widths = [[390, 900, true, 'dark'], [768, 1024, fals
 // a zero from a clean product print the same.
 if (selftest) {
   await p.viewport(390, 844, true);
-  await p.goto('http://localhost:5173/');
+  await p.goto(`${base}/`);
   await wait('.pf-bottomnav__item');
   await p.eval(`(() => {
     const plant = (html) => document.body.insertAdjacentHTML('beforeend', html);
@@ -196,7 +198,7 @@ if (selftest) {
   process.exit(missed.length);
 }
 await p.viewport(1280, 1000, false);
-await p.goto('http://localhost:5173/');
+await p.goto(`${base}/`);
 await wait('.pf-bottomnav__item');
 await openEverything();
 await shoot('01-board');

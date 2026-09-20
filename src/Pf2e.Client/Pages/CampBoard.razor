@@ -7,15 +7,31 @@
 
 <PageTitle>Camp</PageTitle>
 
-@* Making camp, in the two halves it actually has. The four ten-minute activities move the
-   party's clock and are tracked per character. The camping activities from the ruleset are a
-   longer list the party chooses from and mostly resolve with a roll, so what this page can
-   usefully say about one of them is who at the table is trained enough to try it. *@
+@* Making camp, in the two halves it has. The camping session is the five steps the rules give
+   it, and is a component of its own. Under it are the four ten-minute activities a party takes
+   whenever it stops, which move the same clock and are tracked per character. *@
 <CampaignPage Heading="Camp" Context="table">
     <div class="camp">
+        @* The camping session itself, as the rules run one. Everything below it on this page is
+           what a party does whenever it stops, camp or no camp. *@
+        <Card Class="camp__card camp__session">
+            <ChildContent>
+                <SectionHead Text="Making camp" Glyph="tent">
+                    <Aside>
+                        <span class="clock" role="status">
+                            <Icon Name="clock" />
+                            <span class="clock__label">Time so far</span>
+                            <span class="clock__value">@Duration.Spoken(table.ElapsedMinutes)</span>
+                        </span>
+                    </Aside>
+                </SectionHead>
+                <CampSession Table="table" Activities="Camping" />
+            </ChildContent>
+        </Card>
+
         <Card Class="camp__card">
             <ChildContent>
-                <SectionHead Text="When you stop" Glyph="tent">
+                <SectionHead Text="Whenever you stop" Glyph="clock">
                     <Aside>
                         <span class="clock" role="status">
                             <Icon Name="clock" />
@@ -78,76 +94,8 @@
                     </dl>
                 </Disclosure>
 
-                @if (table.Role == "Dm")
-                {
-                    <div class="camp__night">
-                    <Button Class="camp__rest"
-                            OnClick="() => Dispatcher.Dispatch(new NightRested())">
-                        <Icon Name="moon" Class="pf-icon--lead" />Rest for the night
-                    </Button>
-                    <p class="camp__rest-says">
-                        Eight hours. Everyone recovers Constitution times level in hit points,
-                        temporary hit points expire, fatigued ends, and drained and doomed each
-                        step down by one.
-                    </p>
-                    </div>
-                }
             </ChildContent>
         </Card>
-
-        @* The ruleset's own camping activities. Names and requirements only: the pull takes no
-           rule prose, so what each one does is on the record, one tap away.
-
-           The useful thing a screen can add is the answer to the question a table actually asks,
-           which is not "what is Cook a Meal" but "who here can". *@
-        @if (Camping is { Count: > 0 } camping)
-        {
-            <Card Class="camp__card" Title="Camping activities">
-                <ChildContent>
-                    <p class="camp__says">
-                        @camping.Count activities from the ruleset. A name marked underneath is
-                        somebody whose sheet already meets the requirement.
-                    </p>
-
-                    @foreach (var group in Grouped(camping, table))
-                    {
-                        <Disclosure Class="camp__group"
-                                    Title="@group.Heading"
-                                    Glyph="@group.Glyph"
-                                    Count="group.Activities.Count"
-                                    Open="@group.Open"
-                                    data-camping-group="@group.Key">
-                            <ul class="activities">
-                                @foreach (var entry in group.Activities)
-                                {
-                                    <li class="activity" data-activity="@entry.Activity.RuleId">
-                                        <RuleLink Ref='@(new RuleRef.Id(entry.Activity.RuleId))'
-                                                  Label="@entry.Activity.Name"
-                                                  Alone="true"
-                                                  Class="activity__name" />
-                                        @if (entry.Activity.Requires is { Length: > 0 } requires)
-                                        {
-                                            <p class="activity__needs">@requires</p>
-                                        }
-                                        @if (entry.Able.Count > 0)
-                                        {
-                                            <p class="activity__able">
-                                                <Icon Name="check" Class="activity__tick" />
-                                                @string.Join(", ", entry.Able.Select(c => c.Name))
-                                            </p>
-                                        }
-                                        else if (entry.Activity.Rank is { Length: > 0 })
-                                        {
-                                            <p class="activity__none">Nobody here is trained enough.</p>
-                                        }
-                                    </li>
-                                }
-                            </ul>
-                        </Disclosure>
-                    }
-                </ChildContent>
-            </Card>
-        }
     </div>
 </CampaignPage>
 
@@ -155,39 +103,4 @@
     CampaignState State => Store.Value;
 
     IReadOnlyList<CampingActivityView> Camping => ExplorationStore.Value.Camping;
-
-    /// <summary>One activity with the party read against it.</summary>
-    sealed record Entry(CampingActivityView Activity, IReadOnlyList<CharacterSheetView> Able);
-
-    sealed record Group(
-        string Key, string Heading, string Glyph, bool Open, IReadOnlyList<Entry> Activities);
-
-    /// <summary>
-    /// Three groups, by what the party can do with the activity rather than by its name.
-    /// Alphabetical would put Cook a Meal beside Cover Tracks and leave a GM reading all
-    /// twenty-three to find the two their party is actually equipped for.
-    /// </summary>
-    static IReadOnlyList<Group> Grouped(
-        IReadOnlyList<CampingActivityView> activities, CampaignView table)
-    {
-        var entries = activities
-            .Select(activity => new Entry(
-                activity,
-                [.. table.Characters.Where(c => SheetFormat.Meets(c, activity.Rank, activity.Skills))]))
-            .OrderBy(entry => entry.Activity.Name, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        return
-        [
-            .. new[]
-            {
-                new Group("able", "Somebody can do this", "check", true,
-                    [.. entries.Where(e => e.Able.Count > 0)]),
-                new Group("open", "No stated requirement", "person", false,
-                    [.. entries.Where(e => e.Able.Count == 0 && e.Activity.Requires is not { Length: > 0 })]),
-                new Group("barred", "Needs training nobody has", "warn", false,
-                    [.. entries.Where(e => e.Able.Count == 0 && e.Activity.Requires is { Length: > 0 })]),
-            }.Where(group => group.Activities.Count > 0),
-        ];
-    }
 }

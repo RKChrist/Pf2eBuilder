@@ -30,6 +30,25 @@
                     starts, so this is worth setting before anyone opens a door.
                 </p>
 
+                @if (table.Role == "Dm")
+                {
+                    @* The clock above only ever moved at camp. "An hour later you reach the ford"
+                       is said at every table, and until it could be said here, anybody Treated
+                       before setting out stayed immune for the whole walk. *@
+                    <div class="passing" role="group" aria-label="Let time pass">
+                        <span class="passing__says">Time passes</span>
+                        @foreach (var (minutes, label) in Spans)
+                        {
+                            <Button Variant="ButtonVariant.Secondary"
+                                    Class="passing__span"
+                                    data-minutes="@minutes"
+                                    OnClick="() => Dispatcher.Dispatch(new TimePassed(minutes))">
+                                @label
+                            </Button>
+                        }
+                    </div>
+                }
+
                 <div class="doing">
                     @foreach (var character in table.Characters)
                     {
@@ -119,6 +138,15 @@
 
 @code {
     static string Signed(int total) => SheetFormat.Signed(total);
+
+    /// <summary>The spans a DM says out loud. Anything between them is two taps, and anything
+    /// longer than a day is downtime.</summary>
+    static readonly (int Minutes, string Label)[] Spans =
+    [
+        (10, "10 minutes"),
+        (60, "An hour"),
+        (240, "Four hours"),
+    ];
 
     /// <summary>The engine's list in the chooser's shape. The names and the sentences are the
     /// engine's either way; this only changes which type is carrying them.</summary>

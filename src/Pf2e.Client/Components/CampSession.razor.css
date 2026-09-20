@@ -1,0 +1,697 @@
+.session {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+/* ---------------------------------------------------------------- the line of steps
+
+   Five stops on one line. On a phone the line stands up and the stops run down it, because five
+   names do not fit across 390px and a row that scrolls sideways hides where you are. */
+.steps {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+    margin: var(--space-0);
+    padding: var(--space-0);
+    list-style: none;
+    counter-reset: none;
+}
+
+.steps__step {
+    position: relative;
+}
+
+.steps__face {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+        'number name time'
+        'number here here';
+    align-items: center;
+    column-gap: var(--space-3);
+    inline-size: 100%;
+    min-block-size: var(--tap-primary);
+    padding: var(--space-2) var(--space-3);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-radius: var(--radius-control);
+    background: var(--surface-raised);
+    color: var(--text-secondary);
+    text-align: start;
+    transition: background-color var(--motion-duration-quick) var(--motion-easing-exit),
+                border-color var(--motion-duration-quick) var(--motion-easing-exit);
+}
+
+.steps__number {
+    grid-area: number;
+    display: grid;
+    place-items: center;
+    inline-size: var(--space-6);
+    block-size: var(--space-6);
+    border: var(--border-strong) solid var(--line-subtle);
+    border-radius: 50%;
+    background: var(--surface-raised);
+    color: var(--text-muted);
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-data);
+    font-weight: var(--font-weight-bold);
+}
+
+.steps__name {
+    grid-area: name;
+    color: var(--text-primary);
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-data);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--font-leading-snug);
+}
+
+.steps__time {
+    grid-area: time;
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+    white-space: nowrap;
+}
+
+.steps__here {
+    grid-area: here;
+    justify-self: start;
+    margin-top: var(--space-1);
+    padding: var(--space-0) var(--space-2);
+    border-radius: var(--radius-chip);
+    background: var(--highlight-base);
+    color: var(--highlight-text);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Behind you: filled, because it is finished. */
+.steps__step--done .steps__number {
+    border-color: var(--accent-base);
+    background: var(--accent-base);
+    color: var(--text-on-accent);
+}
+
+/* Where the table is: the lantern, the same mark the rail and the turn order use for "here". */
+.steps__step--here .steps__number {
+    border-color: var(--highlight-base);
+    background: var(--highlight-base);
+    color: var(--highlight-text);
+}
+
+/* What this screen is looking at, which may not be where the table is. */
+.steps__step--viewing .steps__face {
+    border-color: var(--accent-base);
+    background: var(--accent-tint);
+    box-shadow: 0 0 0 var(--border-hair) var(--accent-base);
+}
+
+.steps__face:focus-visible {
+    outline: var(--border-focus) solid var(--line-focus);
+    outline-offset: var(--space-1);
+}
+
+@media (hover: hover) {
+    .steps__face:hover {
+        border-color: var(--accent-base);
+    }
+}
+
+/* Sized by the session's own width, not the window's: a docked panel halves it. */
+.session {
+    container: camp-session / inline-size;
+}
+
+@container camp-session (min-width: 820px) {
+    .steps {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: var(--space-0);
+    }
+
+    .steps__face {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas: 'number' 'name' 'time' 'here';
+        justify-items: center;
+        row-gap: var(--space-1);
+        block-size: 100%;
+        align-content: start;
+        padding: var(--space-3) var(--space-2);
+        border-color: transparent;
+        background: transparent;
+        text-align: center;
+    }
+
+    .steps__here {
+        justify-self: center;
+    }
+
+    /* The line itself, from the middle of one number to the middle of the next, drawn behind
+       them. Filled as far as the table has got. */
+    .steps__step + .steps__step::before {
+        content: '';
+        position: absolute;
+        inset-block-start: calc(var(--space-3) + var(--space-6) / 2);
+        inset-inline: -50% 50%;
+        block-size: var(--border-strong);
+        background: var(--line-subtle);
+    }
+
+    .steps__step--done + .steps__step::before {
+        background: var(--accent-base);
+    }
+
+    .steps__number {
+        position: relative;
+        z-index: 1;
+    }
+}
+
+/* ---------------------------------------------------------------- one step */
+
+.step,
+.book {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding-top: var(--space-4);
+    border-top: var(--border-hair) solid var(--line-subtle);
+}
+
+.step__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.step__name {
+    font-size: var(--font-size-subhead);
+}
+
+.step__number {
+    margin-inline-end: var(--space-2);
+    color: var(--accent-base);
+    font-size: var(--font-size-data);
+    font-weight: var(--font-weight-bold);
+}
+
+.step__says,
+.step__do {
+    max-width: calc(var(--layout-content-max) * 1.4);
+    color: var(--text-secondary);
+    font-size: var(--font-size-data);
+    line-height: var(--font-leading-normal);
+    text-wrap: pretty;
+}
+
+.step__shut {
+    padding: var(--space-3);
+    border-inline-start: var(--border-focus) solid var(--effect-down);
+    border-radius: var(--radius-chip);
+    background: var(--effect-down-wash);
+    color: var(--text-primary);
+    font-size: var(--font-size-data);
+}
+
+.session ::deep .step__act {
+    align-self: flex-start;
+}
+
+/* ---------------------------------------------------------------- step 1: the place and the roll */
+
+.zone {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+    max-width: 44rem;
+}
+
+@container camp-session (min-width: 600px) {
+    .zone {
+        grid-template-columns: minmax(0, 1fr) 8rem 8rem;
+        align-items: end;
+    }
+}
+
+.zone__where {
+    font-weight: var(--font-weight-semibold);
+}
+
+.dcs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
+.dc {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: 'value label' 'value says';
+    align-items: center;
+    column-gap: var(--space-3);
+    flex: 1 1 16rem;
+    padding: var(--space-3) var(--space-4);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-radius: var(--radius-control);
+    background: var(--surface-sunken);
+}
+
+.dc__value {
+    grid-area: value;
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-section);
+    font-weight: var(--font-weight-bold);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+.dc__label {
+    grid-area: label;
+    font-size: var(--font-size-data);
+    font-weight: var(--font-weight-semibold);
+}
+
+.dc__says {
+    grid-area: says;
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+}
+
+/* The perfect campsite moved it, and up is good for the party. */
+.dc--moved {
+    border-color: var(--effect-up);
+    background: var(--effect-up-wash);
+}
+
+.dc--moved .dc__value {
+    color: var(--effect-up);
+}
+
+.outcomes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: var(--space-2);
+}
+
+.outcome {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-block-size: var(--tap-primary);
+    padding: var(--space-3);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-block-start: var(--space-1) solid var(--outcome);
+    border-radius: var(--radius-control);
+    background: var(--surface-raised);
+    color: var(--text-primary);
+    text-align: start;
+}
+
+.outcome--crit-success { --outcome: var(--outcome-critical-success); }
+.outcome--success { --outcome: var(--outcome-success); }
+.outcome--failure { --outcome: var(--outcome-failure); }
+.outcome--crit-failure { --outcome: var(--outcome-critical-failure); }
+
+.outcome__name {
+    color: var(--outcome);
+    font-size: var(--font-size-data);
+    font-weight: var(--font-weight-bold);
+}
+
+.outcome__means {
+    color: var(--text-secondary);
+    font-size: var(--font-size-chip);
+    line-height: var(--font-leading-snug);
+}
+
+.outcome--on {
+    border-color: var(--outcome);
+    background: var(--accent-tint);
+    box-shadow: 0 0 0 var(--border-hair) var(--outcome);
+}
+
+.outcome:disabled {
+    cursor: default;
+}
+
+.outcome:focus-visible {
+    outline: var(--border-focus) solid var(--line-focus);
+    outline-offset: var(--space-1);
+}
+
+/* ---------------------------------------------------------------- step 2: who, and how it went */
+
+.actors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--tap-separation);
+}
+
+.actor {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+    min-block-size: var(--tap-default);
+    padding: var(--space-2) var(--space-3);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-radius: var(--radius-control);
+    background: var(--surface-raised);
+    color: var(--text-primary);
+}
+
+.actor--on {
+    border-color: var(--accent-base);
+    background: var(--accent-base);
+    color: var(--text-on-accent);
+}
+
+.actor__name {
+    font-size: var(--font-size-data);
+    font-weight: var(--font-weight-semibold);
+}
+
+.actor__pips {
+    display: flex;
+    gap: var(--space-1);
+}
+
+.actor__pip {
+    inline-size: var(--space-3);
+    block-size: var(--space-1);
+    border-radius: var(--radius-chip);
+    background: var(--rank-empty);
+}
+
+.actor__pip--used {
+    background: var(--highlight-base);
+}
+
+.actor:focus-visible,
+.roll:focus-visible,
+.pick:focus-visible {
+    outline: var(--border-focus) solid var(--line-focus);
+    outline-offset: var(--space-1);
+}
+
+.doing,
+.entries {
+    display: flex;
+    flex-direction: column;
+    margin: var(--space-0);
+    padding: var(--space-0);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-radius: var(--radius-control);
+    list-style: none;
+    overflow: clip;
+}
+
+.act,
+.entry {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    background: var(--surface-raised);
+}
+
+.act + .act,
+.entry + .entry {
+    border-top: var(--border-hair) solid var(--line-subtle);
+}
+
+.act--closed {
+    background: var(--surface-sunken);
+}
+
+.act__what {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-3);
+    min-inline-size: 0;
+    flex: 1 1 16rem;
+    font-size: var(--font-size-data);
+}
+
+.act__name--own {
+    font-weight: var(--font-weight-semibold);
+}
+
+.act__own,
+.act__needs {
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+}
+
+.act__took {
+    padding: var(--space-0) var(--space-2);
+    border-radius: var(--radius-chip);
+    background: var(--surface-sunken);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+}
+
+.act__took--crit-success { color: var(--outcome-critical-success); }
+.act__took--success { color: var(--outcome-success); }
+.act__took--failure { color: var(--outcome-failure); }
+.act__took--crit-failure { color: var(--outcome-critical-failure); }
+
+.act__done {
+    color: var(--outcome-success);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+}
+
+.act__roll {
+    display: flex;
+    gap: var(--space-1);
+}
+
+.roll {
+    min-inline-size: var(--tap-min);
+    min-block-size: var(--tap-min);
+    padding-inline: var(--space-2);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-block-end: var(--border-focus) solid var(--outcome);
+    border-radius: var(--radius-chip);
+    background: var(--surface-raised);
+    color: var(--text-primary);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
+}
+
+.roll--crit-success { --outcome: var(--outcome-critical-success); }
+.roll--success { --outcome: var(--outcome-success); }
+.roll--failure { --outcome: var(--outcome-failure); }
+.roll--crit-failure { --outcome: var(--outcome-critical-failure); }
+
+.roll:disabled {
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+@media (hover: hover) {
+    .roll:not(:disabled):hover,
+    .actor:not(.actor--on):hover,
+    .pick:not(.pick--on):hover,
+    .outcome:not(:disabled):hover {
+        background: var(--accent-tint);
+    }
+}
+
+/* ---------------------------------------------------------------- step 3: the larder and the plates */
+
+.larder {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3) var(--space-5);
+}
+
+.larder__count {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.larder__label {
+    font-size: var(--font-size-data);
+    font-weight: var(--font-weight-semibold);
+}
+
+.larder__says {
+    flex: 1 1 20rem;
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+    line-height: var(--font-leading-normal);
+}
+
+.plates {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.plate {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+}
+
+.plate__who {
+    min-inline-size: 7rem;
+    font-size: var(--font-size-data);
+    font-weight: var(--font-weight-semibold);
+}
+
+.plate__choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+}
+
+.pick {
+    min-block-size: var(--tap-min);
+    padding: var(--space-1) var(--space-3);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-radius: var(--radius-chip);
+    background: var(--surface-page);
+    color: var(--text-secondary);
+    font-size: var(--font-size-chip);
+}
+
+.pick--on {
+    border-color: var(--accent-base);
+    background: var(--accent-base);
+    color: var(--text-on-accent);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* ---------------------------------------------------------------- step 4: the watches
+
+   One bar the length of the rest, cut into as many equal watches as there are people, with a
+   mark wherever the GM checks for an encounter. */
+.watches {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    max-width: 56rem;
+}
+
+.watches__bar {
+    position: relative;
+    display: flex;
+    block-size: var(--tap-default);
+    border-radius: var(--radius-control);
+    overflow: clip;
+}
+
+.watches__watch {
+    flex: 1;
+    display: grid;
+    place-items: center;
+    min-inline-size: 0;
+    background: var(--accent-base);
+    color: var(--text-on-accent);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+}
+
+.watches__watch:nth-child(even) {
+    background: var(--accent-press);
+}
+
+.watches__who {
+    overflow: hidden;
+    padding-inline: var(--space-1);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.watches__check {
+    position: absolute;
+    inset-block: 0;
+    inline-size: var(--border-focus);
+    background: var(--highlight-base);
+}
+
+.watches__scale {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+}
+
+/* ---------------------------------------------------------------- the camp book */
+
+.entry {
+    justify-content: flex-start;
+}
+
+.entry__kind {
+    padding: var(--space-0) var(--space-2);
+    border-radius: var(--radius-chip);
+    background: var(--surface-sunken);
+    color: var(--text-secondary);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+}
+
+.entry__kind--recipe {
+    background: var(--accent-tint);
+    color: var(--accent-press);
+}
+
+.entry__name {
+    font-size: var(--font-size-data);
+    font-weight: var(--font-weight-semibold);
+}
+
+.entry__dc {
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+    font-variant-numeric: tabular-nums;
+}
+
+.entry__does {
+    flex: 1 1 18rem;
+    color: var(--text-secondary);
+    font-size: var(--font-size-chip);
+    line-height: var(--font-leading-normal);
+    white-space: pre-line;
+}
+
+.writing {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    max-width: 40rem;
+    padding-top: var(--space-2);
+}
+
+.writing ::deep .writing__dc {
+    max-width: 14rem;
+}
+
+.survivors {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+    gap: var(--space-4);
+}
+
+.survivor {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.survivor__who {
+    font-size: var(--font-size-data);
+    font-weight: var(--font-weight-semibold);
+}

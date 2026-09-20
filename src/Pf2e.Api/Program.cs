@@ -197,6 +197,15 @@ app.UseExceptionHandler(handler => handler.Run(async context =>
         return;
     }
 
+    // A rule of camping said no: four activities already, or somebody has succeeded at this one
+    // tonight. The same kind of answer as the immunity above, and the sentence is the rule.
+    if (error is CampRuleException camping)
+    {
+        context.Response.StatusCode = StatusCodes.Status409Conflict;
+        await context.Response.WriteAsJsonAsync(new { title = camping.Message });
+        return;
+    }
+
     // Which creature is the whole question, so the sentence carries it.
     if (error is CombatantNotFoundException absent)
     {

@@ -234,7 +234,62 @@ public sealed record CampaignView(
     /// <summary>How long the party has been at this, in minutes. Only ever goes up.</summary>
     int ElapsedMinutes,
     /// <summary>Which downtime day the party is on, counting from one.</summary>
-    int Day);
+    int Day,
+    /// <summary>Where the party is in its evening, its camp book and tonight's meal.</summary>
+    CampSiteView Camp);
+
+/// <summary>
+/// A camping session as the rules run it. Step is "PrepareCampsite", "CampingActivities",
+/// "Eating", "Resting" or "DailyPreparations". Campsite is how Prepare Campsite went, as a degree
+/// of success, and null until somebody has rolled it.
+/// <para>The three things the rules derive from that roll are stated here and not worked out on
+/// the screen: whether Camping activities are allowed at all, the penalty a poor campsite puts on
+/// them, and tonight's Encounter DC.</para>
+/// </summary>
+public sealed record CampSiteView(
+    string Step,
+    string? ZoneName,
+    int ZoneDc,
+    int EncounterDc,
+    int EncounterDcTonight,
+    string? Campsite,
+    bool ActivitiesAllowed,
+    int ActivityPenalty,
+    IReadOnlyList<CampingTakeView> Taken,
+    IReadOnlyList<MealChoiceView> Meals,
+    IReadOnlyList<CampEntryView> Book,
+    int BasicIngredients,
+    int SpecialIngredients,
+    /// <summary>How long this party has to set aside to rest with equal watches, and how long
+    /// each watch is. Zero for a party of one, who cannot keep a watch and sleep.</summary>
+    int RestMinutes,
+    int EachWatchMinutes);
+
+/// <summary>Outcome is "CriticalSuccess", "Success", "Failure" or "CriticalFailure".</summary>
+public sealed record CampingTakeView(Guid CharacterId, string Activity, string Outcome);
+
+/// <summary>Kind is "Rations", "BasicMeal" or "SpecialMeal".</summary>
+public sealed record MealChoiceView(Guid CharacterId, string Kind, Guid? RecipeId);
+
+/// <summary>Kind is "Recipe" or "Activity". Dc is a recipe's cooking DC.</summary>
+public sealed record CampEntryView(Guid Id, string Kind, string Name, string Does, int? Dc);
+
+public sealed record SetCampStepRequest(string Step);
+
+public sealed record SetCampZoneRequest(string? ZoneName, int ZoneDc, int EncounterDc);
+
+/// <summary>A null outcome is nobody having rolled it yet.</summary>
+public sealed record RecordCampsiteRequest(string? Outcome);
+
+public sealed record TakeCampingActivityRequest(string Activity, string Outcome);
+
+/// <summary>The client names the entry, so saving it twice is one entry and an edit is the same
+/// request as an add.</summary>
+public sealed record SaveCampEntryRequest(string Kind, string Name, string Does, int? Dc);
+
+public sealed record ChooseMealRequest(string Kind, Guid? RecipeId);
+
+public sealed record SetCampSuppliesRequest(int BasicIngredients, int SpecialIngredients);
 
 /// <summary>The one payload that ever carries the DM key. Whoever asked for it is the DM, and
 /// no later response repeats it.</summary>
@@ -283,6 +338,8 @@ public sealed record RollInitiativeRequest(IReadOnlyList<InitiativeRoll> Rolls);
 public sealed record SetInitiativeRequest(int Initiative);
 
 public sealed record RevealMonsterRequest(bool Revealed);
+
+public sealed record PassTimeRequest(int Minutes);
 
 /// <summary>
 /// The fields that feed the calculator, in the form the screen edits them. Everything here is

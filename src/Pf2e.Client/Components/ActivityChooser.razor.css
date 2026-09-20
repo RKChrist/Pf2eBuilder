@@ -25,9 +25,42 @@
    the character rather than about the chip that is lit. */
 .choose__says {
     margin: 0;
+    min-block-size: calc(2lh + var(--space-2) * 2);
+    padding: var(--space-2) var(--space-3);
+    border-inline-start: var(--border-focus) solid var(--line-subtle);
+    border-radius: var(--radius-chip);
+    background: var(--surface-sunken);
     color: var(--text-secondary);
-    font-size: var(--font-size-chip);
+    font-size: var(--font-size-data);
+    line-height: var(--font-leading-snug);
     text-wrap: pretty;
+}
+
+/* Pointed at, not chosen: the same line, marked as a look and not a fact about the character. */
+.choose__says--looking {
+    border-inline-start-color: var(--accent-base);
+    background: var(--accent-tint);
+}
+
+/* The gap is here and not in the markup, where Razor takes the space after a closing tag out. */
+.choose__says strong {
+    margin-inline-end: 0.35em;
+    color: var(--text-primary);
+}
+
+.choose__hint {
+    color: var(--text-muted);
+}
+
+/* A finger has no "point at". Tapping chooses, and the line then says what was chosen. */
+@media (hover: none) {
+    .choose__hint {
+        display: none;
+    }
+
+    .choose__says:has(.choose__hint) {
+        display: none;
+    }
 }
 
 /* A rule between the numbers and the choices, because a chip reading "AC 25" and a chip reading

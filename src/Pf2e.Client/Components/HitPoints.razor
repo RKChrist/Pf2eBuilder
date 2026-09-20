@@ -8,9 +8,12 @@
     <span class="hits__track" aria-hidden="true">
         <span class="hits__fill" style="width: @Percent%"></span>
     </span>
-    <span class="hits__count">
-        <Icon Name="heart" /><span class="hits__now">@Current</span><span class="hits__of">/@Max</span>
-    </span>
+    @if (ShowCount)
+    {
+        <span class="hits__count">
+            <Icon Name="heart" /><span class="hits__now">@Current</span><span class="hits__of">/@Max</span>
+        </span>
+    }
     @if (Temporary > 0)
     {
         <span class="hits__temp">+@Temporary temp</span>
@@ -27,6 +30,10 @@
     [Parameter, EditorRequired] public int Max { get; set; }
 
     [Parameter] public int Temporary { get; set; }
+
+    /// <summary>Off where the number is already written large beside the bar, which is the party
+    /// card: 76/76 twice on one line is one number and a reader checking they agree.</summary>
+    [Parameter] public bool ShowCount { get; set; } = true;
 
     int Percent => Max <= 0 ? 0 : Math.Clamp(Current * 100 / Max, 0, 100);
 }

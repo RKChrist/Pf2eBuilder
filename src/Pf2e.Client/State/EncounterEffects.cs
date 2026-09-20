@@ -111,6 +111,10 @@ public sealed class EncounterEffects
             code, action.CharacterId, action.Activity, CancellationToken.None));
 
     [EffectMethod]
+    public Task Handle(TimePassed action, IDispatcher dispatcher) =>
+        RunAsync(dispatcher, code => _tracker.PassTimeAsync(code, action.Minutes, CancellationToken.None));
+
+    [EffectMethod]
     public Task Handle(NightRested _, IDispatcher dispatcher) =>
         RunAsync(dispatcher, code => _tracker.RestAsync(code, CancellationToken.None));
 
