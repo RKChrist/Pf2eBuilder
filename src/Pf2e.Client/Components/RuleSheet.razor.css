@@ -126,8 +126,9 @@
 }
 
 /* A name that opens its own record, a real link at the tap floor, and beside it any name the
-   ruleset has no record of, as plain words at the same inset. Set flush with the text around it
-   by pulling back that inset. */
+   ruleset has no record of. Those are plain words and are not sized like a target, or a reader
+   would keep tapping the one thing here that never opens; they keep the refs' inset so the two
+   line up. Set flush with the text around them by pulling that inset back. */
 .refs {
     display: flex;
     flex-wrap: wrap;
@@ -135,17 +136,18 @@
     margin-inline-start: calc(var(--space-2) * -1);
 }
 
-.ref,
 .plain {
+    align-self: center;
+    padding-inline: var(--space-2);
+}
+
+.ref {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     min-width: var(--tap-min);
     min-height: var(--tap-min);
     padding: var(--space-0) var(--space-2);
-}
-
-.ref {
     border: none;
     border-radius: var(--radius-chip);
     background: transparent;
