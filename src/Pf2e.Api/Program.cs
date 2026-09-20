@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.HttpOverrides;
+using System.Security.Cryptography;
 using System.Text.Json;
 using FluentValidation;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -33,6 +35,24 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
     WebRootPath = string.IsNullOrWhiteSpace(clientRoot) ? null : Path.GetFullPath(clientRoot),
 });
 
+// The signing key is required, and outside Development that is the point: a process that starts
+// without one hands out sessions nobody configured. Inside Development it would mean a fresh
+// clone refusing to start until its author finds the user-secrets incantation, which is a worse
+// trade than a key that does not survive a restart. Generated here rather than defaulted in
+// AuthJwtOptions, so the refusal stays real everywhere else. A new provider rather than a write
+// through the existing ones, because last provider wins and this one must not beat a key the
+// operator did set, which is what the guard above it is for.
+var signingKeyPath = $"{AuthOptions.Section}:Jwt:{nameof(AuthJwtOptions.SigningKey)}";
+var generatedSigningKey = builder.Environment.IsDevelopment()
+                          && string.IsNullOrWhiteSpace(builder.Configuration[signingKeyPath]);
+if (generatedSigningKey)
+{
+    builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+    {
+        [signingKeyPath] = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
+    });
+}
+
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddProblemDetails();
@@ -62,6 +82,37 @@ builder.Services.AddOptions<HubOptions>()
     });
 builder.Services.AddScoped<ICampaignBroadcaster, CampaignBroadcaster>();
 
+builder.Services.AddSection<AuthOptions>(builder.Configuration, AuthOptions.Section);
+builder.Services.AddSingleton<IValidateOptions<AuthOptions>, AuthOptionsValidator>();
+
+// Accounts sit underneath the campaign code and the DM key rather than beside them: no route
+// that existed before this asks who you are, and none of them is given an authorization policy
+// here. Signing in adds a name to the header and nothing else.
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
+builder.Services.AddAuthorization();
+
+// Same shape as HubOptions above: our own bound section projected onto the framework's options
+// in the Configure stage, which runs before the PostConfigure that fills in the library's own
+// defaults, so those only ever fill what we left alone.
+builder.Services.AddOptions<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme)
+    .Configure<IOptions<AuthOptions>>((framework, mine) =>
+    {
+        var cookie = mine.Value.Cookie;
+
+        framework.Cookie.Name = cookie.Name;
+        framework.Cookie.SameSite = Enum.Parse<SameSiteMode>(cookie.SameSite, ignoreCase: true);
+        framework.Cookie.SecurePolicy = Enum.Parse<CookieSecurePolicy>(cookie.SecurePolicy, ignoreCase: true);
+
+        // The ticket carries a signed token, so script must never be able to read the cookie
+        // that holds it. This is not configurable for the same reason it is not optional.
+        framework.Cookie.HttpOnly = true;
+
+        framework.ExpireTimeSpan = TimeSpan.FromMinutes(cookie.ExpireMinutes);
+        framework.SlidingExpiration = cookie.SlidingExpiration;
+        framework.LoginPath = cookie.LoginPath;
+        framework.AccessDeniedPath = cookie.AccessDeniedPath;
+    });
+
 // Kestrel refuses a body over 30 MB before any handler sees it, and a refusal there is a bare
 // 413 with no sentence in it. The validator answers with the size and the format, so it has to
 // be the one that refuses: Kestrel is lifted above it rather than left underneath.
@@ -69,6 +120,16 @@ builder.WebHost.ConfigureKestrel(kestrel =>
     kestrel.Limits.MaxRequestBodySize = ImportCharacterValidator.MaxPayload + (1024 * 1024));
 
 var app = builder.Build();
+
+// Said through the configured logging pipeline rather than to the console from before Build(),
+// so it lands wherever the operator sends warnings.
+if (generatedSigningKey)
+{
+    app.Logger.LogWarning(
+        "No {Setting} is configured, so this Development run generated a random one. Every " +
+        "session it signs dies with the process, so a restart signs everybody out. Set a user " +
+        "secret to keep them.", signingKeyPath);
+}
 
 // A failed validator is a bad request, not a server fault. Translating it here keeps every
 // handler free of HTTP concerns.

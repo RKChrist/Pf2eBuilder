@@ -23,6 +23,10 @@
     <ProjectReference Include="..\..\src\Pf2e.Domain\Pf2e.Domain.csproj" />
     <ProjectReference Include="..\..\src\Pf2e.Contracts\Pf2e.Contracts.csproj" />
     <ProjectReference Include="..\..\src\Pf2e.Application\Pf2e.Application.csproj" />
+    <!-- For the options validators, which live beside the host that reads them. The layering
+         assertions in ArchitectureRules read compiled assemblies, so what this test project
+         references cannot loosen what the source projects may reference. -->
+    <ProjectReference Include="..\..\src\Pf2e.Api\Pf2e.Api.csproj" />
   </ItemGroup>
 
 </Project>
