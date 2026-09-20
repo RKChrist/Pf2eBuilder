@@ -241,7 +241,7 @@
                                             else
                                             {
                                                 <span class="chip chip--read" data-effect="@effect.Id">
-                                                    <RuleLink Ref='@(new RuleRef.Named("condition", effect.Name))'
+                                                    <RuleLink Ref="@(effect is { Kind: "Rule", Key: { Length: > 0 } ruleId } ? new RuleRef.Id(ruleId) : new RuleRef.Named(null, effect.Name))"
                                                               Label="@Named(effect)"
                                                               Class="chip__name" />
                                                 </span>

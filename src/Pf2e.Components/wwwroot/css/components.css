@@ -1248,6 +1248,7 @@
   border-top-right-radius: var(--radius-sheet);
   background: var(--surface-overlay);
   color: var(--text-primary);
+  box-shadow: var(--elevation-float);
   transform: translateY(var(--pf-sheet-drag));
   animation: pf-sheet-rise var(--motion-duration-sheet) var(--motion-easing-enter);
   transition: transform var(--motion-duration-sheet) var(--motion-easing-exit);

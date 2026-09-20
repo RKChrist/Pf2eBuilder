@@ -9,9 +9,9 @@ namespace Pf2e.Client.State;
 /// </summary>
 public sealed class RuleNames(RulesApi api)
 {
-    readonly Dictionary<(string Category, string Name), string?> _known = new();
+    readonly Dictionary<(string? Category, string Name), string?> _known = new();
 
-    public async Task<string?> IdOfAsync(string category, string name, CancellationToken ct)
+    public async Task<string?> IdOfAsync(string? category, string name, CancellationToken ct)
     {
         if (_known.TryGetValue((category, name), out var remembered))
         {

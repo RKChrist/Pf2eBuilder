@@ -16,5 +16,7 @@ public abstract record RuleRef
 
     public sealed record Id(string RuleId) : RuleRef;
 
-    public sealed record Named(string Category, string Name) : RuleRef;
+    /// <summary>A null category is a name that could be any kind of record: a buff is as likely
+    /// to be a spell as an action, and the picker that lists it does not know which.</summary>
+    public sealed record Named(string? Category, string Name) : RuleRef;
 }

@@ -24,7 +24,7 @@
                     <li class="row">
                         <ModifierValue Value="modifier.Value" Kind="RuleDisplay.KindOf(modifier.Type)" />
                         <span class="row__source">
-                            <RuleLink Ref='@(new RuleRef.Named("condition", Unvalued(modifier.Source)))'
+                            <RuleLink Ref='@(new RuleRef.Named(null, Unvalued(modifier.Source)))'
                                       Label="@modifier.Source" />
                         </span>
                         <span class="row__applies">to @string.Join(" and ", modifier.Applies)</span>
@@ -44,7 +44,7 @@
                         <ModifierValue Value="suppressed.Modifier.Value"
                                        Kind="RuleDisplay.KindOf(suppressed.Modifier.Type)" />
                         <span class="row__source">
-                            <RuleLink Ref='@(new RuleRef.Named("condition", Unvalued(suppressed.Modifier.Source)))'
+                            <RuleLink Ref='@(new RuleRef.Named(null, Unvalued(suppressed.Modifier.Source)))'
                                       Label="@suppressed.Modifier.Source" />
                         </span>
                         <span class="row__reason">@suppressed.Reason</span>

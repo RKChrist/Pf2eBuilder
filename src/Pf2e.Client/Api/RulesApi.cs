@@ -28,9 +28,9 @@ public sealed class RulesApi(HttpClient http)
     public Task<RuleCounts> CountAsync(string? name, string? trait, CancellationToken ct) =>
         GetAsync<RuleCounts>(new UrlBuilder("rules/counts").Add("Name", name).Add("Trait", trait).ToString(), ct);
 
-    /// <summary>The record in <paramref name="category"/> named exactly <paramref name="name"/>,
+    /// <summary>The record in <paramref name="category"/>, or in any category when that is null, named exactly <paramref name="name"/>,
     /// which a ranked search puts first when there is one.</summary>
-    public async Task<RuleSummary?> FindAsync(string category, string name, CancellationToken ct)
+    public async Task<RuleSummary?> FindAsync(string? category, string name, CancellationToken ct)
     {
         var found = await SearchAsync(category, name, null, null, null, 1, ct, pageSize: 5);
         return found.Items.FirstOrDefault(item => item.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
