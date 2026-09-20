@@ -85,7 +85,7 @@
                                     {
                                         <div class="condition" data-condition="@condition.Key">
                                             <span class="condition__name">
-                                                @condition.Name
+                                                <RuleLink Ref='@(new RuleRef.Named("condition", condition.Name))' />
                                                 @if (Reads(condition) is { Length: > 0 } reads)
                                                 {
                                                     <span class="condition__reads">@reads</span>

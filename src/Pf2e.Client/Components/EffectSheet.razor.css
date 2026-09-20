@@ -72,15 +72,12 @@
     border-color: var(--line-subtle);
 }
 
-.condition:hover {
-    border-color: var(--accent-base);
-}
-
 /* The name and what it does, stacked, because "+1 status to attack rolls, Damage" does not fit
    beside a stepper on a phone and is the half that answers the question. */
 .condition__name {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     gap: var(--space-1);
     font-size: var(--font-size-data);
     min-width: 0;
