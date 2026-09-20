@@ -132,7 +132,13 @@ public sealed class RestForTheNightHandler(
         var campaign = change.Campaign;
         CampaignAccess.RequireDm(change.Role, "call a night's rest");
 
-        campaign.ElapsedMinutes += NightsRest.Minutes;
+        // Eight hours each, and longer on the clock once there are enough people to keep watch:
+        // the rules' Watches and Rest table, which is one formula.
+        var (rest, _) = Watches.For(campaign.Characters.Count);
+        campaign.ElapsedMinutes += Math.Max(NightsRest.Minutes, rest);
+
+        // What comes after the night is getting ready for the day.
+        campaign.Camp = campaign.Camp with { Step = CampStep.DailyPreparations };
 
         foreach (var character in campaign.Characters)
         {

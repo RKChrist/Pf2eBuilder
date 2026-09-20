@@ -49,6 +49,45 @@ public static class CampaignEndpoints
              CampActivityRequest body, CancellationToken ct) =>
                 sender.Send(new TakeCampActivity(code, DmKeyOf(request), id, body.Activity), ct));
 
+        // A camping session, step by step. Everything hangs off /camp, because it is one value
+        // on the campaign and these are the ways it changes.
+        app.MapPut("/campaigns/{code}/camp/step",
+            (ISender sender, HttpRequest request, string code, SetCampStepRequest body, CancellationToken ct) =>
+                sender.Send(new SetCampStep(code, DmKeyOf(request), body.Step), ct));
+
+        app.MapPut("/campaigns/{code}/camp/zone",
+            (ISender sender, HttpRequest request, string code, SetCampZoneRequest body, CancellationToken ct) =>
+                sender.Send(new SetCampZone(code, DmKeyOf(request), body.ZoneName, body.ZoneDc, body.EncounterDc), ct));
+
+        app.MapPut("/campaigns/{code}/camp/campsite",
+            (ISender sender, HttpRequest request, string code, RecordCampsiteRequest body, CancellationToken ct) =>
+                sender.Send(new RecordCampsite(code, DmKeyOf(request), body.Outcome), ct));
+
+        app.MapPost("/campaigns/{code}/camp/characters/{id:guid}/activities",
+            (ISender sender, HttpRequest request, string code, Guid id,
+             TakeCampingActivityRequest body, CancellationToken ct) =>
+                sender.Send(new TakeCampingActivity(code, DmKeyOf(request), id, body.Activity, body.Outcome), ct));
+
+        app.MapPut("/campaigns/{code}/camp/characters/{id:guid}/meal",
+            (ISender sender, HttpRequest request, string code, Guid id, ChooseMealRequest body, CancellationToken ct) =>
+                sender.Send(new ChooseMeal(code, DmKeyOf(request), id, body.Kind, body.RecipeId), ct));
+
+        app.MapPut("/campaigns/{code}/camp/book/{id:guid}",
+            (ISender sender, HttpRequest request, string code, Guid id, SaveCampEntryRequest body, CancellationToken ct) =>
+                sender.Send(new SaveCampEntry(code, DmKeyOf(request), id, body.Kind, body.Name, body.Does, body.Dc), ct));
+
+        app.MapDelete("/campaigns/{code}/camp/book/{id:guid}",
+            (ISender sender, HttpRequest request, string code, Guid id, CancellationToken ct) =>
+                sender.Send(new RemoveCampEntry(code, DmKeyOf(request), id), ct));
+
+        app.MapPut("/campaigns/{code}/camp/supplies",
+            (ISender sender, HttpRequest request, string code, SetCampSuppliesRequest body, CancellationToken ct) =>
+                sender.Send(new SetCampSupplies(code, DmKeyOf(request), body.BasicIngredients, body.SpecialIngredients), ct));
+
+        app.MapPost("/campaigns/{code}/camp/break",
+            (ISender sender, HttpRequest request, string code, CancellationToken ct) =>
+                sender.Send(new BreakCamp(code, DmKeyOf(request)), ct));
+
         app.MapPost("/campaigns/{code}/time",
             (ISender sender, HttpRequest request, string code, PassTimeRequest body, CancellationToken ct) =>
                 sender.Send(new PassTime(code, DmKeyOf(request), body.Minutes), ct));

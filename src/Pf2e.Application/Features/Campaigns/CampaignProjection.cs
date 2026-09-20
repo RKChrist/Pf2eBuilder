@@ -44,7 +44,30 @@ internal static class CampaignProjection
                 .OfType<EffectApplicationView>()],
             campaign.Encounter is { } present ? Of(role, present, campaign, visible, visibleIds) : null,
             campaign.ElapsedMinutes,
-            campaign.Day);
+            campaign.Day,
+            Of(campaign.Camp, campaign.Characters.Count));
+    }
+
+    static CampSiteView Of(CampSite camp, int partySize)
+    {
+        var (rest, watch) = Watches.For(partySize);
+
+        return new CampSiteView(
+            camp.Step.ToString(),
+            camp.ZoneName,
+            camp.ZoneDc,
+            camp.EncounterDc,
+            camp.EncounterDcTonight,
+            camp.Campsite?.ToString(),
+            camp.ActivitiesAllowed,
+            camp.ActivityPenalty,
+            [.. camp.Taken.Select(take => new CampingTakeView(take.CharacterId, take.Activity, take.Outcome.ToString()))],
+            [.. camp.Meals.Select(meal => new MealChoiceView(meal.CharacterId, meal.Kind.ToString(), meal.RecipeId))],
+            [.. camp.Book.Select(entry => new CampEntryView(entry.Id, entry.Kind.ToString(), entry.Name, entry.Does, entry.Dc))],
+            camp.BasicIngredients,
+            camp.SpecialIngredients,
+            rest,
+            watch);
     }
 
     /// <summary>The creatures a viewer may know anything about. For the DM that is everybody; for

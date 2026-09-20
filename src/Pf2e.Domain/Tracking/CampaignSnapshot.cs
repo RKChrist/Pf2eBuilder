@@ -55,7 +55,8 @@ public sealed record CampaignSnapshot(
     ImmutableArray<CharacterHealthSnapshot> Characters,
     ImmutableArray<EffectSnapshot> Effects,
     EncounterSnapshot? Encounter,
-    int ElapsedMinutes);
+    int ElapsedMinutes,
+    CampSite Camp);
 
 /// <summary>Taking and putting back, as functions over the campaign.</summary>
 public static class CampaignSnapshots
@@ -68,7 +69,8 @@ public static class CampaignSnapshots
                 c.Id, c.CurrentHitPoints, c.TemporaryHitPoints, c.HeroPoints, c.TreatedAtMinute))],
         [.. campaign.EffectApplications.Select(Of)],
         campaign.Encounter is { } encounter ? Of(encounter) : null,
-        campaign.ElapsedMinutes);
+        campaign.ElapsedMinutes,
+        campaign.Camp);
 
     /// <summary>
     /// Puts the campaign back where the snapshot found it. Combatants and effects are reconciled
@@ -84,6 +86,9 @@ public static class CampaignSnapshots
         // a night's rest, an hour on the road. Undo that left the clock where it was undid the
         // healing and kept the hour.
         campaign.ElapsedMinutes = snapshot.ElapsedMinutes;
+
+        // An immutable value, so the reference the snapshot kept is the camp as it was.
+        campaign.Camp = snapshot.Camp;
 
         foreach (var health in snapshot.Characters)
         {
