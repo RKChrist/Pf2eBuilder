@@ -76,7 +76,7 @@ await sleep(800);
 
 const before = await p.eval(`(() => ({
   dm: !!document.querySelector('.shell__dm'),
-  controls: document.querySelectorAll('.fight__acts button').length,
+  controls: document.querySelectorAll('.fight__acts button, .now button').length,
   rows: [...document.querySelectorAll('.turn__called')].map(e => e.textContent.trim()),
 }))()`);
 check('the GM is the GM', before.dm);
@@ -91,7 +91,7 @@ check('the campaign comes back after a reload', await wait('.fight', 30000));
 const after = await p.eval(`(() => ({
   code: document.querySelector('.campaign-code')?.textContent.trim() ?? '',
   dm: !!document.querySelector('.shell__dm'),
-  controls: document.querySelectorAll('.fight__acts button').length,
+  controls: document.querySelectorAll('.fight__acts button, .now button').length,
   rows: [...document.querySelectorAll('.turn__called')].map(e => e.textContent.trim()),
   join: !!document.querySelector('.join'),
 }))()`);

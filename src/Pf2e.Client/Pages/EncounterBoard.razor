@@ -36,13 +36,6 @@
                                     OnClick="() => Dispatcher.Dispatch(new ChangeUndone())">
                                 <Icon Name="undo" Class="pf-icon--lead" />Undo
                             </Button>
-                            @* The button pressed more than every other control in the app put
-                               together, so it is the only filled one on the screen. *@
-                            <Button Class="fight__next"
-                                        Disabled="@(table.Encounter is not { Round: > 0 })"
-                                        OnClick="() => Dispatcher.Dispatch(new TurnAdvanced())">
-                                    <Icon Name="chevron" Class="pf-icon--lead" />Next turn
-                                </Button>
                             </div>
                         }
                     </Aside>
@@ -68,6 +61,16 @@
                     @if (table.Encounter is { Round: > 0 } started)
                     {
                         <span class="now__round">Round @started.Round</span>
+                    }
+                    @if (table.Role == "Dm")
+                    {
+                        @* The button pressed more than every other control in the app put
+                           together, beside the sentence it changes. *@
+                        <Button Class="fight__next"
+                                Disabled="@(table.Encounter is not { Round: > 0 })"
+                                OnClick="() => Dispatcher.Dispatch(new TurnAdvanced())">
+                            <Icon Name="chevron" Class="pf-icon--lead" />Next turn
+                        </Button>
                     }
                 </div>
 

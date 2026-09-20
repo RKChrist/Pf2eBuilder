@@ -25,10 +25,16 @@
    a phone with twelve creatures in the order that means scrolling. */
 /* Sits directly on the list it points into, and reads as the heading of it rather than as a
    notice above it. The name is in the display face because it is a name. */
+/* Held under the header while the order scrolls, because both halves of it are needed from
+   wherever a GM happens to be looking: the name of whoever is up, and the button that moves it
+   on. Pressing that used to mean scrolling to the top and back down again every turn. */
 .now {
+    position: sticky;
+    top: var(--site-head-block);
+    z-index: 2;
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
+    align-items: center;
     gap: var(--space-2) var(--space-3);
     margin-top: var(--space-5);
     padding: var(--space-2) var(--space-3);
@@ -88,19 +94,16 @@
     gap: var(--space-1);
 }
 
-.fight ::deep .fight__next {
-    flex: 1 0 100%;
-    margin-inline-start: 0;
+/* On the accent ground a filled button would vanish into it, so it inverts: the page's own
+   surface carrying the accent as its text. */
+.now ::deep .fight__next {
+    margin-inline-start: auto;
+    background: var(--surface-page);
+    border-color: var(--surface-page);
+    color: var(--accent-base);
 }
 
-@media (min-width: 600px) {
-    .fight ::deep .fight__next {
-        flex: 0 0 auto;
-        margin-inline-start: var(--space-2);
-    }
-}
-
-.fight__next .pf-icon {
+.now ::deep .fight__next .pf-icon {
     transform: rotate(90deg);
 }
 

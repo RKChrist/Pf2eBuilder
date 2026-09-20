@@ -1087,6 +1087,9 @@
 
 /* ---------------------------------------------------------------- card */
 
+/* clip rather than hidden: the card wants its corners cut, not a scroll container. hidden makes
+   one, and a scroll container is what stops position: sticky working for anything inside a card,
+   which the fight's "whose turn it is" band is. */
 .pf-card {
   display: flex;
   flex-direction: column;
@@ -1094,7 +1097,7 @@
   border-radius: var(--radius-card);
   background: var(--surface-raised);
   color: var(--text-primary);
-  overflow: hidden;
+  overflow: clip;
 }
 
 .pf-card__head {

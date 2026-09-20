@@ -411,7 +411,7 @@ check('attack bonuses are on the row whose turn it is and nowhere else',
   JSON.stringify(shape.map(row => [row.who, row.now, row.character, row.attacks])));
 
 const first = await dm.eval(`document.querySelector('.turn--now .turn__called').textContent.trim()`);
-await clickText(dm, '.fight__acts button', 'Next turn');
+await clickText(dm, '.now button', 'Next turn');
 await sleep(900);
 const second = await dm.eval(`document.querySelector('.turn--now .turn__called').textContent.trim()`);
 check('next turn moves the marker', first !== second, `${first} -> ${second}`);
@@ -497,7 +497,7 @@ const seen = await player.eval(`(() => {
     names: rows.map(r => r.querySelector('.turn__called').textContent.trim()),
     withNumbers: rows.filter(r => r.querySelector('.hits__count'))
       .map(r => r.querySelector('.turn__called').textContent.trim()),
-    controls: document.querySelectorAll('.fight__acts button').length,
+    controls: document.querySelectorAll('.fight__acts button, .now button').length,
     initiativeFields: document.querySelectorAll('.turn__initiative--typed').length,
     removals: document.querySelectorAll('.turn__out').length,
   };

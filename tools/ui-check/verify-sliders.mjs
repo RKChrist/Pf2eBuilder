@@ -11,6 +11,10 @@ const check = reporter();
 const browser = await launch({ headless: false });
 const page = await openPage(browser);
 
+// Navigated here rather than by openPage, which took a url until the day it took options and
+// stopped taking one. This file kept calling it the old way and drove about:blank.
+await page.goto(url);
+
 const centre = async (selector, nth = 0) =>
   page.eval(`(() => {
     const el = document.querySelectorAll(${JSON.stringify(selector)})[${nth}];
