@@ -29,6 +29,9 @@ public sealed record CombatantAdded(
 
 public sealed record MonsterEdited(Guid CombatantId, EditMonsterRequest Monster);
 
+/// <summary>Back to the numbers the ruleset prints for it.</summary>
+public sealed record MonsterReset(Guid CombatantId);
+
 /// <summary>Everybody on the roster who is not in the fight yet, as one action rather than one
 /// per character. Adding them as separate actions means separate commands racing each other on
 /// the same campaign, which lost all but one of them.</summary>

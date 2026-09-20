@@ -73,6 +73,12 @@ public sealed class TrackerApi(HttpClient http)
                 new AddCombatantRequest(ruleId, characterId, name, initiative, homebrew, count)),
             ct);
 
+    public Task<CampaignView> ResetMonsterAsync(string code, Guid combatant, CancellationToken ct) =>
+        SendAsync<CampaignView>(
+            new HttpRequestMessage(
+                HttpMethod.Delete, $"{Campaign(code)}/encounter/combatants/{combatant}/monster"),
+            ct);
+
     public Task<CampaignView> EditMonsterAsync(
         string code, Guid combatant, EditMonsterRequest monster, CancellationToken ct) =>
         SendAsync<CampaignView>(

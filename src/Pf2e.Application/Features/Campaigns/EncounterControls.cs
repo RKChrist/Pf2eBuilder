@@ -115,6 +115,68 @@ public sealed class EditMonsterHandler(
 }
 
 /// <summary>
+/// A monster the DM changed goes back to the numbers the ruleset prints for it.
+/// <para>An edit writes over the copy this monster took when it joined, and the record it was
+/// copied from is never touched, so the book's line is always there to be read again. A monster
+/// the DM wrote has no book to go back to, and saying so is better than resetting it to
+/// nothing.</para>
+/// <para>The wound is kept, the same way an edit keeps it: hit points move by as much as the
+/// maximum moved. An "Elite" or "Weak" the form put in front of the name comes off with the
+/// numbers it described.</para>
+/// </summary>
+public sealed record ResetMonster(string Code, string? DmKey, Guid CombatantId) : IRequest<CampaignView>;
+
+public sealed class ResetMonsterValidator : AbstractValidator<ResetMonster>
+{
+    public ResetMonsterValidator()
+    {
+        RuleFor(c => c.Code).Must(CampaignCode.IsValid)
+                            .WithMessage("A campaign code is four to twelve letters and digits.");
+        RuleFor(c => c.CombatantId).NotEmpty();
+    }
+}
+
+public sealed class ResetMonsterHandler(
+    ITrackerDbContext db, IRulesDbContext rules, IUndoStack undo, ICampaignBroadcaster broadcaster)
+    : IRequestHandler<ResetMonster, CampaignView>
+{
+    public async Task<CampaignView> Handle(ResetMonster command, CancellationToken ct)
+    {
+        var change = await CampaignAccess.LoadForChangeAsync(
+            db, undo, command.Code, command.DmKey, "a monster put back", ct);
+        var (campaign, role) = (change.Campaign, change.Role);
+        CampaignAccess.RequireDm(role, "put a monster back");
+
+        if (campaign.Encounter?.Find(command.CombatantId) is not MonsterCombatant monster)
+        {
+            throw new CombatantNotFoundException("No monster in this encounter has that id.");
+        }
+
+        if (monster.RuleId.Length == 0)
+        {
+            throw new CombatantNotFoundException(
+                $"{monster.Name} is a monster of your own, so there is no book to put it back to.");
+        }
+
+        var (_, book) = await AddCombatantHandler.BookLineAsync(rules, monster.RuleId, ct);
+        var moved = book.MaxHitPoints - monster.Stats.MaxHitPoints;
+
+        monster.Stats = book;
+        monster.CurrentHitPoints = Math.Clamp(monster.CurrentHitPoints + moved, 0, book.MaxHitPoints);
+        foreach (var adjusted in new[] { "Elite ", "Weak " })
+        {
+            if (monster.Name.StartsWith(adjusted, StringComparison.OrdinalIgnoreCase))
+            {
+                monster.Name = monster.Name[adjusted.Length..];
+            }
+        }
+
+        await db.SaveChangesAsync(ct);
+        return await CampaignAccess.PublishChangeAsync(broadcaster, undo, change, ct);
+    }
+}
+
+/// <summary>
 /// The encounter ends and the campaign returns to Exploration, which is the other half of the
 /// document's state diagram. The encounter and its combatants go with it; effects that outlast
 /// the fight stay, because they belong to the campaign and not to the encounter.

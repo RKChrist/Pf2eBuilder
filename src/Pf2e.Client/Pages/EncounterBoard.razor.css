@@ -573,3 +573,13 @@
 .defence--up[data-defence="AC"] .defence__value {
     color: var(--effect-up);
 }
+
+.edit__book {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+    margin-top: var(--space-5);
+    padding-top: var(--space-4);
+    border-top: var(--border-hair) solid var(--line-subtle);
+}

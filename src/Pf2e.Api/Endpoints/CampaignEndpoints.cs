@@ -108,6 +108,11 @@ public static class CampaignEndpoints
                         body.Homebrew, body.Count ?? 1),
                     ct));
 
+        // DELETE, because what goes is the DM's own version of the monster. The monster stays.
+        app.MapDelete("/campaigns/{code}/encounter/combatants/{id:guid}/monster",
+            (ISender sender, HttpRequest request, string code, Guid id, CancellationToken ct) =>
+                sender.Send(new ResetMonster(code, DmKeyOf(request), id), ct));
+
         app.MapPut("/campaigns/{code}/encounter/combatants/{id:guid}/monster",
             (ISender sender, HttpRequest request, string code, Guid id,
              EditMonsterRequest body, CancellationToken ct) =>

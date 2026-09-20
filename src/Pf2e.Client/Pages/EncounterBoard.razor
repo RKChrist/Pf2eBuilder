@@ -451,6 +451,21 @@
                      SubmitLabel="Save"
                      Adjustable="true"
                      OnSubmit="Change" />
+
+        @* Only where there is a book. The record a monster was copied from is never changed by an
+           edit, so its numbers can always be read again. *@
+        @if (line.RuleId.Length > 0)
+        {
+            <div class="edit__book">
+                <p class="hint">
+                    This changes this one monster in this fight. The bestiary's @BookName(changing.Name) is
+                    untouched, and the next one you add has the book's numbers.
+                </p>
+                <Button Variant="ButtonVariant.Secondary" OnClick="Reset">
+                    <Icon Name="undo" Class="pf-icon--lead" />Back to the book's numbers
+                </Button>
+            </div>
+        }
     }
 </BottomSheet>
 
@@ -472,6 +487,20 @@
                 own.Name, own.MaxHitPoints, own.Level, own.ArmorClass,
                 own.Fortitude, own.Reflex, own.Will, own.Perception),
             _count));
+
+    void Reset()
+    {
+        if (_editing is { } id)
+        {
+            Dispatcher.Dispatch(new MonsterReset(id));
+        }
+
+        _editing = null;
+    }
+
+    /// <summary>"Goblin Warrior 3" is this fight's name for it; the book's has no number.</summary>
+    static string BookName(string called) =>
+        System.Text.RegularExpressions.Regex.Replace(called, @"^(Elite|Weak)\s+|\s+\d+$", string.Empty);
 
     void Change(EditMonsterRequest monster)
     {

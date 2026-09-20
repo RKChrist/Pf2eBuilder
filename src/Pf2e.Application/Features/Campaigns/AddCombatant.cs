@@ -158,26 +158,32 @@ public sealed class AddCombatantHandler(
 
     async Task<Template> SeededAsync(AddCombatant command, CancellationToken ct)
     {
+        var (name, stats) = await BookLineAsync(rules, command.RuleId!, ct);
+        return new Template(name, command.RuleId!, stats);
+    }
+
+    /// <summary>A creature's name and line as the ruleset prints them. Read when a monster joins,
+    /// and read again when the DM wants one they changed put back.</summary>
+    internal static async Task<(string Name, MonsterStatBlock Stats)> BookLineAsync(
+        IRulesDbContext rules, string ruleId, CancellationToken ct)
+    {
         var record = await rules.RuleRecords.AsNoTracking()
-            .Where(r => r.Id == command.RuleId && r.Category == "creature")
-            .Select(r => new { r.Id, r.Name, r.Level, r.Traits, r.Mechanics })
+            .Where(r => r.Id == ruleId && r.Category == "creature")
+            .Select(r => new { r.Name, r.Level, r.Traits, r.Mechanics })
             .SingleOrDefaultAsync(ct)
             ?? throw new CombatantNotFoundException(
-                $"No seeded creature has the id {command.RuleId}.");
+                $"No seeded creature has the id {ruleId}.");
 
         var mechanics = JsonNode.Parse(record.Mechanics) as JsonObject;
-        return new Template(
-            record.Name,
-            record.Id,
-            new MonsterStatBlock(
-                record.Level ?? 0,
-                Number(mechanics, "hp"),
-                Number(mechanics, "ac"),
-                Number(mechanics, "fortitude_save"),
-                Number(mechanics, "reflex_save"),
-                Number(mechanics, "will_save"),
-                Number(mechanics, "perception"),
-                [.. record.Traits]));
+        return (record.Name, new MonsterStatBlock(
+            record.Level ?? 0,
+            Number(mechanics, "hp"),
+            Number(mechanics, "ac"),
+            Number(mechanics, "fortitude_save"),
+            Number(mechanics, "reflex_save"),
+            Number(mechanics, "will_save"),
+            Number(mechanics, "perception"),
+            [.. record.Traits]));
     }
 
     static MonsterCombatant Monster(Encounter encounter, Template template, string? called)

@@ -38,6 +38,10 @@ public sealed class EncounterEffects
             action.Homebrew, action.Count));
 
     [EffectMethod]
+    public Task Handle(MonsterReset action, IDispatcher dispatcher) =>
+        RunAsync(dispatcher, code => _tracker.ResetMonsterAsync(code, action.CombatantId, CancellationToken.None));
+
+    [EffectMethod]
     public Task Handle(MonsterEdited action, IDispatcher dispatcher) =>
         RunAsync(dispatcher, code => _tracker.EditMonsterAsync(
             code, action.CombatantId, action.Monster, CancellationToken.None));

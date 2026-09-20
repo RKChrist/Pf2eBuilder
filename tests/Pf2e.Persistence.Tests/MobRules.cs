@@ -146,6 +146,66 @@ public class MobRules(SeededDatabase database) : IClassFixture<SeededDatabase>
     }
 
     [Fact]
+    public async Task AnEditChangesOneMonsterInOneFightAndTheBookCanAlwaysBeReadAgain()
+    {
+        var campaign = await Campaign();
+        var fight = (await Add(campaign, Seeded(campaign, count: 2))).Encounter!.Combatants;
+        var edited = fight[0];
+        var book = edited.Monster!;
+
+        await using (var db = database.NewContext())
+        {
+            await new EditMonsterHandler(db, Undo, Broadcaster).Handle(
+                new EditMonster(campaign.Code, campaign.DmKey, edited.Id,
+                    new EditMonsterRequest("Elite " + edited.Name, book.MaxHitPoints + 20, book.Level + 1,
+                        book.ArmorClass + 2, book.Fortitude + 2, book.Reflex + 2, book.Will + 2, book.Perception + 2)),
+                default);
+            await new ChangeHitPointsHandler(db, Undo, Broadcaster).Handle(
+                new ChangeHitPoints(campaign.Code, campaign.DmKey, edited.Id, 15, HitPointDirection.Damage), default);
+        }
+
+        // The other one in the same fight never moved, and neither does the next to arrive.
+        var after = (await Add(campaign, Seeded(campaign))).Encounter!.Combatants;
+        Assert.All(after.Where(c => c.Id != edited.Id), other =>
+        {
+            Assert.Equal(book.ArmorClass, other.Monster!.ArmorClass);
+            Assert.Equal(book.MaxHitPoints, other.Monster.MaxHitPoints);
+        });
+
+        CampaignView answered;
+        await using (var db = database.NewContext())
+        {
+            answered = await new ResetMonsterHandler(db, db, Undo, Broadcaster)
+                .Handle(new ResetMonster(campaign.Code, campaign.DmKey, edited.Id), default);
+        }
+
+        var back = answered.Encounter!.Combatants.Single(c => c.Id == edited.Id);
+        Assert.Equal(edited.Name, back.Name);
+        Assert.Equal(book.ArmorClass, back.Monster!.ArmorClass);
+        Assert.Equal(book.MaxHitPoints, back.Monster.MaxHitPoints);
+        Assert.Equal(book.Traits, back.Monster.Traits);
+
+        // The fifteen it had taken, it has still taken.
+        Assert.Equal(book.MaxHitPoints - 15, back.Monster.CurrentHitPoints);
+    }
+
+    [Fact]
+    public async Task AMonsterOfTheDmsOwnHasNoBookToGoBackToAndIsToldSo()
+    {
+        var campaign = await Campaign();
+        var own = Assert.Single((await Add(campaign,
+            new AddCombatant(campaign.Code, campaign.DmKey, null, null, null,
+                Homebrew: new HomebrewMonster("Clockwork Heron", 64)))).Encounter!.Combatants);
+
+        await using var db = database.NewContext();
+        var refusal = await Assert.ThrowsAsync<CombatantNotFoundException>(() =>
+            new ResetMonsterHandler(db, db, Undo, Broadcaster)
+                .Handle(new ResetMonster(campaign.Code, campaign.DmKey, own.Id), default));
+
+        Assert.Contains("of your own", refusal.Message);
+    }
+
+    [Fact]
     public async Task AFrightenedMonstersLineDropsAndTheNumbersTheDmEditsDoNot()
     {
         var campaign = await Campaign();

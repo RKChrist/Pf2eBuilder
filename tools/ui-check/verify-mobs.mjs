@@ -87,6 +87,13 @@ assert(new Set(fight.map(r => r.name)).size === 3, 'each with a name of its own'
 assert(fight.map(r => r.alias).sort().join('|') === 'Mob 1 to players|Mob 2 to players|Mob 3 to players',
   'and the DM is told what the players call each', fight.map(r => r.alias).join(', '));
 
+// With the add panel docked the order is half the window, and a row laid out for the window
+// clipped its traits down to "GOB HUMAI". Measured, because a clipped strip still has its chips
+// in the page and only its width says they cannot be read.
+const clipped = await dmPage.eval(`[...document.querySelectorAll('.turn__traits')]
+  .filter(strip => strip.querySelectorAll('.pf-trait').length === 0 || strip.scrollWidth > strip.clientWidth + 4).length`);
+assert(clipped === 0, 'every monster shows all of its traits while the add panel is open', `${clipped} clipped`);
+
 await dm.click('.adding__count .pf-stepper__btn--minus');
 await dm.click('.adding__count .pf-stepper__btn--minus');
 await dm.click('.adding__own .pf-disclose__summary, .adding__own summary, .adding__own button');
