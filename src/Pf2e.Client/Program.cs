@@ -33,6 +33,7 @@ builder.Services.AddScoped<TrackerApi>();
 builder.Services.AddScoped<AccountsApi>();
 builder.Services.AddScoped<CampaignHub>();
 builder.Services.AddScoped<CampaignMemory>();
+builder.Services.AddScoped<RuleNames>();
 builder.Services.AddFluxor(options => options.ScanAssemblies(typeof(App).Assembly));
 
 await builder.Build().RunAsync();
