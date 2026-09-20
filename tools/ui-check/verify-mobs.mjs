@@ -141,7 +141,12 @@ assert(await playerPage.eval(`!document.querySelector('.turn__edit, .fight__acts
   'and no control that would change the fight');
 await player.shot('5-player');
 
-await dmPage.eval(`document.querySelector('.turn .pf-switch__input').click()`);
+// The goblin's own switch, not the first row's. Initiative is rolled, so the first row is
+// whichever creature won it, and on the run where that was the heron this revealed the heron
+// and then asserted a goblin had appeared. It passed three times out of four.
+await dmPage.eval(`[...document.querySelectorAll('.turn')]
+  .find(t => /goblin/i.test(t.querySelector('.turn__called').textContent))
+  .querySelector('.pf-switch__input').click()`);
 await sleep(2500);
 const after = await rows(playerPage);
 assert(after.some(r => /goblin/i.test(r.name)) && after.filter(r => /^Mob \d$/.test(r.name)).length === 3,

@@ -34,6 +34,7 @@ const KNOWN = {
   boot: { needs: 'build', slow: true },
   camp: { needs: 'servers' },
   campaign: { needs: 'servers' },
+  campaigns: { needs: 'servers' },
   client: { needs: 'servers' },
   concurrency: { needs: 'servers' },
   effects: { needs: 'servers' },
