@@ -1,175 +1,19 @@
+/* Three bands down the page and a sheet over it. Sized by the session's own width, not the
+   window's: a docked panel halves the one and leaves the other alone. */
 .session {
     display: flex;
     flex-direction: column;
     gap: var(--space-5);
-}
-
-/* ---------------------------------------------------------------- the line of steps
-
-   Five stops on one line. On a phone the line stands up and the stops run down it, because five
-   names do not fit across 390px and a row that scrolls sideways hides where you are. */
-.steps {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-2);
-    margin: var(--space-0);
-    padding: var(--space-0);
-    list-style: none;
-    counter-reset: none;
-}
-
-.steps__step {
-    position: relative;
-}
-
-.steps__face {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-areas:
-        'number name time'
-        'number here here';
-    align-items: center;
-    column-gap: var(--space-3);
-    inline-size: 100%;
-    min-block-size: var(--tap-primary);
-    padding: var(--space-2) var(--space-3);
-    border: var(--border-hair) solid var(--line-subtle);
-    border-radius: var(--radius-control);
-    background: var(--surface-raised);
-    color: var(--text-secondary);
-    text-align: start;
-    transition: background-color var(--motion-duration-quick) var(--motion-easing-exit),
-                border-color var(--motion-duration-quick) var(--motion-easing-exit);
-}
-
-.steps__number {
-    grid-area: number;
-    display: grid;
-    place-items: center;
-    inline-size: var(--space-6);
-    block-size: var(--space-6);
-    border: var(--border-strong) solid var(--line-subtle);
-    border-radius: 50%;
-    background: var(--surface-raised);
-    color: var(--text-muted);
-    font-family: var(--font-family-display);
-    font-size: var(--font-size-data);
-    font-weight: var(--font-weight-bold);
-}
-
-.steps__name {
-    grid-area: name;
-    color: var(--text-primary);
-    font-family: var(--font-family-display);
-    font-size: var(--font-size-data);
-    font-weight: var(--font-weight-semibold);
-    line-height: var(--font-leading-snug);
-}
-
-.steps__time {
-    grid-area: time;
-    color: var(--text-muted);
-    font-size: var(--font-size-chip);
-    white-space: nowrap;
-}
-
-.steps__here {
-    grid-area: here;
-    justify-self: start;
-    margin-top: var(--space-1);
-    padding: var(--space-0) var(--space-2);
-    border-radius: var(--radius-chip);
-    background: var(--highlight-base);
-    color: var(--highlight-text);
-    font-size: var(--font-size-chip);
-    font-weight: var(--font-weight-semibold);
-}
-
-/* Behind you: filled, because it is finished. */
-.steps__step--done .steps__number {
-    border-color: var(--accent-base);
-    background: var(--accent-base);
-    color: var(--text-on-accent);
-}
-
-/* Where the table is: the lantern, the same mark the rail and the turn order use for "here". */
-.steps__step--here .steps__number {
-    border-color: var(--highlight-base);
-    background: var(--highlight-base);
-    color: var(--highlight-text);
-}
-
-/* What this screen is looking at, which may not be where the table is. */
-.steps__step--viewing .steps__face {
-    border-color: var(--accent-base);
-    background: var(--accent-tint);
-    box-shadow: 0 0 0 var(--border-hair) var(--accent-base);
-}
-
-.steps__face:focus-visible {
-    outline: var(--border-focus) solid var(--line-focus);
-    outline-offset: var(--space-1);
-}
-
-@media (hover: hover) {
-    .steps__face:hover {
-        border-color: var(--accent-base);
-    }
-}
-
-/* Sized by the session's own width, not the window's: a docked panel halves it. */
-.session {
     container: camp-session / inline-size;
 }
 
-@container camp-session (min-width: 820px) {
-    .steps {
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-        gap: var(--space-0);
-    }
+/* ---------------------------------------------------------------- a band
 
-    .steps__face {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-areas: 'number' 'name' 'time' 'here';
-        justify-items: center;
-        row-gap: var(--space-1);
-        block-size: 100%;
-        align-content: start;
-        padding: var(--space-3) var(--space-2);
-        border-color: transparent;
-        background: transparent;
-        text-align: center;
-    }
-
-    .steps__here {
-        justify-self: center;
-    }
-
-    /* The line itself, from the middle of one number to the middle of the next, drawn behind
-       them. Filled as far as the table has got. */
-    .steps__step + .steps__step::before {
-        content: '';
-        position: absolute;
-        inset-block-start: calc(var(--space-3) + var(--space-6) / 2);
-        inset-inline: -50% 50%;
-        block-size: var(--border-strong);
-        background: var(--line-subtle);
-    }
-
-    .steps__step--done + .steps__step::before {
-        background: var(--accent-base);
-    }
-
-    .steps__number {
-        position: relative;
-        z-index: 1;
-    }
-}
-
-/* ---------------------------------------------------------------- one step */
-
-.step,
-.book {
+   The same rule and the same heading for all three, because they are three readings of one
+   evening and not three different kinds of thing. */
+.tonight,
+.party,
+.night {
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
@@ -177,27 +21,20 @@
     border-top: var(--border-hair) solid var(--line-subtle);
 }
 
-.step__head {
+.band__head {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: baseline;
     justify-content: space-between;
     gap: var(--space-3);
 }
 
-.step__name {
+.band__name {
     font-size: var(--font-size-subhead);
 }
 
-.step__number {
-    margin-inline-end: var(--space-2);
-    color: var(--accent-base);
-    font-size: var(--font-size-data);
-    font-weight: var(--font-weight-bold);
-}
-
-.step__says,
-.step__do {
+.band__says,
+.tonight__means {
     max-width: calc(var(--layout-content-max) * 1.4);
     color: var(--text-secondary);
     font-size: var(--font-size-data);
@@ -205,20 +42,7 @@
     text-wrap: pretty;
 }
 
-.step__shut {
-    padding: var(--space-3);
-    border-inline-start: var(--border-focus) solid var(--effect-down);
-    border-radius: var(--radius-chip);
-    background: var(--effect-down-wash);
-    color: var(--text-primary);
-    font-size: var(--font-size-data);
-}
-
-.session ::deep .step__act {
-    align-self: flex-start;
-}
-
-/* ---------------------------------------------------------------- step 1: the place and the roll */
+/* ---------------------------------------------------------------- band one: tonight */
 
 .zone {
     display: grid;
@@ -288,24 +112,26 @@
     color: var(--effect-up);
 }
 
+/* Four doors, name only, so the row of them fits across a phone without wrapping to four
+   blocks. What each one opens and shuts is the one line underneath. */
 .outcomes {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
     gap: var(--space-2);
 }
 
 .outcome {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    min-block-size: var(--tap-primary);
-    padding: var(--space-3);
+    align-items: center;
+    justify-content: center;
+    min-block-size: var(--tap-default);
+    padding: var(--space-2) var(--space-3);
     border: var(--border-hair) solid var(--line-subtle);
     border-block-start: var(--space-1) solid var(--outcome);
     border-radius: var(--radius-control);
     background: var(--surface-raised);
     color: var(--text-primary);
-    text-align: start;
+    text-align: center;
 }
 
 .outcome--crit-success { --outcome: var(--outcome-critical-success); }
@@ -317,12 +143,6 @@
     color: var(--outcome);
     font-size: var(--font-size-data);
     font-weight: var(--font-weight-bold);
-}
-
-.outcome__means {
-    color: var(--text-secondary);
-    font-size: var(--font-size-chip);
-    line-height: var(--font-leading-snug);
 }
 
 .outcome--on {
@@ -340,63 +160,15 @@
     outline-offset: var(--space-1);
 }
 
-/* ---------------------------------------------------------------- step 2: who, and how it went */
-
-.actors {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--tap-separation);
-}
-
-.actor {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-1);
-    min-block-size: var(--tap-default);
-    padding: var(--space-2) var(--space-3);
-    border: var(--border-hair) solid var(--line-subtle);
-    border-radius: var(--radius-control);
-    background: var(--surface-raised);
+.tonight__was {
     color: var(--text-primary);
 }
 
-.actor--on {
-    border-color: var(--accent-base);
-    background: var(--accent-base);
-    color: var(--text-on-accent);
-}
+/* ---------------------------------------------------------------- band two: the roster
 
-.actor__name {
-    font-size: var(--font-size-data);
-    font-weight: var(--font-weight-semibold);
-}
-
-.actor__pips {
-    display: flex;
-    gap: var(--space-1);
-}
-
-.actor__pip {
-    inline-size: var(--space-3);
-    block-size: var(--space-1);
-    border-radius: var(--radius-chip);
-    background: var(--rank-empty);
-}
-
-.actor__pip--used {
-    background: var(--highlight-base);
-}
-
-.actor:focus-visible,
-.roll:focus-visible,
-.pick:focus-visible {
-    outline: var(--border-focus) solid var(--line-focus);
-    outline-offset: var(--space-1);
-}
-
-.doing,
-.entries {
+   One row per person, and the row is the unit of design. Down the phone it is three stacked
+   groups with the name on top; across a desk it is one line read left to right. */
+.roster {
     display: flex;
     flex-direction: column;
     margin: var(--space-0);
@@ -407,47 +179,69 @@
     overflow: clip;
 }
 
-.act,
-.entry {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-2) var(--space-3);
-    padding: var(--space-2) var(--space-3);
+.who {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-2);
+    padding: var(--space-3);
     background: var(--surface-raised);
 }
 
-.act + .act,
-.entry + .entry {
+.who + .who {
     border-top: var(--border-hair) solid var(--line-subtle);
 }
 
-.act--closed {
-    background: var(--surface-sunken);
+/* 700px is what the three columns below need: a name and its watch chip in 11rem, a doing
+   column wide enough for an activity chip beside the button, and an eating column wide enough
+   for a meal's name. Under that they stack, which is the phone. A container query and not a
+   media query, because a docked sheet halves this width without moving the viewport. */
+@container camp-session (min-width: 700px) {
+    .who {
+        grid-template-columns: 11rem minmax(0, 1.4fr) minmax(0, 1fr);
+        align-items: center;
+        gap: var(--space-3);
+    }
 }
 
-.act__what {
+.who__is {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: var(--space-1) var(--space-3);
-    min-inline-size: 0;
-    flex: 1 1 16rem;
-    font-size: var(--font-size-data);
+    gap: var(--space-2);
 }
 
-.act__name--own {
+.who__name {
+    font-size: var(--font-size-data);
     font-weight: var(--font-weight-semibold);
 }
 
-.act__own,
-.act__needs {
+.who__watch {
+    padding: var(--space-0) var(--space-2);
+    border-radius: var(--radius-chip);
+    background: var(--surface-sunken);
     color: var(--text-muted);
     font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
 }
 
-.act__took {
+.who__doing,
+.who__eating {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-2);
+    min-inline-size: 0;
+}
+
+.who__eating {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* One chip per activity already taken, in the colour of how it went. */
+.who__took {
     padding: var(--space-0) var(--space-2);
     border-radius: var(--radius-chip);
     background: var(--surface-sunken);
@@ -455,62 +249,88 @@
     font-weight: var(--font-weight-semibold);
 }
 
-.act__took--crit-success { color: var(--outcome-critical-success); }
-.act__took--success { color: var(--outcome-success); }
-.act__took--failure { color: var(--outcome-failure); }
-.act__took--crit-failure { color: var(--outcome-critical-failure); }
+.who__took--crit-success { color: var(--outcome-critical-success); }
+.who__took--success { color: var(--outcome-success); }
+.who__took--failure { color: var(--outcome-failure); }
+.who__took--crit-failure { color: var(--outcome-critical-failure); }
 
-.act__done {
-    color: var(--outcome-success);
-    font-size: var(--font-size-chip);
-    font-weight: var(--font-weight-semibold);
-}
-
-.act__roll {
+.who__open {
     display: flex;
-    gap: var(--space-1);
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--tap-min);
+    max-inline-size: 100%;
+    padding: var(--space-1) var(--space-3);
+    border: var(--border-hair) dashed var(--line-subtle);
+    border-radius: var(--radius-chip);
+    background: var(--surface-page);
+    color: var(--text-secondary);
+    font-size: var(--font-size-chip);
+    text-align: start;
 }
 
-.roll {
-    min-inline-size: var(--tap-min);
-    min-block-size: var(--tap-min);
-    padding-inline: var(--space-2);
-    border: var(--border-hair) solid var(--line-subtle);
-    border-block-end: var(--border-focus) solid var(--outcome);
-    border-radius: var(--radius-chip);
-    background: var(--surface-raised);
+/* Something chosen is a statement rather than an invitation, so the outline goes solid. */
+.who__open--on {
+    border-style: solid;
+    border-color: var(--accent-base);
+    background: var(--accent-tint);
     color: var(--text-primary);
-    font-size: var(--font-size-chip);
     font-weight: var(--font-weight-semibold);
+}
+
+.who__open--meal {
+    inline-size: 100%;
+}
+
+.who__verb {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.roll--crit-success { --outcome: var(--outcome-critical-success); }
-.roll--success { --outcome: var(--outcome-success); }
-.roll--failure { --outcome: var(--outcome-failure); }
-.roll--crit-failure { --outcome: var(--outcome-critical-failure); }
-
-.roll:disabled {
-    color: var(--text-muted);
-    cursor: not-allowed;
+/* Four pips, because "how many has Gnibbo got left" is the question and a count answers it. */
+.who__pips {
+    display: flex;
+    flex: none;
+    gap: var(--space-1);
 }
 
-@media (hover: hover) {
-    .roll:not(:disabled):hover,
-    .actor:not(.actor--on):hover,
-    .pick:not(.pick--on):hover,
-    .outcome:not(:disabled):hover {
-        background: var(--accent-tint);
-    }
+.who__pip {
+    inline-size: var(--space-3);
+    block-size: var(--space-1);
+    border-radius: var(--radius-chip);
+    background: var(--rank-empty);
 }
 
-/* ---------------------------------------------------------------- step 3: the larder and the plates */
+.who__pip--used {
+    background: var(--highlight-base);
+}
 
+.who__benefit {
+    color: var(--text-secondary);
+    font-size: var(--font-size-chip);
+    line-height: var(--font-leading-snug);
+    text-wrap: pretty;
+}
+
+.who__open:focus-visible,
+.roll:focus-visible,
+.pick:focus-visible,
+.meal__take:focus-visible,
+.menu__all:focus-visible {
+    outline: var(--border-focus) solid var(--line-focus);
+    outline-offset: var(--space-1);
+}
+
+/* The party's larder, in the band's heading, because it belongs to the party and not to any
+   row. It drops under the heading rather than beside it as soon as the two stop fitting. */
 .larder {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-3) var(--space-5);
+    gap: var(--space-2) var(--space-4);
+    max-inline-size: 44rem;
 }
 
 .larder__count {
@@ -524,56 +344,26 @@
     font-weight: var(--font-weight-semibold);
 }
 
+.larder__left {
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Tonight's meals have taken something out, which is the one state worth colouring. */
+.larder__left--spent {
+    color: var(--effect-down);
+}
+
 .larder__says {
-    flex: 1 1 20rem;
+    flex: 1 1 100%;
     color: var(--text-muted);
     font-size: var(--font-size-chip);
     line-height: var(--font-leading-normal);
+    text-wrap: pretty;
 }
 
-.plates {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-}
-
-.plate {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-2) var(--space-3);
-}
-
-.plate__who {
-    min-inline-size: 7rem;
-    font-size: var(--font-size-data);
-    font-weight: var(--font-weight-semibold);
-}
-
-.plate__choices {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1);
-}
-
-.pick {
-    min-block-size: var(--tap-min);
-    padding: var(--space-1) var(--space-3);
-    border: var(--border-hair) solid var(--line-subtle);
-    border-radius: var(--radius-chip);
-    background: var(--surface-page);
-    color: var(--text-secondary);
-    font-size: var(--font-size-chip);
-}
-
-.pick--on {
-    border-color: var(--accent-base);
-    background: var(--accent-base);
-    color: var(--text-on-accent);
-    font-weight: var(--font-weight-semibold);
-}
-
-/* ---------------------------------------------------------------- step 4: the watches
+/* ---------------------------------------------------------------- band three: the night
 
    One bar the length of the rest, cut into as many equal watches as there are people, with a
    mark wherever the GM checks for an encounter. */
@@ -628,7 +418,272 @@
     font-size: var(--font-size-chip);
 }
 
-/* ---------------------------------------------------------------- the camp book */
+/* Reaches the Button component's own root, which this file does not write. */
+.night ::deep .night__act {
+    align-self: flex-start;
+}
+
+/* ---------------------------------------------------------------- the two pickers
+
+   Both are the same sheet, so their insides share a width and a rhythm. */
+.sheet__shut {
+    padding: var(--space-3);
+    border-inline-start: var(--border-focus) solid var(--effect-down);
+    border-radius: var(--radius-chip);
+    background: var(--effect-down-wash);
+    color: var(--text-primary);
+    font-size: var(--font-size-data);
+}
+
+.doing,
+.entries,
+.menu__list {
+    display: flex;
+    flex-direction: column;
+    margin: var(--space-0);
+    padding: var(--space-0);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-radius: var(--radius-control);
+    list-style: none;
+    overflow: clip;
+}
+
+.act,
+.entry,
+.meal {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    background: var(--surface-raised);
+}
+
+.act + .act,
+.entry + .entry,
+.meal + .meal {
+    border-top: var(--border-hair) solid var(--line-subtle);
+}
+
+.act--closed {
+    background: var(--surface-sunken);
+}
+
+.act__what {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-3);
+    min-inline-size: 0;
+    flex: 1 1 16rem;
+    font-size: var(--font-size-data);
+}
+
+.act__name--own {
+    font-weight: var(--font-weight-semibold);
+}
+
+.act__own,
+.act__needs {
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+}
+
+.act__done {
+    color: var(--outcome-success);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* The odds for the character who is choosing, at the moment they choose. On its own line under
+   the name, because the die is twenty faces wide and will not sit beside anything. */
+.act__odds {
+    display: flex;
+    flex: 1 1 100%;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.act__chance {
+    color: var(--text-secondary);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+}
+
+.act__roll {
+    display: flex;
+    gap: var(--space-1);
+}
+
+.roll {
+    min-inline-size: var(--tap-min);
+    min-block-size: var(--tap-min);
+    padding-inline: var(--space-2);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-block-end: var(--border-focus) solid var(--outcome);
+    border-radius: var(--radius-chip);
+    background: var(--surface-raised);
+    color: var(--text-primary);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
+}
+
+.roll--crit-success { --outcome: var(--outcome-critical-success); }
+.roll--success { --outcome: var(--outcome-success); }
+.roll--failure { --outcome: var(--outcome-failure); }
+.roll--crit-failure { --outcome: var(--outcome-critical-failure); }
+
+.roll:disabled {
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+/* The meal picker. Rations, a basic meal and nothing yet first, because most nights are one of
+   those three and the twenty-seven below are the exception. */
+.menu {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.menu__quick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--tap-separation);
+}
+
+.pick {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-0);
+    min-block-size: var(--tap-default);
+    padding: var(--space-2) var(--space-3);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-radius: var(--radius-control);
+    background: var(--surface-page);
+    color: var(--text-secondary);
+    font-size: var(--font-size-chip);
+    text-align: start;
+}
+
+.pick--on {
+    border-color: var(--accent-base);
+    background: var(--accent-base);
+    color: var(--text-on-accent);
+}
+
+.pick__name {
+    font-size: var(--font-size-data);
+    font-weight: var(--font-weight-semibold);
+}
+
+.menu__says {
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+    line-height: var(--font-leading-normal);
+    text-wrap: pretty;
+}
+
+.menu__heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    font-size: var(--font-size-data);
+}
+
+.menu__all {
+    min-block-size: var(--tap-min);
+    padding-inline: var(--space-3);
+    border: var(--border-hair) solid var(--line-subtle);
+    border-radius: var(--radius-chip);
+    background: var(--surface-raised);
+    color: var(--accent-base);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
+}
+
+.meal__name {
+    font-size: var(--font-size-data);
+    font-weight: var(--font-weight-semibold);
+}
+
+.meal__tag {
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.meal__rarity {
+    --rarity: var(--rarity-common);
+    padding: var(--space-0) var(--space-2);
+    border: var(--border-hair) solid var(--rarity);
+    border-radius: var(--radius-chip);
+    color: var(--rarity);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    text-transform: capitalize;
+}
+
+.meal__rarity--uncommon { --rarity: var(--rarity-uncommon); }
+.meal__rarity--rare { --rarity: var(--rarity-rare); }
+.meal__rarity--unique { --rarity: var(--rarity-unique); }
+
+.meal__does {
+    flex: 1 1 100%;
+    color: var(--text-secondary);
+    font-size: var(--font-size-chip);
+    line-height: var(--font-leading-normal);
+    white-space: pre-line;
+}
+
+/* The name is an anchor into the record, so choosing needs a control of its own. */
+.meal__take {
+    min-block-size: var(--tap-min);
+    padding-inline: var(--space-3);
+    border: var(--border-hair) solid var(--accent-base);
+    border-radius: var(--radius-chip);
+    background: var(--surface-raised);
+    color: var(--accent-base);
+    font-size: var(--font-size-chip);
+    font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
+}
+
+.meal--on {
+    background: var(--accent-tint);
+}
+
+.meal--on .meal__take {
+    background: var(--accent-base);
+    color: var(--text-on-accent);
+}
+
+@media (hover: hover) {
+    .roll:not(:disabled):hover,
+    .who__open:hover,
+    .menu__all:hover,
+    .meal__take:hover,
+    .pick:not(.pick--on):hover,
+    .outcome:not(:disabled):hover {
+        background: var(--accent-tint);
+    }
+}
+
+/* ---------------------------------------------------------------- the camp book
+
+   Ruled like the three bands above it, since it is the fourth thing on the page. The rule has
+   to reach the Disclosure's own root, which this file does not write. */
+.session ::deep .book {
+    padding-top: var(--space-4);
+    border-top: var(--border-hair) solid var(--line-subtle);
+}
 
 .entry {
     justify-content: flex-start;
@@ -672,26 +727,9 @@
     flex-direction: column;
     gap: var(--space-3);
     max-width: 40rem;
-    padding-top: var(--space-2);
+    padding-top: var(--space-3);
 }
 
 .writing ::deep .writing__dc {
     max-width: 14rem;
-}
-
-.survivors {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
-    gap: var(--space-4);
-}
-
-.survivor {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-}
-
-.survivor__who {
-    font-size: var(--font-size-data);
-    font-weight: var(--font-weight-semibold);
 }
