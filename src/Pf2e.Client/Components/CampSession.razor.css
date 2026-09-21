@@ -345,10 +345,6 @@
 .roll:focus-visible,
 .pick:focus-visible,
 .meal__take:focus-visible,
-.menu__all:focus-visible {
-    outline: var(--border-focus) solid var(--line-focus);
-    outline-offset: var(--space-1);
-}
 
 /* The party's larder, in the band's heading, because it belongs to the party and not to any
    row. It drops under the heading rather than beside it as soon as the two stop fitting. */
@@ -623,18 +619,6 @@
     font-size: var(--font-size-data);
 }
 
-.menu__all {
-    min-block-size: var(--tap-min);
-    padding-inline: var(--space-3);
-    border: var(--border-hair) solid var(--line-subtle);
-    border-radius: var(--radius-chip);
-    background: var(--surface-raised);
-    color: var(--accent-base);
-    font-size: var(--font-size-chip);
-    font-weight: var(--font-weight-semibold);
-    white-space: nowrap;
-}
-
 .meal__name {
     font-size: var(--font-size-data);
     font-weight: var(--font-weight-semibold);
@@ -695,7 +679,7 @@
 @media (hover: hover) {
     .roll:not(:disabled):hover,
     .who__open:hover,
-    .menu__all:hover,
+
     .meal__take:hover,
     .pick:not(.pick--on):hover,
     .outcome:not(:disabled):hover {

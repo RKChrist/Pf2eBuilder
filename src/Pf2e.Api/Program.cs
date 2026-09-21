@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using Pf2e.Api.Authentication;
 using Pf2e.Api.Configuration;
 using Pf2e.Api.Endpoints;
+using Pf2e.Api.Hosting;
 using Pf2e.Api.Hubs;
 using Pf2e.Application;
 using Pf2e.Application.Abstractions;
@@ -75,6 +76,14 @@ builder.Services.AddOptions<AspNetCorsOptions>()
 
 builder.Services.AddSection<HostingOptions>(builder.Configuration, HostingOptions.Section);
 builder.Services.AddSection<RealtimeOptions>(builder.Configuration, RealtimeOptions.Section);
+
+// Pressing run on this project runs the app rather than half of it. Development only, and only
+// when nothing already answers on the client's port.
+if (builder.Environment.IsDevelopment()
+    && builder.Configuration.GetValue($"{HostingOptions.Section}:{nameof(HostingOptions.StartClient)}", true))
+{
+    builder.Services.AddHostedService<ClientProcess>();
+}
 builder.Services.AddSignalR();
 builder.Services.AddOptions<HubOptions>()
     .Configure<IOptions<RealtimeOptions>>((hub, mine) =>

@@ -435,14 +435,7 @@
                     </ul>
                 }
 
-                <h4 class="menu__heading">
-                    Campsite meals
-                    @* Six of the twenty-seven sit below level 3, so a first-level party has a real
-                       list without the other twenty-one in the way. *@
-                    <button type="button" class="menu__all" @onclick="() => _everyMeal = !_everyMeal">
-                        @(_everyMeal ? $"Only up to level {PartyLevel}" : $"All {Meals.Count}")
-                    </button>
-                </h4>
+<h4 class="menu__heading">All @Meals.Count campsite meals</h4>
                 <ul class="menu__list">
                     @foreach (var dish in OnOffer)
                     {
@@ -467,13 +460,6 @@
                     }
                 </ul>
 
-                @if (!_everyMeal && OnOffer.Count < Meals.Count)
-                {
-                    <p class="menu__says">
-                        @(Meals.Count - OnOffer.Count) meals above level @PartyLevel are not shown. There are
-                        @Meals.Count in all.
-                    </p>
-                }
             </div>
         }
     }
@@ -505,7 +491,6 @@
     sealed record Open(Guid CharacterId, Picker Picker);
 
     Open? _open;
-    bool _everyMeal;
     string _kind = Recipe, _name = string.Empty, _does = string.Empty, _dc = string.Empty;
 
     string SheetTitle => _open is { } open
@@ -557,12 +542,11 @@
 
     IEnumerable<CampEntryView> Recipes => Camp.Book.Where(entry => entry.Kind == Recipe);
 
-    /// <summary>The level a party can reasonably cook at, which is its highest. A meal whose record
-    /// carries no level reads as zero, which is where the two level-zero meals belong anyway.</summary>
-    int PartyLevel => Table.Characters.Count == 0 ? 1 : Table.Characters.Max(character => character.Level);
-
+/// <summary>Every meal, lowest level first, so the ones a party can cook now are at the top
+    /// and the rest are further down rather than hidden. A record with no level reads as zero,
+    /// which is where the two level-zero meals belong anyway.</summary>
     IReadOnlyList<CampsiteMealView> OnOffer =>
-        _everyMeal ? Meals : [.. Meals.Where(dish => (dish.Level ?? 0) <= PartyLevel)];
+        [.. Meals.OrderBy(dish => dish.Level ?? 0).ThenBy(dish => dish.Name, StringComparer.OrdinalIgnoreCase)];
 
     /// <summary>The rarity worth saying, and null for common, which every other screen leaves
     /// unsaid because it is the default.</summary>
