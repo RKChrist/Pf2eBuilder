@@ -29,6 +29,10 @@ public sealed record ExplorationState
     /// most of them are somebody rolling a skill rather than ten minutes passing.</summary>
     public IReadOnlyList<CampingActivityView> Camping { get; init; } = [];
 
+    /// <summary>The twenty-seven campsite meals the ruleset carries, which a party can cook
+    /// without anybody having written a recipe into the camp book first.</summary>
+    public IReadOnlyList<CampsiteMealView> Meals { get; init; } = [];
+
     public IReadOnlyList<ChoiceOption<string>> DowntimeOptions =>
     [
         new(string.Empty, "Nothing today"),
@@ -63,6 +67,8 @@ public sealed record CampActivitiesLoaded(IReadOnlyList<CampActivityView> Activi
 public sealed record DowntimeActivitiesLoaded(IReadOnlyList<DowntimeActivityView> Activities);
 
 public sealed record CampingActivitiesLoaded(IReadOnlyList<CampingActivityView> Activities);
+
+public sealed record CampsiteMealsLoaded(IReadOnlyList<CampsiteMealView> Meals);
 
 /// <summary>Null clears it. A task level with no activity is a level for nothing.</summary>
 public sealed record DowntimeActivityChosen(Guid CharacterId, string? Activity, int? TaskLevel);
@@ -106,6 +112,10 @@ public static class ExplorationReducers
     [ReducerMethod]
     public static ExplorationState On(ExplorationState state, CampingActivitiesLoaded action) =>
         state with { Camping = action.Activities };
+
+    [ReducerMethod]
+    public static ExplorationState On(ExplorationState state, CampsiteMealsLoaded action) =>
+        state with { Meals = action.Meals };
 }
 
 public sealed class ExplorationEffects(TrackerApi tracker)
@@ -123,6 +133,8 @@ public sealed class ExplorationEffects(TrackerApi tracker)
                 await tracker.GetDowntimeActivitiesAsync(CancellationToken.None)));
             dispatcher.Dispatch(new CampingActivitiesLoaded(
                 await tracker.GetCampingActivitiesAsync(CancellationToken.None)));
+            dispatcher.Dispatch(new CampsiteMealsLoaded(
+                await tracker.GetCampsiteMealsAsync(CancellationToken.None)));
         }
         catch (CampaignApiException failure)
         {

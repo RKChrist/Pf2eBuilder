@@ -156,6 +156,13 @@ public sealed record CampingActivityView(
     string? Rank,
     IReadOnlyList<string> Skills);
 
+/// <summary>
+/// One of the campsite meals the Kingmaker Companion Guide prints. What a meal does is prose the
+/// licence withholds, so this is the name, what it takes to cook, and nothing else the table could
+/// act on. Requires is null for the twenty that print no requirement.
+/// </summary>
+public sealed record CampsiteMealView(string RuleId, string Name, int Level, string? Rarity, string? Requires);
+
 /// <summary>One thing a day can be spent on. Skill is the one it is rolled with and null
 /// where the activity has no single skill.</summary>
 public sealed record DowntimeActivityView(string Key, string Name, string? Skill, string What);
@@ -260,6 +267,8 @@ public sealed record CampSiteView(
     IReadOnlyList<CampEntryView> Book,
     int BasicIngredients,
     int SpecialIngredients,
+    /// <summary>The larder with tonight's meals already taken out.</summary>
+    int BasicIngredientsLeft,
     /// <summary>How long this party has to set aside to rest with equal watches, and how long
     /// each watch is. Zero for a party of one, who cannot keep a watch and sleep.</summary>
     int RestMinutes,
@@ -268,13 +277,15 @@ public sealed record CampSiteView(
 /// <summary>Outcome is "CriticalSuccess", "Success", "Failure" or "CriticalFailure".</summary>
 public sealed record CampingTakeView(Guid CharacterId, string Activity, string Outcome);
 
-/// <summary>Kind is "Rations", "BasicMeal" or "SpecialMeal".</summary>
-public sealed record MealChoiceView(Guid CharacterId, string Kind, Guid? RecipeId);
+/// <summary>Kind is "Rations", "BasicMeal" or "SpecialMeal". A special meal names either a recipe
+/// from the camp book or one of the ruleset's own. RecipeName and Benefit come from the camp book
+/// entry, and are null for a ruleset meal, whose name the client already holds and whose words the
+/// record panel fetches.</summary>
+public sealed record MealChoiceView(
+    Guid CharacterId, string Kind, Guid? RecipeId, string? RuleId, string? RecipeName, string? Benefit);
 
 /// <summary>Kind is "Recipe" or "Activity". Dc is a recipe's cooking DC.</summary>
 public sealed record CampEntryView(Guid Id, string Kind, string Name, string Does, int? Dc);
-
-public sealed record SetCampStepRequest(string Step);
 
 public sealed record SetCampZoneRequest(string? ZoneName, int ZoneDc, int EncounterDc);
 
@@ -287,7 +298,8 @@ public sealed record TakeCampingActivityRequest(string Activity, string Outcome)
 /// request as an add.</summary>
 public sealed record SaveCampEntryRequest(string Kind, string Name, string Does, int? Dc);
 
-public sealed record ChooseMealRequest(string Kind, Guid? RecipeId);
+/// <summary>A null Kind is nobody having decided yet, and clears the choice.</summary>
+public sealed record ChooseMealRequest(string? Kind, Guid? RecipeId, string? RuleId);
 
 public sealed record SetCampSuppliesRequest(int BasicIngredients, int SpecialIngredients);
 

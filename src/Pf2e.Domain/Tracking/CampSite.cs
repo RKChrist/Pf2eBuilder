@@ -54,8 +54,13 @@ public sealed record CampingTake(Guid CharacterId, string Activity, CampOutcome 
     public bool Succeeded => Outcome is CampOutcome.CriticalSuccess or CampOutcome.Success;
 }
 
-/// <summary>What one character is eating. <paramref name="RecipeId"/> is set for a special meal.</summary>
-public sealed record MealChoice(Guid CharacterId, MealKind Kind, Guid? RecipeId = null);
+/// <summary>
+/// What one character is eating. A special meal is either a recipe the table wrote into its camp
+/// book, named by <paramref name="RecipeId"/>, or one of the ruleset's own, named by
+/// <paramref name="RuleId"/>. One or the other, never both and never neither. Every other kind of
+/// meal sets neither.
+/// </summary>
+public sealed record MealChoice(Guid CharacterId, MealKind Kind, Guid? RecipeId = null, string? RuleId = null);
 
 /// <summary>
 /// A camping session: where the party has got to, the two DCs of the place it is camping in, how
@@ -87,6 +92,9 @@ public sealed record CampSite(
     public const int DailyPreparationsMinutes = 30;
     public const int MostEntries = 60;
 
+    /// <summary>What the rules charge for a basic meal, per serving.</summary>
+    public const int BasicMealIngredients = 2;
+
     // A default ImmutableArray is not an empty one and throws on enumeration, and this type is
     // reached by deserialization, where an absent list arrives as exactly that.
     public ImmutableArray<CampingTake> Taken { get; init; } = Taken.IsDefault ? [] : Taken;
@@ -103,6 +111,26 @@ public sealed record CampSite(
 
     /// <summary>A perfect campsite is two harder to stumble on.</summary>
     public int EncounterDcTonight => EncounterDc + (Campsite is CampOutcome.CriticalSuccess ? 2 : 0);
+
+    // Derived from Meals rather than subtracted from the larder when a meal is chosen, so changing
+    // or clearing a meal puts the ingredients back by arithmetic and there is no second place for
+    // the count to go wrong.
+    //
+    // Only the basic count. The rules state the price of a basic meal plainly and state no special
+    // meal's cost at all, because the twenty-seven the ruleset carries keep theirs in prose the
+    // licence withholds. Deducting for a recipe a table typed in while not deducting for an
+    // official one would be arithmetic that is right half the time, which is worse than none, so
+    // the special ingredient count stays the plain tally the table keeps by hand.
+    public int BasicIngredientsSpent =>
+        Meals.Count(meal => meal.Kind is MealKind.BasicMeal) * BasicMealIngredients;
+
+    public int BasicIngredientsLeft => BasicIngredients - BasicIngredientsSpent;
+
+    /// <summary>The recipe somebody is eating, or null when they are not eating one.</summary>
+    public CampEntry? RecipeFor(MealChoice meal) =>
+        meal.RecipeId is { } id
+            ? Book.FirstOrDefault(entry => entry.Id == id && entry.Kind is CampEntryKind.Recipe)
+            : null;
 
     public int TakenBy(Guid characterId) => Taken.Count(take => take.CharacterId == characterId);
 
@@ -145,6 +173,21 @@ public sealed record CampSite(
     public CampSite With(MealChoice meal) =>
         this with { Meals = [.. Meals.Where(existing => existing.CharacterId != meal.CharacterId), meal] };
 
+    public CampSite WithoutMealFor(Guid characterId) =>
+        this with { Meals = [.. Meals.Where(meal => meal.CharacterId != characterId)] };
+
+    /// <summary>Why the larder cannot serve this meal, or null if it can.</summary>
+    public string? MealRefusal(MealChoice meal)
+    {
+        // Over the state the choice would produce, so swapping a meal frees what the old one held.
+        var after = With(meal);
+
+        return after.BasicIngredientsLeft < 0
+            ? $"A basic meal takes {BasicMealIngredients} basic ingredients a serving. "
+              + $"Tonight's meals would take {after.BasicIngredientsSpent} from a larder of {BasicIngredients}."
+            : null;
+    }
+
     /// <summary>The next camp. The zone, the book and the larder carry over; what happened at
     /// this one does not.</summary>
     public CampSite BrokenCamp() => this with
@@ -153,6 +196,10 @@ public sealed record CampSite(
         Campsite = null,
         Taken = [],
         Meals = [],
+
+        // Daily preparations are the rules' boundary, and past it the night's meals have been
+        // eaten, so the larder settles to what is left rather than refunding a night that happened.
+        BasicIngredients = BasicIngredientsLeft,
     };
 
     static bool IsCookSpecialMeal(string activity) => Same(activity, "Cook Special Meal");

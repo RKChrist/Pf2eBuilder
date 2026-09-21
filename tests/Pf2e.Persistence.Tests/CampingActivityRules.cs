@@ -96,4 +96,25 @@ public class CampingActivityRules(SeededDatabase database) : IClassFixture<Seede
             ["Camouflage Campsite", "Discover Special Meal", "Hunt and Gather", "Organize Watch"],
             checkable.OrderBy(n => n, StringComparer.Ordinal));
     }
+
+    [Fact]
+    public async Task AndTheCampsiteMealsComeOutOfTheRulesetTheSameWay()
+    {
+        await using var db = database.NewContext();
+        var meals = await new GetCampsiteMealsHandler(db).Handle(new GetCampsiteMeals(), default);
+
+        Assert.Equal(27, meals.Count);
+        Assert.All(meals, meal => Assert.NotEmpty(meal.Name));
+        Assert.All(meals, meal => Assert.InRange(meal.Level, 0, 20));
+
+        var names = meals.Select(meal => meal.Name).ToList();
+        Assert.Equal(names.OrderBy(n => n, StringComparer.OrdinalIgnoreCase), names);
+
+        // Seven of the twenty-seven print a requirement, and the rest print none, which is not the
+        // same as printing one anybody meets.
+        Assert.Equal(7, meals.Count(meal => meal.Requires is not null));
+        Assert.Equal(
+            "legendary in Arcana or Nature",
+            meals.Single(meal => meal.RuleId == "campsite-meal-2").Requires);
+    }
 }

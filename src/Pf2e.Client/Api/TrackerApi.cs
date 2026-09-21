@@ -155,6 +155,12 @@ public sealed class TrackerApi(HttpClient http)
         SendAsync<IReadOnlyList<CampingActivityView>>(
             new HttpRequestMessage(HttpMethod.Get, "camping-activities"), ct);
 
+    /// <summary>The campsite meals the ruleset holds. Names and requirements only, for the same
+    /// reason: what a meal does is prose the pull leaves on the record it links to.</summary>
+    public Task<IReadOnlyList<CampsiteMealView>> GetCampsiteMealsAsync(CancellationToken ct) =>
+        SendAsync<IReadOnlyList<CampsiteMealView>>(
+            new HttpRequestMessage(HttpMethod.Get, "campsite-meals"), ct);
+
     public Task<CampaignView> TakeCampActivityAsync(
         string code, Guid character, string activity, CancellationToken ct) =>
         SendAsync<CampaignView>(

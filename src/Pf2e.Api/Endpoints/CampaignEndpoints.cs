@@ -49,12 +49,8 @@ public static class CampaignEndpoints
              CampActivityRequest body, CancellationToken ct) =>
                 sender.Send(new TakeCampActivity(code, DmKeyOf(request), id, body.Activity), ct));
 
-        // A camping session, step by step. Everything hangs off /camp, because it is one value
-        // on the campaign and these are the ways it changes.
-        app.MapPut("/campaigns/{code}/camp/step",
-            (ISender sender, HttpRequest request, string code, SetCampStepRequest body, CancellationToken ct) =>
-                sender.Send(new SetCampStep(code, DmKeyOf(request), body.Step), ct));
-
+        // A camping session. Everything hangs off /camp, because it is one value on the campaign
+        // and these are the ways it changes.
         app.MapPut("/campaigns/{code}/camp/zone",
             (ISender sender, HttpRequest request, string code, SetCampZoneRequest body, CancellationToken ct) =>
                 sender.Send(new SetCampZone(code, DmKeyOf(request), body.ZoneName, body.ZoneDc, body.EncounterDc), ct));
@@ -70,7 +66,7 @@ public static class CampaignEndpoints
 
         app.MapPut("/campaigns/{code}/camp/characters/{id:guid}/meal",
             (ISender sender, HttpRequest request, string code, Guid id, ChooseMealRequest body, CancellationToken ct) =>
-                sender.Send(new ChooseMeal(code, DmKeyOf(request), id, body.Kind, body.RecipeId), ct));
+                sender.Send(new ChooseMeal(code, DmKeyOf(request), id, body.Kind, body.RecipeId, body.RuleId), ct));
 
         app.MapPut("/campaigns/{code}/camp/book/{id:guid}",
             (ISender sender, HttpRequest request, string code, Guid id, SaveCampEntryRequest body, CancellationToken ct) =>
@@ -115,6 +111,9 @@ public static class CampaignEndpoints
         // seeded actions carrying the Camping trait, requirements and all.
         app.MapGet("/camping-activities", (ISender sender, CancellationToken ct) =>
             sender.Send(new GetCampingActivities(), ct));
+
+        app.MapGet("/campsite-meals", (ISender sender, CancellationToken ct) =>
+            sender.Send(new GetCampsiteMeals(), ct));
 
         app.MapGet("/camp-activities", () => Results.Ok(
             Pf2e.Domain.CampActivities.All

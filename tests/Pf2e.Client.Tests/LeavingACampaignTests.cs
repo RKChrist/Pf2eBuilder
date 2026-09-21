@@ -23,7 +23,7 @@ public class LeavingACampaignTests
         0,
         1,
         new CampSiteView(
-            "PrepareCampsite", null, 0, 0, 0, null, true, 0, [], [], [], 0, 0, 0, 0));
+            "PrepareCampsite", null, 0, 0, 0, null, true, 0, [], [], [], 0, 0, 0, 0, 0));
 
     static CampaignState AtTheTable(string code) => new CampaignState
     {

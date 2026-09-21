@@ -62,12 +62,23 @@ internal static class CampaignProjection
             camp.ActivitiesAllowed,
             camp.ActivityPenalty,
             [.. camp.Taken.Select(take => new CampingTakeView(take.CharacterId, take.Activity, take.Outcome.ToString()))],
-            [.. camp.Meals.Select(meal => new MealChoiceView(meal.CharacterId, meal.Kind.ToString(), meal.RecipeId))],
+            [.. camp.Meals.Select(meal => Of(camp, meal))],
             [.. camp.Book.Select(entry => new CampEntryView(entry.Id, entry.Kind.ToString(), entry.Name, entry.Does, entry.Dc))],
             camp.BasicIngredients,
             camp.SpecialIngredients,
+            camp.BasicIngredientsLeft,
             rest,
             watch);
+    }
+
+    /// <summary>A camp book recipe's own words travel with the meal, so the character who ate it
+    /// can read what it does without anybody looking the entry back up.</summary>
+    static MealChoiceView Of(CampSite camp, MealChoice meal)
+    {
+        var recipe = camp.RecipeFor(meal);
+
+        return new MealChoiceView(
+            meal.CharacterId, meal.Kind.ToString(), meal.RecipeId, meal.RuleId, recipe?.Name, recipe?.Does);
     }
 
     /// <summary>The creatures a viewer may know anything about. For the DM that is everybody; for
