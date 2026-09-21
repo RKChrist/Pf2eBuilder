@@ -29,12 +29,6 @@
                         Options="ZoneOptions"
                         Value="@(Zones.Any(zone => zone.Name == Camp.ZoneName) ? Camp.ZoneName : Elsewhere)"
                         ValueChanged="PickZone" />
-                <TextInput Class="zone__dc" Label="Zone DC" InputMode="numeric"
-                           Value="@Camp.ZoneDc.ToString()"
-                           ValueChanged="typed => SetDcs(typed, null)" />
-                <TextInput Class="zone__dc" Label="Encounter DC" InputMode="numeric"
-                           Value="@Camp.EncounterDc.ToString()"
-                           ValueChanged="typed => SetDcs(null, typed)" />
             }
             else
             {
@@ -44,12 +38,32 @@
 
         <div class="dcs">
             <div class="dc">
-                <span class="dc__value">@Camp.ZoneDc</span>
+                @if (IsDm)
+                {
+                    <input class="dc__value dc__value--typed" type="text" inputmode="numeric"
+                           aria-label="Zone DC" value="@Camp.ZoneDc"
+                           @onchange="e => SetDcs(e.Value?.ToString(), null)" />
+                }
+                else
+                {
+                    <span class="dc__value">@Camp.ZoneDc</span>
+                }
                 <span class="dc__label">Zone DC</span>
                 <span class="dc__says">Prepare Campsite and most Camping checks</span>
             </div>
             <div class="dc @(Camp.EncounterDcTonight != Camp.EncounterDc ? "dc--moved" : null)">
-                <span class="dc__value">@Camp.EncounterDcTonight</span>
+                @* Tonight's, which a perfect campsite moves. The DM types the zone's own
+                   number; what the night is actually rolled against is derived from it. *@
+                @if (IsDm && Camp.EncounterDcTonight == Camp.EncounterDc)
+                {
+                    <input class="dc__value dc__value--typed" type="text" inputmode="numeric"
+                           aria-label="Encounter DC" value="@Camp.EncounterDc"
+                           @onchange="e => SetDcs(null, e.Value?.ToString())" />
+                }
+                else
+                {
+                    <span class="dc__value">@Camp.EncounterDcTonight</span>
+                }
                 <span class="dc__label">Encounter DC tonight</span>
                 <span class="dc__says">A flat check. Meeting it means something finds the camp.</span>
             </div>
@@ -140,7 +154,8 @@
                         }
                         <button type="button" class="who__open" data-doing="@character.Id"
                                 @onclick="() => _open = new Open(character.Id, Picker.Doing)">
-                            <span class="who__verb">@(taken.Count == 0 ? "Nothing yet" : "Something else")</span>
+                            <span class="who__for">Doing</span>
+                            <span class="who__verb">@(taken.Count == 0 ? "nothing yet" : "something else")</span>
                             <span class="who__pips" aria-label="@($"{taken.Count} of 4 activities taken")">
                                 @for (var pip = 0; pip < 4; pip++)
                                 {
@@ -155,6 +170,7 @@
                                 class="who__open who__open--meal @(meal is null ? null : "who__open--on")"
                                 data-eating="@character.Id"
                                 @onclick="() => _open = new Open(character.Id, Picker.Eating)">
+                            <span class="who__for">Eating</span>
                             <span class="who__verb">@MealLabel(meal)</span>
                         </button>
                         @* A recipe the table wrote carries its own words. A seeded meal's words are
@@ -555,7 +571,7 @@
 
     string MealLabel(MealChoiceView? meal) => meal switch
     {
-        null => "Nothing yet",
+        null => "nothing yet",
         { Kind: Rations } => "Rations",
         { Kind: BasicMeal } => "Basic meal",
         { RecipeName: { Length: > 0 } named } => named,

@@ -90,6 +90,24 @@
     line-height: 1;
 }
 
+/* The tile is the field. Sized and set like the number it replaces, so reading the screen and
+   editing it are the same act rather than two rows of the same figure. */
+.dc__value--typed {
+    inline-size: 3.5ch;
+    padding: var(--space-0);
+    border: var(--border-hair) dashed var(--line-subtle);
+    border-radius: var(--radius-chip);
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: center;
+}
+
+.dc__value--typed:focus-visible {
+    outline: var(--line-focus) solid var(--border-focus);
+    outline-offset: 2px;
+}
+
 .dc__label {
     grid-area: label;
     font-size: var(--font-size-data);
@@ -280,6 +298,15 @@
 
 .who__open--meal {
     inline-size: 100%;
+}
+
+/* Which of the two this control is for. Without it a row read "Nothing yet" twice, once for
+   what somebody is doing and once for what they are eating, and nothing said which. */
+.who__for {
+    color: var(--text-muted);
+    font-size: var(--font-size-chip);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
 .who__verb {
