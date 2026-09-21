@@ -19,7 +19,7 @@ public sealed record CampEntrySaved(Guid EntryId, string Kind, string Name, stri
 
 public sealed record CampEntryRemoved(Guid EntryId);
 
-public sealed record MealChosen(Guid CharacterId, string? Kind, Guid? RecipeId, string? RuleId);
+public sealed record MealChosen(Guid CharacterId, string? Kind, Guid? RecipeId, string? RuleId = null);
 
 public sealed record CampSuppliesSet(int BasicIngredients, int SpecialIngredients);
 

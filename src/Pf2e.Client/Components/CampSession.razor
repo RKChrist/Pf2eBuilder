@@ -253,14 +253,14 @@
                             <span class="plate__who">@character.Name</span>
                             <div class="plate__choices" role="group" aria-label="@($"What {character.Name} is eating")">
                                 <button type="button" class="pick @(plate?.Kind == "Rations" ? "pick--on" : null)"
-                                        @onclick='() => Dispatcher.Dispatch(new MealChosen(character.Id, "Rations", null, null))'>Rations</button>
+                                        @onclick='() => Dispatcher.Dispatch(new MealChosen(character.Id, "Rations", null))'>Rations</button>
                                 <button type="button" class="pick @(plate?.Kind == "BasicMeal" ? "pick--on" : null)"
-                                        @onclick='() => Dispatcher.Dispatch(new MealChosen(character.Id, "BasicMeal", null, null))'>Basic meal</button>
+                                        @onclick='() => Dispatcher.Dispatch(new MealChosen(character.Id, "BasicMeal", null))'>Basic meal</button>
                                 @foreach (var recipe in Recipes)
                                 {
                                     <button type="button" class="pick @(plate?.RecipeId == recipe.Id ? "pick--on" : null)"
                                             data-recipe="@recipe.Id"
-                                            @onclick='() => Dispatcher.Dispatch(new MealChosen(character.Id, "SpecialMeal", recipe.Id, null))'>@recipe.Name</button>
+                                            @onclick='() => Dispatcher.Dispatch(new MealChosen(character.Id, "SpecialMeal", recipe.Id))'>@recipe.Name</button>
                                 }
                             </div>
                         </div>

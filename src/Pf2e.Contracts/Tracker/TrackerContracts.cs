@@ -159,9 +159,10 @@ public sealed record CampingActivityView(
 /// <summary>
 /// One of the campsite meals the Kingmaker Companion Guide prints. What a meal does is prose the
 /// licence withholds, so this is the name, what it takes to cook, and nothing else the table could
-/// act on. Requires is null for the twenty that print no requirement.
+/// act on. Requires is null for the twenty that print no requirement, and Level is null for a meal
+/// whose record carries none, which is not the same as the level zero two of them really are.
 /// </summary>
-public sealed record CampsiteMealView(string RuleId, string Name, int Level, string? Rarity, string? Requires);
+public sealed record CampsiteMealView(string RuleId, string Name, int? Level, string? Rarity, string? Requires);
 
 /// <summary>One thing a day can be spent on. Skill is the one it is rolled with and null
 /// where the activity has no single skill.</summary>

@@ -34,12 +34,13 @@ public sealed class GetCampsiteMealsHandler(IRulesDbContext db)
         [
             .. meals
                 .OrderBy(meal => meal.Name, StringComparer.OrdinalIgnoreCase)
-                // No seeded meal is missing a level, so a zero here is a record that changed
-                // shape rather than a meal a first-level party can cook.
+                // Passed through rather than defaulted. Every seeded meal carries a level today,
+                // and two of them carry level zero, so a zero standing in for a missing one would
+                // read as a meal a first-level party can cook.
                 .Select(meal => new CampsiteMealView(
                     meal.Id,
                     meal.Name,
-                    meal.Level ?? 0,
+                    meal.Level,
                     meal.Rarity,
                     RuleFields.Text(meal.Mechanics, "requirement"))),
         ];

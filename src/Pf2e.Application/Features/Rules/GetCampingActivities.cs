@@ -24,7 +24,7 @@ public sealed class GetCampingActivitiesHandler(IRulesDbContext db)
         GetCampingActivities query, CancellationToken ct)
     {
         // Traits are a column of their own, and the provider cannot search inside the list, so
-        // the filter happens in memory over the 551 actions rather than over all 25,595 records.
+        // the filter happens in memory over the 551 actions rather than over all 25,622 records.
         var actions = await db.RuleRecords.AsNoTracking()
             .Where(r => r.Category == "action")
             .Select(r => new { r.Id, r.Name, r.Traits, r.Mechanics })

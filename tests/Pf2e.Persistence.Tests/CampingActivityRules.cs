@@ -105,7 +105,10 @@ public class CampingActivityRules(SeededDatabase database) : IClassFixture<Seede
 
         Assert.Equal(27, meals.Count);
         Assert.All(meals, meal => Assert.NotEmpty(meal.Name));
-        Assert.All(meals, meal => Assert.InRange(meal.Level, 0, 20));
+        // Every one of them carries a level today, which is the assertion that would catch a seed
+        // dropping one. Level zero is a real meal, so a missing level must not read as one.
+        Assert.All(meals, meal => Assert.NotNull(meal.Level));
+        Assert.All(meals, meal => Assert.InRange(meal.Level!.Value, 0, 20));
 
         var names = meals.Select(meal => meal.Name).ToList();
         Assert.Equal(names.OrderBy(n => n, StringComparer.OrdinalIgnoreCase), names);
