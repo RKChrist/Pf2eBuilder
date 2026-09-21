@@ -8,8 +8,6 @@ namespace Pf2e.Client.State;
 // what comes back is the whole campaign, so there is no camp state here to keep in step with the
 // server's: the page reads the camp off the campaign it was just handed.
 
-public sealed record CampStepSet(string Step);
-
 public sealed record CampZoneSet(string? ZoneName, int ZoneDc, int EncounterDc);
 
 /// <summary>How Prepare Campsite went, and null to take the result back.</summary>
@@ -21,7 +19,7 @@ public sealed record CampEntrySaved(Guid EntryId, string Kind, string Name, stri
 
 public sealed record CampEntryRemoved(Guid EntryId);
 
-public sealed record MealChosen(Guid CharacterId, string Kind, Guid? RecipeId);
+public sealed record MealChosen(Guid CharacterId, string? Kind, Guid? RecipeId, string? RuleId = null);
 
 public sealed record CampSuppliesSet(int BasicIngredients, int SpecialIngredients);
 
@@ -29,10 +27,6 @@ public sealed record CampBroken;
 
 public sealed class CampEffects(TrackerApi tracker, IState<CampaignState> state)
 {
-    [EffectMethod]
-    public Task Handle(CampStepSet action, IDispatcher dispatcher) =>
-        Run(dispatcher, HttpMethod.Put, "step", new SetCampStepRequest(action.Step));
-
     [EffectMethod]
     public Task Handle(CampZoneSet action, IDispatcher dispatcher) =>
         Run(dispatcher, HttpMethod.Put, "zone",
@@ -59,7 +53,7 @@ public sealed class CampEffects(TrackerApi tracker, IState<CampaignState> state)
     [EffectMethod]
     public Task Handle(MealChosen action, IDispatcher dispatcher) =>
         Run(dispatcher, HttpMethod.Put, $"characters/{action.CharacterId}/meal",
-            new ChooseMealRequest(action.Kind, action.RecipeId));
+            new ChooseMealRequest(action.Kind, action.RecipeId, action.RuleId));
 
     [EffectMethod]
     public Task Handle(CampSuppliesSet action, IDispatcher dispatcher) =>

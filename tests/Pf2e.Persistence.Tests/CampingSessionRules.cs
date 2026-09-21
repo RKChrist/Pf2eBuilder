@@ -54,6 +54,40 @@ public class CampingSessionRules(SeededDatabase database) : IClassFixture<Seeded
         return await Camp(db).Handle(new RecordCampsite(campaign.Code, campaign.DmKey, outcome), default);
     }
 
+    async Task<CampaignView> Supplies(CreatedCampaignView campaign, int basic, int special = 0)
+    {
+        await using var db = database.NewContext();
+        return await Camp(db).Handle(new SetCampSupplies(campaign.Code, null, basic, special), default);
+    }
+
+    async Task<CampaignView> Meal(
+        CreatedCampaignView campaign, Guid who, string? kind, Guid? recipe = null, string? ruleId = null)
+    {
+        await using var db = database.NewContext();
+        return await Camp(db).Handle(new ChooseMeal(campaign.Code, null, who, kind, recipe, ruleId), default);
+    }
+
+    async Task<CampaignView> Rest(CreatedCampaignView campaign)
+    {
+        await using var db = database.NewContext();
+        return await new RestForTheNightHandler(db, Undo, Broadcaster)
+            .Handle(new RestForTheNight(campaign.Code, campaign.DmKey), default);
+    }
+
+    async Task<CampaignView> Break(CreatedCampaignView campaign)
+    {
+        await using var db = database.NewContext();
+        return await Camp(db).Handle(new BreakCamp(campaign.Code, campaign.DmKey), default);
+    }
+
+    /// <summary>Straight out of the store through a fresh context, for asserting that something a
+    /// refused command tried to write is not there.</summary>
+    async Task<CampSiteView> Stored(CreatedCampaignView campaign)
+    {
+        await using var db = database.NewContext();
+        return (await new GetCampaignHandler(db).Handle(new GetCampaign(campaign.Code, null), default)).Camp;
+    }
+
     [Fact]
     public async Task ACampStartsAtTheFirstStepWithTheWatchesThisPartyWouldKeep()
     {
@@ -161,13 +195,13 @@ public class CampingSessionRules(SeededDatabase database) : IClassFixture<Seeded
             // A player, with no DM key: the cook writes down the recipe they learned.
             await Camp(db).Handle(new SaveCampEntry(
                 campaign.Code, null, recipe, "Recipe", "Hearty Stew", "Success: +1 to Fortitude saves.", 18), default);
-            await Camp(db).Handle(new ChooseMeal(campaign.Code, null, gnibbo, "SpecialMeal", recipe), default);
+            await Camp(db).Handle(new ChooseMeal(campaign.Code, null, gnibbo, "SpecialMeal", recipe, null), default);
         }
 
         CampaignView after;
         await using (var db = database.NewContext())
         {
-            after = await Camp(db).Handle(new ChooseMeal(campaign.Code, null, einar, "Rations", null), default);
+            after = await Camp(db).Handle(new ChooseMeal(campaign.Code, null, einar, "Rations", null, null), default);
         }
 
         Assert.Equal(18, Assert.Single(after.Camp.Book).Dc);
@@ -214,19 +248,139 @@ public class CampingSessionRules(SeededDatabase database) : IClassFixture<Seeded
     }
 
     [Fact]
-    public async Task MovingTheTableOnIsTheDmsAndTakingAnActivityIsAnybodys()
+    public async Task TheCampsiteAndBreakingCampAreTheDmsAndTakingAnActivityIsAnybodys()
     {
         var (campaign, gnibbo, _) = await Party();
 
         await using var db = database.NewContext();
-        await Assert.ThrowsAsync<NotTheDmException>(() =>
-            Camp(db).Handle(new SetCampStep(campaign.Code, null, "Eating"), default));
         await Assert.ThrowsAsync<NotTheDmException>(() =>
             Camp(db).Handle(new RecordCampsite(campaign.Code, null, "Success"), default));
         await Assert.ThrowsAsync<NotTheDmException>(() =>
             Camp(db).Handle(new BreakCamp(campaign.Code, null), default));
 
         Assert.Single((await Take(campaign, gnibbo, "Relax")).Camp.Taken);
+    }
+
+    [Fact]
+    public async Task ABasicMealSpendsTwoIngredientsAndChangingItPutsThemBack()
+    {
+        var (campaign, gnibbo, einar) = await Party();
+        await Supplies(campaign, 5);
+
+        Assert.Equal(3, (await Meal(campaign, gnibbo, "BasicMeal")).Camp.BasicIngredientsLeft);
+        Assert.Equal(1, (await Meal(campaign, einar, "BasicMeal")).Camp.BasicIngredientsLeft);
+
+        Assert.Equal(3, (await Meal(campaign, gnibbo, "Rations")).Camp.BasicIngredientsLeft);
+
+        var cleared = (await Meal(campaign, einar, null)).Camp;
+        Assert.Equal(5, cleared.BasicIngredientsLeft);
+        Assert.DoesNotContain(cleared.Meals, meal => meal.CharacterId == einar);
+    }
+
+    [Fact]
+    public async Task ALarderThatCannotPayForABasicMealSaysSoInsteadOfAllowingIt()
+    {
+        var (campaign, gnibbo, einar) = await Party();
+        await Supplies(campaign, 3);
+
+        Assert.Equal(1, (await Meal(campaign, gnibbo, "BasicMeal")).Camp.BasicIngredientsLeft);
+
+        var refused = await Assert.ThrowsAsync<CampRuleException>(() => Meal(campaign, einar, "BasicMeal"));
+        Assert.Equal(
+            "A basic meal takes 2 basic ingredients a serving. "
+            + "Tonight's meals would take 4 from a larder of 3.",
+            refused.Message);
+
+        // A refusal that has already written is a refusal that did nothing, so the absence is the
+        // assertion and it is read back out of the store rather than off the thrown command.
+        var stored = await Stored(campaign);
+        Assert.DoesNotContain(stored.Meals, meal => meal.CharacterId == einar);
+        Assert.Equal(1, stored.BasicIngredientsLeft);
+    }
+
+    [Fact]
+    public async Task ARecipeFromTheCampBooksWordsReachTheCharacterWhoAteIt()
+    {
+        const string does = "Success: +1 status bonus to Fortitude saves until your next daily preparations.";
+        var (campaign, gnibbo, _) = await Party();
+        var recipe = Guid.NewGuid();
+
+        await using (var db = database.NewContext())
+        {
+            await Camp(db).Handle(
+                new SaveCampEntry(campaign.Code, null, recipe, "Recipe", "Hearty Stew", does, 18), default);
+        }
+
+        var eaten = (await Meal(campaign, gnibbo, "SpecialMeal", recipe)).Camp.Meals.Single();
+        Assert.Equal("Hearty Stew", eaten.RecipeName);
+        Assert.Equal(does, eaten.Benefit);
+
+        // The rules keep a meal's benefit until the next daily preparations, and a night's rest is
+        // not those, so sleeping on it changes nothing.
+        Assert.Equal(does, (await Rest(campaign)).Camp.Meals.Single().Benefit);
+
+        var next = (await Break(campaign)).Camp;
+        Assert.Empty(next.Meals);
+        Assert.Equal("Hearty Stew", Assert.Single(next.Book).Name);
+    }
+
+    [Fact]
+    public async Task AMealFromTheRulesetIsChosenByItsRecordAndCarriesNoWordsOfItsOwn()
+    {
+        var (campaign, gnibbo, _) = await Party();
+
+        var eaten = (await Meal(campaign, gnibbo, "SpecialMeal", ruleId: "campsite-meal-1")).Camp.Meals.Single();
+        Assert.Equal("campsite-meal-1", eaten.RuleId);
+        Assert.Null(eaten.RecipeId);
+
+        // The absence is the point. The licence withholds a seeded meal's prose, so a projection
+        // that put a name or a benefit here would be inventing one.
+        Assert.Null(eaten.RecipeName);
+        Assert.Null(eaten.Benefit);
+
+        Assert.Equal("campsite-meal-1", (await Rest(campaign)).Camp.Meals.Single().RuleId);
+        Assert.Empty((await Break(campaign)).Camp.Meals);
+    }
+
+    [Fact]
+    public async Task TheLarderCannotBeSetBelowWhatTonightsMealsHaveAlreadyTaken()
+    {
+        var (campaign, gnibbo, einar) = await Party();
+        await Supplies(campaign, 6);
+        await Meal(campaign, gnibbo, "BasicMeal");
+        await Meal(campaign, einar, "BasicMeal");
+
+        var refused = await Assert.ThrowsAsync<CampRuleException>(() => Supplies(campaign, 3));
+        Assert.Equal(
+            "Tonight's meals have already taken 4 basic ingredients out of the larder.", refused.Message);
+
+        Assert.Equal(6, (await Stored(campaign)).BasicIngredients);
+    }
+
+    [Fact]
+    public void ChoosingASpecialMealWithoutSayingWhichIsRefused()
+    {
+        var validator = new ChooseMealValidator();
+        var who = Guid.NewGuid();
+        var recipe = Guid.NewGuid();
+
+        ChooseMeal Choosing(string? kind, Guid? id, string? ruleId) =>
+            new("ABCDEF", null, who, kind, id, ruleId);
+
+        var neither = validator.Validate(Choosing("SpecialMeal", null, null));
+        Assert.False(neither.IsValid);
+        Assert.Contains("Say which special meal.", neither.Errors.Select(e => e.ErrorMessage));
+
+        Assert.False(validator.Validate(Choosing("SpecialMeal", recipe, "campsite-meal-1")).IsValid);
+
+        // The positive controls, so this test cannot pass on a validator that refuses everything.
+        Assert.True(validator.Validate(Choosing("SpecialMeal", recipe, null)).IsValid);
+        Assert.True(validator.Validate(Choosing("SpecialMeal", null, "campsite-meal-1")).IsValid);
+        Assert.True(validator.Validate(Choosing("Rations", null, null)).IsValid);
+        Assert.True(validator.Validate(Choosing(null, null, null)).IsValid);
+
+        // Nothing but a special meal names a meal at all.
+        Assert.False(validator.Validate(Choosing("Rations", null, "campsite-meal-1")).IsValid);
     }
 
     [Fact]

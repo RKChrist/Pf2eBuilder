@@ -7,12 +7,10 @@ using Pf2e.Domain.Tracking;
 
 namespace Pf2e.Application.Features.Campaigns;
 
-// A camping session, as commands. The ones that move the whole table on are the DM's: the step,
-// the zone, how the campsite turned out, and breaking camp. The ones a player does for their own
-// character are open to anybody with the code, like a camp activity and like an import: taking a
-// Camping activity, choosing a meal, writing a recipe into the book, counting the larder.
-
-public sealed record SetCampStep(string Code, string? DmKey, string Step) : IRequest<CampaignView>;
+// A camping session, as commands. The ones that move the whole table on are the DM's: the zone,
+// how the campsite turned out, and breaking camp. The ones a player does for their own character
+// are open to anybody with the code, like a camp activity and like an import: taking a Camping
+// activity, choosing a meal, writing a recipe into the book, counting the larder.
 
 public sealed record SetCampZone(string Code, string? DmKey, string? ZoneName, int ZoneDc, int EncounterDc)
     : IRequest<CampaignView>;
@@ -36,7 +34,10 @@ public sealed record SaveCampEntry(
 
 public sealed record RemoveCampEntry(string Code, string? DmKey, Guid EntryId) : IRequest<CampaignView>;
 
-public sealed record ChooseMeal(string Code, string? DmKey, Guid CharacterId, string Kind, Guid? RecipeId)
+/// <summary>A null <paramref name="Kind"/> is nobody having decided yet and removes the choice, so
+/// a mis-tap is not a loss and tapping the same choice twice is a clear.</summary>
+public sealed record ChooseMeal(
+    string Code, string? DmKey, Guid CharacterId, string? Kind, Guid? RecipeId, string? RuleId)
     : IRequest<CampaignView>;
 
 public sealed record SetCampSupplies(string Code, string? DmKey, int BasicIngredients, int SpecialIngredients)
@@ -50,18 +51,7 @@ static class CampRules
 {
     public const string CodeMessage = "A campaign code is four to twelve letters and digits.";
 
-    public static bool IsStep(string? step) => Enum.TryParse<CampStep>(step, out _);
-
     public static bool IsOutcome(string? outcome) => Enum.TryParse<CampOutcome>(outcome, out _);
-}
-
-public sealed class SetCampStepValidator : AbstractValidator<SetCampStep>
-{
-    public SetCampStepValidator()
-    {
-        RuleFor(c => c.Code).Must(CampaignCode.IsValid).WithMessage(CampRules.CodeMessage);
-        RuleFor(c => c.Step).Must(CampRules.IsStep).WithMessage("That is not a step of a camping session.");
-    }
 }
 
 public sealed class SetCampZoneValidator : AbstractValidator<SetCampZone>
@@ -130,13 +120,22 @@ public sealed class ChooseMealValidator : AbstractValidator<ChooseMeal>
     {
         RuleFor(c => c.Code).Must(CampaignCode.IsValid).WithMessage(CampRules.CodeMessage);
         RuleFor(c => c.CharacterId).NotEmpty();
-        RuleFor(c => c.Kind).Must(kind => Enum.TryParse<MealKind>(kind, out _))
+        RuleFor(c => c.Kind).Must(kind => kind is null || Enum.TryParse<MealKind>(kind, out _))
                             .WithMessage("A meal is Rations, a BasicMeal or a SpecialMeal.");
 
-        // A special meal is a particular recipe, and nothing else is.
-        RuleFor(c => c.RecipeId).NotNull().When(c => c.Kind == nameof(MealKind.SpecialMeal))
-                                .WithMessage("Say which special meal.");
-        RuleFor(c => c.RecipeId).Null().When(c => c.Kind != nameof(MealKind.SpecialMeal));
+        // A special meal is one particular meal: either a recipe out of this table's camp book or
+        // one of the ruleset's own, never both and never neither. Nothing else names a meal at all.
+        RuleFor(c => c).Must(c => c.RecipeId is not null ^ c.RuleId is not null)
+                       .When(c => c.Kind == nameof(MealKind.SpecialMeal))
+                       .WithMessage("Say which special meal.");
+        RuleFor(c => c).Must(c => c.RecipeId is null && c.RuleId is null)
+                       .When(c => c.Kind != nameof(MealKind.SpecialMeal))
+                       .WithMessage("Only a special meal names a meal.");
+
+        // Taken on trust, the way TakeCampingActivity takes a ruleset name on trust: the ruleset
+        // is a separate database this handler does not read, and a name that matches nothing there
+        // shows up as a meal with no record rather than as a rule of camping broken.
+        RuleFor(c => c.RuleId).Length(1, 80).When(c => c.RuleId is not null);
     }
 }
 
@@ -164,7 +163,6 @@ public sealed class BreakCampValidator : AbstractValidator<BreakCamp>
 /// much time it takes, and the function.
 /// </summary>
 public sealed class CampHandlers(ITrackerDbContext db, IUndoStack undo, ICampaignBroadcaster broadcaster) :
-    IRequestHandler<SetCampStep, CampaignView>,
     IRequestHandler<SetCampZone, CampaignView>,
     IRequestHandler<RecordCampsite, CampaignView>,
     IRequestHandler<TakeCampingActivity, CampaignView>,
@@ -174,10 +172,6 @@ public sealed class CampHandlers(ITrackerDbContext db, IUndoStack undo, ICampaig
     IRequestHandler<SetCampSupplies, CampaignView>,
     IRequestHandler<BreakCamp, CampaignView>
 {
-    public Task<CampaignView> Handle(SetCampStep command, CancellationToken ct) =>
-        Change(command.Code, command.DmKey, "the camp moving on", dmOnly: "move the camp on", 0, ct,
-            (camp, _) => camp with { Step = Enum.Parse<CampStep>(command.Step) });
-
     public Task<CampaignView> Handle(SetCampZone command, CancellationToken ct) =>
         Change(command.Code, command.DmKey, "the zone", dmOnly: "say where the camp is", 0, ct,
             (camp, _) => camp with
@@ -238,22 +232,45 @@ public sealed class CampHandlers(ITrackerDbContext db, IUndoStack undo, ICampaig
                     throw new CombatantNotFoundException("That character is not in this campaign.");
                 }
 
+                if (command.Kind is null)
+                {
+                    return camp.WithoutMealFor(command.CharacterId);
+                }
+
                 if (command.RecipeId is { } recipe
                     && !camp.Book.Any(entry => entry.Id == recipe && entry.Kind is CampEntryKind.Recipe))
                 {
                     throw new CampRuleException("That recipe is not in this campaign's camp book.");
                 }
 
-                return camp.With(new MealChoice(
-                    command.CharacterId, Enum.Parse<MealKind>(command.Kind), command.RecipeId));
+                var choice = new MealChoice(
+                    command.CharacterId, Enum.Parse<MealKind>(command.Kind), command.RecipeId, command.RuleId);
+
+                if (camp.MealRefusal(choice) is { } refusal)
+                {
+                    throw new CampRuleException(refusal);
+                }
+
+                return camp.With(choice);
             });
 
     public Task<CampaignView> Handle(SetCampSupplies command, CancellationToken ct) =>
         Change(command.Code, command.DmKey, "the larder", dmOnly: null, 0, ct,
-            (camp, _) => camp with
+            (camp, _) =>
             {
-                BasicIngredients = command.BasicIngredients,
-                SpecialIngredients = command.SpecialIngredients,
+                // A larder below what tonight's meals have taken is a negative count, and the rules
+                // have no such state.
+                if (command.BasicIngredients < camp.BasicIngredientsSpent)
+                {
+                    throw new CampRuleException(
+                        $"Tonight's meals have already taken {camp.BasicIngredientsSpent} basic ingredients out of the larder.");
+                }
+
+                return camp with
+                {
+                    BasicIngredients = command.BasicIngredients,
+                    SpecialIngredients = command.SpecialIngredients,
+                };
             });
 
     public Task<CampaignView> Handle(BreakCamp command, CancellationToken ct) =>
