@@ -25,7 +25,7 @@
                         </span>
                     </Aside>
                 </SectionHead>
-                <CampSession Table="table" Activities="Camping" />
+                <CampSession Table="table" Activities="Camping" Meals="SpecialMeals" />
             </ChildContent>
         </Card>
 
@@ -55,7 +55,11 @@
                             }
                         </div>
 
-                        <StatStrip Character="character" ShowAttacks="false" ShowHitPoints="true" />
+                        @* Hit points and nothing else. Armour class and the saves belong where
+                           something is rolling against them, which is not here. *@
+                        <HitPoints Current="character.CurrentHitPoints"
+                                   Max="character.MaxHitPoints"
+                                   Temporary="character.TemporaryHitPoints" />
 
                         <div class="camping__acts">
                             @foreach (var activity in ExplorationStore.Value.Camp)
@@ -103,4 +107,6 @@
     CampaignState State => Store.Value;
 
     IReadOnlyList<CampingActivityView> Camping => ExplorationStore.Value.Camping;
+
+    IReadOnlyList<CampsiteMealView> SpecialMeals => ExplorationStore.Value.Meals;
 }

@@ -5,12 +5,23 @@
     padding: var(--space-3) var(--layout-gutter) var(--space-6);
 }
 
+/* One person a line where there is room for one: who they are and how they are, then what ten
+   minutes can be spent on. Six players used to be six blocks of a stat strip and four
+   full-width buttons, which was most of this page. */
 .camping {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: center;
     gap: var(--space-2);
     padding: var(--space-3) 0;
     border-top: var(--border-hair) solid var(--line-subtle);
+}
+
+@media (min-width: 48rem) {
+    .camping {
+        grid-template-columns: minmax(8rem, 14rem) auto minmax(0, 1fr);
+        gap: var(--space-3);
+    }
 }
 
 .camping__who {
@@ -34,9 +45,18 @@
 }
 
 .camping__acts {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-    gap: var(--tap-separation);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+}
+
+/* Quiet and only as wide as their words. Four of these times six people is the page, and a
+   button the width of a column each makes it a page nobody reaches the end of. */
+.camping ::deep .camping__act {
+    flex: none;
+    width: auto;
+    padding-inline: var(--space-3);
+    font-size: var(--font-size-chip);
 }
 
 .camp__what {

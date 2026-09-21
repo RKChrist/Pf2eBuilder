@@ -232,10 +232,8 @@ check('another activity moves the clock on', await dm.eval(
   `document.querySelector('.clock__value')?.textContent.trim() ?? ''`).then(t => t === '20 minutes'),
   await dm.eval(`document.querySelector('.clock__value')?.textContent.trim() ?? ''`));
 
-// The night's rest is step 4 of the camping session now, where the rules put it.
-await dm.eval(`document.querySelector('.steps__face[data-step="Resting"]').click()`);
-await sleep(600);
-await clickText(dm, '.step__act', 'Rest for the night');
+// The night's rest is on the camp page with the rest of the night, rather than behind a step.
+await clickText(dm, '.night__act', 'Rest for the night');
 const morning = await dm.eval(`({
   clock: document.querySelector('.clock__value')?.textContent.trim() ?? '',
   immune: document.querySelector('.camping__immune')?.textContent.trim() ?? 'none',
