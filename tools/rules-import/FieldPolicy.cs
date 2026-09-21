@@ -35,6 +35,13 @@ static class FieldPolicy
         // speed, traits and attribute modifiers as structured fields, so a DM searches for an
         // Ogre Warrior instead of typing one in mid-fight.
         "creature", "creature-family", "creature-ability",
+
+        // The twenty-seven special meals a party can cook at camp. Their name, level, price,
+        // rarity and source are structured; what the meal does to whoever eats it is prose and
+        // is withheld like every other description, so the camp screen offers the meal by name
+        // and design/016 fetches its words when somebody opens it. Without these the meal list
+        // held only what a table had typed in by hand.
+        "campsite-meal",
     ];
 
     // What we withhold is Paizo's expression, meaning flavour text and rule descriptions. Short

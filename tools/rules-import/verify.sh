@@ -115,7 +115,8 @@ hellknight-order 14
 deviant-ability-classification 10
 creature 4791
 creature-family 647
-creature-ability 85'
+creature-ability 85
+campsite-meal 27'
 
 SNAPSHOT_DIR=""
 for candidate in "$SNAPSHOT_ROOT"/*/; do

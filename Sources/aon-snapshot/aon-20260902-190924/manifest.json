@@ -1,6 +1,6 @@
 {
   "index": "aon-20260902-190924",
-  "pulledAtUtc": "2026-09-19T19:16:07Z",
+  "pulledAtUtc": "2026-09-21T03:57:22Z",
   "endpoint": "https://elasticsearch.aonprd.com/aon/_search",
   "pageSize": 500,
   "sort": "id.keyword:asc",
@@ -529,6 +529,12 @@
       "indexed": 85,
       "written": 45,
       "droppedAsLegacy": 40,
+      "legacyTargetMissing": 0
+    },
+    "campsite-meal": {
+      "indexed": 27,
+      "written": 27,
+      "droppedAsLegacy": 0,
       "legacyTargetMissing": 0
     }
   }

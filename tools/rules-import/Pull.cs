@@ -31,6 +31,25 @@ static class Pull
                 $"{category,-14} indexed {stat.Indexed,6}  written {stat.Written,6}  legacy {stat.DroppedAsLegacy,6}  danglingRemaster {stat.LegacyTargetMissing,5}");
         }
 
+        // A --only pull adds a category to the snapshot; it does not become the snapshot. Written
+        // from stats alone, the manifest listed the one category just pulled and dropped the other
+        // seventy-seven, whose files were still sitting beside it untouched. The next transform
+        // then refused with "category 'equipment' is not in snapshot", which reads like missing
+        // data rather than a manifest that forgot it.
+        var carried = new OrderedDictionary<string, CategoryStat>();
+        if (Snapshot.TryReadManifest(Snapshot.SnapshotDir(index))?.Categories is { } already)
+        {
+            foreach (var (category, stat) in already)
+            {
+                carried[category] = stat;
+            }
+        }
+
+        foreach (var (category, stat) in stats)
+        {
+            carried[category] = stat;
+        }
+
         var manifest = new Manifest(
             index,
             DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture),
@@ -39,8 +58,8 @@ static class Pull
             SortSpec,
             FieldPolicy.WireExcludes,
             FieldPolicy.ProseFieldOrder,
-            FieldPolicy.Categories.All(stats.ContainsKey),
-            stats);
+            FieldPolicy.Categories.All(carried.ContainsKey),
+            carried);
 
         WriteAtomic(Snapshot.ManifestFile(index), JsonSerializer.Serialize(manifest, Snapshot.ManifestOptions));
 
