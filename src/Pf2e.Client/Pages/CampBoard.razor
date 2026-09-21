@@ -7,9 +7,9 @@
 
 <PageTitle>Camp</PageTitle>
 
-@* Making camp, in the two halves it has. The camping session is the five steps the rules give
-   it, and is a component of its own. Under it are the four ten-minute activities a party takes
-   whenever it stops, which move the same clock and are tracked per character. *@
+@* Making camp, in the two halves it has. The camping session is an evening at a campsite and is
+   a component of its own. Under it are the four ten-minute activities a party takes whenever it
+   stops, which move the same clock and are tracked per character. *@
 <CampaignPage Heading="Camp" Context="table">
     <div class="camp">
         @* The camping session itself, as the rules run one. Everything below it on this page is
@@ -25,7 +25,7 @@
                         </span>
                     </Aside>
                 </SectionHead>
-                <CampSession Table="table" Activities="Camping" />
+                <CampSession Table="table" Activities="Camping" Meals="Meals" />
             </ChildContent>
         </Card>
 
@@ -103,4 +103,6 @@
     CampaignState State => Store.Value;
 
     IReadOnlyList<CampingActivityView> Camping => ExplorationStore.Value.Camping;
+
+    IReadOnlyList<CampsiteMealView> Meals => ExplorationStore.Value.Meals;
 }
